@@ -1,11 +1,12 @@
 using ModelingToolkit, MethodOfLines, OrdinaryDiffEq, DomainSets
 using Unitful
 using IfElse
+using Latexify
 
-@parameters k = 0.4 [description = "Von Karman constant"]
-@parameters a = 7.2 [description = "constant for γc calculation"]
-@parameters Ri_cr = 0.5 [description = "critical bulk Richardson number for the ABL"]
-@parameters g = 9.8 [unit = u"m/(s^2)", description = "acceleration of gravity"]
+@constants k = 0.4 [description = "Von Karman constant (unitless)"]
+@constants a = 7.2 [description = "constant for γc calculation (unitless)"]
+@constants Ri_cr = 0.5 [description = "critical bulk Richardson number for the ABL (unitless)"]
+@constants g = 9.8 [unit = u"m/(s^2)", description = "acceleration of gravity"]
 
 @parameters Kc [unit = u"m^2/s", description = "eddy diffusivity"]
 @parameters h [unit = u"m", description = "boundary-layer height"]
@@ -14,27 +15,27 @@ using IfElse
 @parameters wₜ [unit = u"m/s", description = "characteristic turbulent velocity scale with respect to tracers"]
 @parameters wₘ [unit = u"m/s", description = "characteristic turbulent velocity scales with respect to momentum"]
 @parameters w_star [unit = u"m/s", description = "convective velocity scale"]
-@parameters Dw = 1 [description = "the additional factor represents the availability of water at the surface"]
-@parameters Cₘ, Cₕ [description = "two surface-layer exchange coefficients"]
-@parameters Cₙ [description = "the neutral exchange coefficient"]
-@parameters Ri₀ [description = "surface-layer bulk Richardson number"]
+@parameters Dw = 1 [description = "the additional factor represents the availability of water at the surface (unitless)"]
+@parameters Cₘ, Cₕ [description = "two surface-layer exchange coefficients (unitless)"]
+@parameters Cₙ [description = "the neutral exchange coefficient (unitless)"]
+@parameters Ri₀ [description = "surface-layer bulk Richardson number (unitless)"]
 @parameters z_0m [unit = u"m", description = "roughness length for momentum, 0.04m over tundra, 2m over tropical rain forest, 0.0001m over ocean"]
 @parameters z1 [unit = u"m", description = "height of the lowest model level"]
 @parameters h [unit = u"m", description = "PBL height"]
 
-@parameters ϕₕ [description = "dimensionless vertical temperature gradient"]
+@parameters ϕₕ [description = "dimensionless vertical temperature gradient (unitless)"]
 @parameters L [unit = u"m", description = "Obukhov length"]
 @parameters u_star [unit = u"m/s", description = "friction velocity"]
-@parameters Pr [description = "turbulent Prandtl number"]
-@parameters c1 = 0.6
+@parameters Pr [description = "turbulent Prandtl number (unitless)"]
+@constants c1 = 0.6 [description = "parameterized constant (unitless)"]
 
-@parameters stable [description="unstable: -1, neutral: 0,  stable: 1"]
-@parameters w_C_0 [unit = u"m/s", description = "surface flux of C"]
-@parameters w_u_0 [unit = u"m^2/(s^2)", description = "parameterized (kinematic) surface flux of u"]
-@parameters w_v_0 [unit = u"m^2/(s^2)", description = "parameterized (kinematic) surface flux of v"]
-@parameters w_θ_0 [unit = u"K*m/s", description = "parameterized (kinematic) surface fluxes of θ"]
-@parameters w_q_0 [unit = u"m/s", description = "parameterized (kinematic) surface fluxes of q"]
-@parameters w_θv_0 [unit = u"K*m/s", description = "surface virtual heat flux"]
+@parameters stable [description="unstable: -1, neutral: 0,  stable: 1 (unitless)"]
+@parameters w_C0 [unit = u"m/s", description = "surface flux of C"]
+@parameters w_u0 [unit = u"m^2/(s^2)", description = "parameterized (kinematic) surface flux of u"]
+@parameters w_v0 [unit = u"m^2/(s^2)", description = "parameterized (kinematic) surface flux of v"]
+@parameters w_θ0 [unit = u"K*m/s", description = "parameterized (kinematic) surface fluxes of θ"]
+@parameters w_q0 [unit = u"m/s", description = "parameterized (kinematic) surface fluxes of q"]
+@parameters w_θv0 [unit = u"K*m/s", description = "surface virtual heat flux"]
 
 @parameters u_10 [unit = u"m/s", description = "zonal wind components"]
 @parameters v_10 [unit = u"m/s", description = "meridional wind components"]
@@ -43,8 +44,8 @@ using IfElse
 @parameters T_10 [unit = u"K"]
 @parameters θ_s [unit = u"K", description = "potential temperature of air"]
 @parameters θ_10 [unit = u"K", description = "potential temperature of air"]
-@parameters θᵥ_s [unit = u"K", description = "virtual temperature"]
-@parameters θᵥ_10 [unit = u"K", description = "virtual temperature"]
+@parameters θᵥs [unit = u"K", description = "virtual temperature"]
+@parameters θᵥ10 [unit = u"K", description = "virtual temperature"]
 @parameters q_s [description = "specific humidity"]
 @parameters q_10 [description = "specific humidity"]
 @parameters P_10 [unit = u"hPa"]
@@ -52,7 +53,7 @@ using IfElse
 @parameters t [unit = u"s"]
 @parameters z [unit = u"m", description = "height above surface"]
 
-@variables C(..) [description = "mixing ratio of tracer"]
+@variables C(..) [description = "mixing ratio of tracer (unitless)"]
 
 Dz = Differential(z)
 Dt = Differential(t)
@@ -61,8 +62,8 @@ Dt = Differential(t)
 Function to calculate potential temperature
 """
 
-@parameters P0 = 1000 [unit = u"hPa", description = "reference pressure"]
-@variables P_s [unit = u"hPa", description = "surface pressure"]
+@constants P0 = 1000 [unit = u"hPa", description = "reference pressure"]
+@parameters P_s [unit = u"hPa", description = "surface pressure"]
 function PT(T,P)
     return T*(P0/P)^0.286
 end
@@ -99,15 +100,15 @@ end
 """
 Function to calculate u_star
 """
-function calc_u_star(w_u_0,w_v_0)
-    return (w_u_0^2+w_v_0^2)^(1/4)
+function calc_u_star(w_u0,w_v0)
+    return (w_u0^2+w_v0^2)^(1/4)
 end
 
 """
 Function to calculate L
 """
-function calc_L(u_star, θᵥ_0, w_θv_0)
-    L = -u_star^3/(k*(g/θᵥ_0)*w_θv_0)
+function calc_L(u_star, θᵥ_0, w_θv0)
+    L = -u_star^3/(k*(g/θᵥ_0)*w_θv0)
     return L
 end
 
@@ -124,8 +125,8 @@ end
 """
 Function to calculate w_star
 """
-function calc_w_star(θᵥ_0, w_θv_0, h)
-    w_star = ((g/θᵥ_0)*w_θv_0*h)^(1/3)
+function calc_w_star(θᵥ_0, w_θv0, h)
+    w_star = ((g/θᵥ_0)*w_θv0*h)^(1/3)
 end
 
 """
@@ -146,13 +147,13 @@ function calc_wₜ(z, h, u_star, ϕₕ, wₘ, Pr)
 end
 
 """
-Function to calculate w_C_0
+Function to calculate w_C0
 """
-function calc_w_C_0(C0, C1, z1, u_star, θᵥ_0, w_θv_0)
-    L = calc_L(u_star, θᵥ_0, w_θv_0)
+function calc_w_C0(C0, C1, z1, u_star, θᵥ_0, w_θv0)
+    L = calc_L(u_star, θᵥ_0, w_θv0)
     ϕₕ = calc_ϕₕ(-1,z1,L)
-    w_C_0 = -k*u_star*z1/ϕₕ*((C1-C0)/z1)
-    return w_C_0
+    w_C0 = -k*u_star*z1/ϕₕ*((C1-C0)/z1)
+    return w_C0
 end
 
 """
@@ -165,12 +166,12 @@ end
 """
 Function to calculate Kc
 """
-function calc_Kc(w_u_0, w_v_0, θᵥ_0, w_θv_0, θᵥ_1, z, h)
-    u_star = calc_u_star(w_u_0, w_v_0)
-    L = calc_L(u_star, θᵥ_0, w_θv_0)
+function calc_Kc(w_u0, w_v0, θᵥ_0, w_θv0, θᵥ_1, z, h)
+    u_star = calc_u_star(w_u0, w_v0)
+    L = calc_L(u_star, θᵥ_0, w_θv0)
     stable = calc_stable(θᵥ_0,θᵥ_1)
     ϕₕ = calc_ϕₕ(stable, z, L)
-    w_star = calc_w_star(θᵥ_0, w_θv_0, h)
+    w_star = calc_w_star(θᵥ_0, w_θv0, h)
     wₘ = calc_wₘ(stable, z, h, u_star, ϕₕ, w_star)
     Pr = calc_Pr(w_star, u_star)
     wₜ = calc_wₜ(z, h, u_star, ϕₕ, wₘ, Pr)
@@ -179,16 +180,16 @@ function calc_Kc(w_u_0, w_v_0, θᵥ_0, w_θv_0, θᵥ_1, z, h)
 end
 
 """
-function to calcualte γc
+function to calculate γc
 """
-function calc_γc(θᵥ_0, θᵥ_1, z, h, w_θv_0, w_u_0, w_v_0, C0, C1, z1)
+function calc_γc(θᵥ_0, θᵥ_1, z, h, w_θv0, w_u0, w_v0, C0, C1, z1)
     stable = calc_stable(θᵥ_0,θᵥ_1)
-    w_star = calc_w_star(θᵥ_0, w_θv_0, h)
-    u_star = calc_u_star(w_u_0, w_v_0)
-    w_C_0 = calc_w_C_0(C0, C1, z1, u_star, θᵥ_0, w_θv_0)
+    w_star = calc_w_star(θᵥ_0, w_θv0, h)
+    u_star = calc_u_star(w_u0, w_v0)
+    w_C0 = calc_w_C0(C0, C1, z1, u_star, θᵥ_0, w_θv0)
     ϕₕ = calc_ϕₕ(stable, z, L)
     wₘ = calc_wₘ(stable, z, h, u_star, ϕₕ, w_star)
-    γc = (a*w_star*(w_C_0)/(wₘ^2*h)) * (z/h <= 0.1) * (stable >= 0)
+    γc = (a*w_star*(w_C0)/(wₘ^2*h)) * (z/h <= 0.1) * (stable >= 0)
     return γc
 end
 
@@ -198,18 +199,20 @@ When the PBL height is taken from the meteorological datasets
 eqs = [
     θ_s ~ PT(T_s,P_s)
     θ_10 ~ PT(T_10,P_10)
-    θᵥ_s ~ VPT(θ_s,q_s)
-    θᵥ_10 ~ VPT(θ_10,q_s)
+    θᵥs ~ VPT(θ_s,q_s)
+    θᵥ10 ~ VPT(θ_10,q_s)
     V_10 ~ (u_10^2+v_10^2)^0.5
-    stable ~ calc_stable(θᵥ_s,θᵥ_10)
-    w_u_0 ~ -V_10*u_10*Surface_fluxes(stable, V_10, u_10, v_10, θ_s, θ_10, q_s, q_10, θᵥ_s, θᵥ_10, z1, z_0m)[1]
-    w_v_0 ~ -V_10*v_10*Surface_fluxes(stable, V_10, u_10, v_10, θ_s, θ_10, q_s, q_10, θᵥ_s, θᵥ_10, z1, z_0m)[1]
-    w_θv_0 ~ V_10*(θᵥ_s-θᵥ_10)*Surface_fluxes(stable, V_10, u_10, v_10, θ_s, θ_10, q_s, q_10, θᵥ_s, θᵥ_10, z1, z_0m)[2]
+    stable ~ calc_stable(θᵥs,θᵥ10)
+    w_u0 ~ -V_10*u_10*Surface_fluxes(stable, V_10, u_10, v_10, θ_s, θ_10, q_s, q_10, θᵥs, θᵥ10, z1, z_0m)[1]
+    w_v0 ~ -V_10*v_10*Surface_fluxes(stable, V_10, u_10, v_10, θ_s, θ_10, q_s, q_10, θᵥs, θᵥ10, z1, z_0m)[1]
+    w_θv0 ~ V_10*(θᵥs-θᵥ10)*Surface_fluxes(stable, V_10, u_10, v_10, θ_s, θ_10, q_s, q_10, θᵥs, θᵥ10, z1, z_0m)[2]
 
-    Kc ~ calc_Kc(w_u_0, w_v_0, θᵥ_s, w_θv_0, θᵥ_10, z, h)
-    γc ~ calc_γc(θᵥ_s, θᵥ_10, z, h, w_θv_0, w_u_0, w_v_0, C(0,t), C(z1,t), z1)
+    Kc ~ calc_Kc(w_u0, w_v0, θᵥs, w_θv0, θᵥ10, z, h)
+    γc ~ calc_γc(θᵥs, θᵥ10, z, h, w_θv0, w_u0, w_v0, C(0,t), C(z1,t), z1)
     Dt(C(z,t)) ~ Dz(-Kc*(Dz(C(z,t))-γc))
 ]
+
+render(latexify(eqs))
 
 z_min = t_min = 0
 z_max = 200
