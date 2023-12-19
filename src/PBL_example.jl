@@ -56,6 +56,7 @@ using Latexify
 @variables C(..) [description = "mixing ratio of tracer (unitless)"]
 
 Dz = Differential(z)
+Dzz = Differential(z)^2
 Dt = Differential(t)
 
 """
@@ -209,7 +210,7 @@ eqs = [
 
     Kc ~ calc_Kc(w_u0, w_v0, θᵥs, w_θv0, θᵥ10, z, h)
     γc ~ calc_γc(θᵥs, θᵥ10, z, h, w_θv0, w_u0, w_v0, C(0,t), C(z1,t), z1)
-    Dt(C(z,t)) ~ -Dz(-Kc*(Dz(C(z,t))-γc))
+    Dt(C(z,t)) ~ Dz(Kc) * (Dz(C(z,t))-γc) + Kc*(Dzz(C(z,t))-Dz(γc))
 ]
 
 render(latexify(eqs))
