@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724947997624,
+  "lastUpdate": 1725040881527,
   "repoUrl": "https://github.com/EarthSciML/EnvironmentalTransport.jl",
   "entries": {
     "Julia benchmark result": [
@@ -1318,6 +1318,126 @@ window.BENCHMARK_DATA = {
           {
             "name": "Advection Simulator/in-of-place/ppm_stencil/1836",
             "value": 14692743.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=30720\nallocs=272\nparams={\"gctrial\":true,\"time_tolerance\":0.05,\"evals_set\":false,\"samples\":10000,\"evals\":1,\"gcsample\":false,\"seconds\":5,\"overhead\":0,\"memory_tolerance\":0.01}"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "ctessum@gmail.com",
+            "name": "Christopher Tessum",
+            "username": "ctessum"
+          },
+          "committer": {
+            "email": "ctessum@gmail.com",
+            "name": "Christopher Tessum",
+            "username": "ctessum"
+          },
+          "distinct": true,
+          "id": "66f63783a2e72554c61e4ec7bdde7cba385ef698",
+          "message": "upwind stencil conserves mass",
+          "timestamp": "2024-08-30T12:45:31-05:00",
+          "tree_id": "e19222cfb1be5992ce1eb0338ddb97318a4c1742",
+          "url": "https://github.com/EarthSciML/EnvironmentalTransport.jl/commit/66f63783a2e72554c61e4ec7bdde7cba385ef698"
+        },
+        "date": 1725040880956,
+        "tool": "julia",
+        "benches": [
+          {
+            "name": "Advection Simulator/out-of-place/l94_stencil/594",
+            "value": 805815,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=299120\nallocs=2550\nparams={\"gctrial\":true,\"time_tolerance\":0.05,\"evals_set\":false,\"samples\":10000,\"evals\":1,\"gcsample\":false,\"seconds\":5,\"overhead\":0,\"memory_tolerance\":0.01}"
+          },
+          {
+            "name": "Advection Simulator/out-of-place/l94_stencil/918",
+            "value": 1206509,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=420464\nallocs=3414\nparams={\"gctrial\":true,\"time_tolerance\":0.05,\"evals_set\":false,\"samples\":10000,\"evals\":1,\"gcsample\":false,\"seconds\":5,\"overhead\":0,\"memory_tolerance\":0.01}"
+          },
+          {
+            "name": "Advection Simulator/out-of-place/l94_stencil/1188",
+            "value": 1561627,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=540112\nallocs=4386\nparams={\"gctrial\":true,\"time_tolerance\":0.05,\"evals_set\":false,\"samples\":10000,\"evals\":1,\"gcsample\":false,\"seconds\":5,\"overhead\":0,\"memory_tolerance\":0.01}"
+          },
+          {
+            "name": "Advection Simulator/out-of-place/l94_stencil/1836",
+            "value": 2353472,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=768576\nallocs=5899\nparams={\"gctrial\":true,\"time_tolerance\":0.05,\"evals_set\":false,\"samples\":10000,\"evals\":1,\"gcsample\":false,\"seconds\":5,\"overhead\":0,\"memory_tolerance\":0.01}"
+          },
+          {
+            "name": "Advection Simulator/out-of-place/ppm_stencil/594",
+            "value": 8074597.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=342896\nallocs=2550\nparams={\"gctrial\":true,\"time_tolerance\":0.05,\"evals_set\":false,\"samples\":10000,\"evals\":1,\"gcsample\":false,\"seconds\":5,\"overhead\":0,\"memory_tolerance\":0.01}"
+          },
+          {
+            "name": "Advection Simulator/out-of-place/ppm_stencil/918",
+            "value": 12457555,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=485936\nallocs=3414\nparams={\"gctrial\":true,\"time_tolerance\":0.05,\"evals_set\":false,\"samples\":10000,\"evals\":1,\"gcsample\":false,\"seconds\":5,\"overhead\":0,\"memory_tolerance\":0.01}"
+          },
+          {
+            "name": "Advection Simulator/out-of-place/ppm_stencil/1188",
+            "value": 16109551,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=625248\nallocs=4386\nparams={\"gctrial\":true,\"time_tolerance\":0.05,\"evals_set\":false,\"samples\":10000,\"evals\":1,\"gcsample\":false,\"seconds\":5,\"overhead\":0,\"memory_tolerance\":0.01}"
+          },
+          {
+            "name": "Advection Simulator/out-of-place/ppm_stencil/1836",
+            "value": 24848146,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=895840\nallocs=5900\nparams={\"gctrial\":true,\"time_tolerance\":0.05,\"evals_set\":false,\"samples\":10000,\"evals\":1,\"gcsample\":false,\"seconds\":5,\"overhead\":0,\"memory_tolerance\":0.01}"
+          },
+          {
+            "name": "Advection Simulator/in-of-place/l94_stencil/594",
+            "value": 326676,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=30720\nallocs=272\nparams={\"gctrial\":true,\"time_tolerance\":0.05,\"evals_set\":false,\"samples\":10000,\"evals\":1,\"gcsample\":false,\"seconds\":5,\"overhead\":0,\"memory_tolerance\":0.01}"
+          },
+          {
+            "name": "Advection Simulator/in-of-place/l94_stencil/918",
+            "value": 459563,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=30720\nallocs=272\nparams={\"gctrial\":true,\"time_tolerance\":0.05,\"evals_set\":false,\"samples\":10000,\"evals\":1,\"gcsample\":false,\"seconds\":5,\"overhead\":0,\"memory_tolerance\":0.01}"
+          },
+          {
+            "name": "Advection Simulator/in-of-place/l94_stencil/1188",
+            "value": 596547,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=30720\nallocs=272\nparams={\"gctrial\":true,\"time_tolerance\":0.05,\"evals_set\":false,\"samples\":10000,\"evals\":1,\"gcsample\":false,\"seconds\":5,\"overhead\":0,\"memory_tolerance\":0.01}"
+          },
+          {
+            "name": "Advection Simulator/in-of-place/l94_stencil/1836",
+            "value": 859845,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=30720\nallocs=272\nparams={\"gctrial\":true,\"time_tolerance\":0.05,\"evals_set\":false,\"samples\":10000,\"evals\":1,\"gcsample\":false,\"seconds\":5,\"overhead\":0,\"memory_tolerance\":0.01}"
+          },
+          {
+            "name": "Advection Simulator/in-of-place/ppm_stencil/594",
+            "value": 4981984.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=30720\nallocs=272\nparams={\"gctrial\":true,\"time_tolerance\":0.05,\"evals_set\":false,\"samples\":10000,\"evals\":1,\"gcsample\":false,\"seconds\":5,\"overhead\":0,\"memory_tolerance\":0.01}"
+          },
+          {
+            "name": "Advection Simulator/in-of-place/ppm_stencil/918",
+            "value": 7526415,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=30720\nallocs=272\nparams={\"gctrial\":true,\"time_tolerance\":0.05,\"evals_set\":false,\"samples\":10000,\"evals\":1,\"gcsample\":false,\"seconds\":5,\"overhead\":0,\"memory_tolerance\":0.01}"
+          },
+          {
+            "name": "Advection Simulator/in-of-place/ppm_stencil/1188",
+            "value": 9659145,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=30720\nallocs=272\nparams={\"gctrial\":true,\"time_tolerance\":0.05,\"evals_set\":false,\"samples\":10000,\"evals\":1,\"gcsample\":false,\"seconds\":5,\"overhead\":0,\"memory_tolerance\":0.01}"
+          },
+          {
+            "name": "Advection Simulator/in-of-place/ppm_stencil/1836",
+            "value": 14726190.5,
             "unit": "ns",
             "extra": "gctime=0\nmemory=30720\nallocs=272\nparams={\"gctrial\":true,\"time_tolerance\":0.05,\"evals_set\":false,\"samples\":10000,\"evals\":1,\"gcsample\":false,\"seconds\":5,\"overhead\":0,\"memory_tolerance\":0.01}"
           }
