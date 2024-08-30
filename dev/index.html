@@ -7,10 +7,10 @@ Pkg.add(&quot;EnvironmentalTransport&quot;)</code></pre><h2 id="Feature-Summary"
   <span class="sgr90">[5b8099bc] </span>DomainSets v0.7.14
 <span class="sgr33">⌅</span> <span class="sgr90">[06fc5a27] </span>DynamicQuantities v0.13.2
   <span class="sgr90">[a293c155] </span>EarthSciData v0.9.0
-  <span class="sgr90">[e53f1632] </span>EarthSciMLBase v0.16.0
+  <span class="sgr90">[e53f1632] </span>EarthSciMLBase v0.16.1
   <span class="sgr90">[9e73f4c4] </span>EnvironmentalTransport v0.1.4 `~/work/EnvironmentalTransport.jl/EnvironmentalTransport.jl`
 <span class="sgr32">⌃</span> <span class="sgr90">[961ee093] </span>ModelingToolkit v9.32.0
-  <span class="sgr90">[85f8d34a] </span>NCDatasets v0.14.4
+  <span class="sgr90">[85f8d34a] </span>NCDatasets v0.14.5
   <span class="sgr90">[91a5bcdd] </span>Plots v1.40.8
   <span class="sgr90">[ade2ca70] </span>Dates
   <span class="sgr90">[37e2e46d] </span>LinearAlgebra
@@ -36,8 +36,8 @@ Environment:
   <span class="sgr90">[ec485272] </span>ArnoldiMethod v0.4.0
   <span class="sgr90">[4fba245c] </span>ArrayInterface v7.15.0
   <span class="sgr90">[4c555306] </span>ArrayLayouts v1.10.3
-  <span class="sgr90">[aae01518] </span>BandedMatrices v1.7.3
-  <span class="sgr90">[e2ed5e7c] </span>Bijections v0.1.8
+  <span class="sgr90">[aae01518] </span>BandedMatrices v1.7.4
+  <span class="sgr90">[e2ed5e7c] </span>Bijections v0.1.9
   <span class="sgr90">[d1d4a3ce] </span>BitFlags v0.1.9
   <span class="sgr90">[62783981] </span>BitTwiddlingConvenienceFunctions v0.1.6
   <span class="sgr90">[8e7c35d0] </span>BlockArrays v1.1.0
@@ -93,7 +93,7 @@ Environment:
 <span class="sgr33">⌅</span> <span class="sgr90">[7c1d4256] </span>DynamicPolynomials v0.5.7
 <span class="sgr33">⌅</span> <span class="sgr90">[06fc5a27] </span>DynamicQuantities v0.13.2
   <span class="sgr90">[a293c155] </span>EarthSciData v0.9.0
-  <span class="sgr90">[e53f1632] </span>EarthSciMLBase v0.16.0
+  <span class="sgr90">[e53f1632] </span>EarthSciMLBase v0.16.1
   <span class="sgr90">[4e289a0a] </span>EnumX v1.0.4
   <span class="sgr90">[9e73f4c4] </span>EnvironmentalTransport v0.1.4 `~/work/EnvironmentalTransport.jl/EnvironmentalTransport.jl`
   <span class="sgr90">[f151be2c] </span>EnzymeCore v0.7.8
@@ -108,7 +108,7 @@ Environment:
   <span class="sgr90">[9aa1b823] </span>FastClosures v0.3.2
   <span class="sgr90">[29a986be] </span>FastLapackInterface v2.0.4
   <span class="sgr90">[5789e2e9] </span>FileIO v1.16.3
-  <span class="sgr90">[1a297f60] </span>FillArrays v1.12.0
+  <span class="sgr90">[1a297f60] </span>FillArrays v1.13.0
   <span class="sgr90">[64ca27bc] </span>FindFirstFunctions v1.3.0
   <span class="sgr90">[6a86dc24] </span>FiniteDiff v2.24.0
   <span class="sgr90">[53c48c17] </span>FixedPointNumbers v0.8.5
@@ -139,7 +139,7 @@ Environment:
   <span class="sgr90">[82899510] </span>IteratorInterfaceExtensions v1.0.0
   <span class="sgr90">[033835bb] </span>JLD2 v0.4.52
   <span class="sgr90">[1019f520] </span>JLFzf v0.1.8
-  <span class="sgr90">[692b3bcd] </span>JLLWrappers v1.5.0
+  <span class="sgr90">[692b3bcd] </span>JLLWrappers v1.6.0
   <span class="sgr90">[682c06a0] </span>JSON v0.21.4
   <span class="sgr90">[98e50ef6] </span>JuliaFormatter v1.0.60
   <span class="sgr90">[ccbc3e58] </span>JumpProcesses v9.13.4
@@ -173,7 +173,7 @@ Environment:
   <span class="sgr90">[46d2c3a1] </span>MuladdMacro v0.2.4
   <span class="sgr90">[102ac46a] </span>MultivariatePolynomials v0.5.6
   <span class="sgr90">[d8a4904e] </span>MutableArithmetics v1.4.6
-  <span class="sgr90">[85f8d34a] </span>NCDatasets v0.14.4
+  <span class="sgr90">[85f8d34a] </span>NCDatasets v0.14.5
   <span class="sgr90">[d41bc354] </span>NLSolversBase v7.8.3
   <span class="sgr90">[2774e3e8] </span>NLsolve v4.5.1
   <span class="sgr90">[77ba4419] </span>NaNMath v1.0.2
@@ -232,7 +232,7 @@ Environment:
   <span class="sgr90">[33c8b6b6] </span>ProgressLogging v0.1.4
   <span class="sgr90">[92933f4c] </span>ProgressMeter v1.10.2
   <span class="sgr90">[c94c279d] </span>Proj v1.7.1
-  <span class="sgr90">[43287f4e] </span>PtrArrays v1.2.0
+  <span class="sgr90">[43287f4e] </span>PtrArrays v1.2.1
   <span class="sgr90">[1fd47b50] </span>QuadGK v2.10.1
   <span class="sgr90">[74087812] </span>Random123 v1.7.0
   <span class="sgr90">[e6cf234a] </span>RandomNumbers v1.6.0
@@ -250,7 +250,7 @@ Environment:
   <span class="sgr90">[7e49a35a] </span>RuntimeGeneratedFunctions v0.5.13
   <span class="sgr90">[94e857df] </span>SIMDTypes v0.1.0
   <span class="sgr90">[476501e8] </span>SLEEFPirates v0.6.43
-  <span class="sgr90">[0bca4576] </span>SciMLBase v2.50.5
+  <span class="sgr90">[0bca4576] </span>SciMLBase v2.50.6
   <span class="sgr90">[c0aeaf25] </span>SciMLOperators v0.3.10
   <span class="sgr90">[53ae85a6] </span>SciMLStructures v1.4.2
   <span class="sgr90">[6c6a2e73] </span>Scratch v1.2.1
@@ -318,7 +318,7 @@ Environment:
   <span class="sgr90">[3b182d85] </span>Graphite2_jll v1.3.14+0
 <span class="sgr33">⌅</span> <span class="sgr90">[0234f1f7] </span>HDF5_jll v1.12.2+2
   <span class="sgr90">[2e76f6c2] </span>HarfBuzz_jll v8.3.1+0
-  <span class="sgr90">[1d5cc7b8] </span>IntelOpenMP_jll v2024.2.0+0
+  <span class="sgr90">[1d5cc7b8] </span>IntelOpenMP_jll v2024.2.1+0
   <span class="sgr90">[aacddb02] </span>JpegTurbo_jll v3.0.3+0
   <span class="sgr90">[c1c5ebd0] </span>LAME_jll v3.100.2+0
 <span class="sgr33">⌅</span> <span class="sgr90">[88015f11] </span>LERC_jll v3.0.0+1
@@ -442,4 +442,4 @@ Environment:
   <span class="sgr90">[3f19e933] </span>p7zip_jll v17.4.0+2
 <span class="sgr36"><span class="sgr1">Info</span></span> Packages marked with <span class="sgr32">⌃</span> and <span class="sgr33">⌅</span> have new versions available. Those with <span class="sgr32">⌃</span> may be upgradable, but those with <span class="sgr33">⌅</span> are restricted by compatibility constraints from upgrading. To see why use `status --outdated -m`</code></pre></details>You can also download the 
 <a href="<p>https://github.com/EarthSciML/EnvironmentalTransport.jl/tree/gh-pages/v0.1.4/assets/Manifest.toml</p>">manifest</a> file and the
-<a href="<p>https://github.com/EarthSciML/EnvironmentalTransport.jl/tree/gh-pages/v0.1.4/assets/Project.toml</p>">project</a> file.</article><nav class="docs-footer"><a class="docs-footer-nextpage" href="advection/">Advection »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.6.0 on <span class="colophon-date" title="Thursday 29 August 2024 16:22">Thursday 29 August 2024</span>. Using Julia version 1.10.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+<a href="<p>https://github.com/EarthSciML/EnvironmentalTransport.jl/tree/gh-pages/v0.1.4/assets/Project.toml</p>">project</a> file.</article><nav class="docs-footer"><a class="docs-footer-nextpage" href="advection/">Advection »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.6.0 on <span class="colophon-date" title="Friday 30 August 2024 18:10">Friday 30 August 2024</span>. Using Julia version 1.10.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
