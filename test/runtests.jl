@@ -6,4 +6,6 @@ using Test, SafeTestsets
     @safetestset "Boundary Conditions" begin include("boundary_conditions_test.jl") end
     @safetestset "Advection" begin include("advection_test.jl") end
     @safetestset "Advection Simulator" begin include("advection_simulator_test.jl") end
+    @safetestset "Puff" begin include("puff_test.jl") end
+    @safetestset "Puff-GEOSFP" begin include("puff_geosfp_test.jl") end
 end

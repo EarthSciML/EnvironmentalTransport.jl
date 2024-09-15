@@ -183,32 +183,3 @@ function EarthSciMLBase.get_scimlop(op::AdvectionOperator, sim::Simulator, u = n
     scimlop = advection_op(u, op.stencil, v_fs, Δ_fs, op.Δt, op.bc_type, p = sim.p)
     cache_operator(scimlop, u[:])
 end
-
-"""
-$(SIGNATURES)
-
-Couple the advection operator into the CoupledSystem.
-This function mutates the operator to add the windfield variables.
-There must already be a source of wind data in the coupled system for this to work.
-Currently the only valid source of wind data is `EarthSciData.GEOSFP`.
-"""
-function EarthSciMLBase.couple(c::CoupledSystem, op::AdvectionOperator)::CoupledSystem
-    found = 0
-    for sys in c.systems
-        if EarthSciMLBase.get_coupletype(sys) == EarthSciData.GEOSFPCoupler
-            found += 1
-            op.vardict = Dict(
-                "lon" => sys.A3dyn₊U,
-                "lat" => sys.A3dyn₊V,
-                "lev" => sys.A3dyn₊OMEGA
-            )
-        end
-    end
-    if found == 0
-        error("Could not find a source of wind data in the coupled system. Valid sources are currently {EarthSciData.GEOSFP}.")
-    elseif found > 1
-        error("Found multiple sources of wind data in the coupled system. Valid sources are currently {EarthSciData.GEOSFP}")
-    end
-    push!(c.ops, op)
-    c
-end
