@@ -63,11 +63,18 @@ end
     @test sol[puff.y][end] ≈ -1.0
 end
 
-@testset "z bounded" begin
+@testset "z bounded +" begin
     p = MTKParameters(puff, [puff.v_z => 10.0])
     prob2 = remake(prob, p = p)
     sol = solve(prob2)
     @test sol.t[end] ≈ 1
-    @test minimum(sol[puff.z]) ≈ -1.0
     @test maximum(sol[puff.z]) ≈ 1.0
+end
+
+@testset "z bounded -" begin
+    p = MTKParameters(puff, [puff.v_z => -10.0])
+    prob2 = remake(prob, p = p)
+    sol = solve(prob2)
+    @test sol.t[end] ≈ 1
+    @test minimum(sol[puff.z]) ≈ -1.0
 end

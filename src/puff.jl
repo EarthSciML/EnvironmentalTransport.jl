@@ -11,8 +11,8 @@ Create a Lagrangian transport model which advects a "puff" or particle of matter
 within a fluid velocity field.
 
 Model boundaries are set by the DomainInfo argument.
-The model sets "mirror" boundary conditions at the ground and model bottom and top,
-reversing the direction of travel when the puff reaches these boundaries. If the
+The model sets boundaries at the ground and model bottom and top,
+preventing the puff from crossing those boundaries. If the
 puff reaches one of the horizontal boundaries, the simulation is stopped.
 """
 function Puff(di::DomainInfo; name = :puff)
@@ -51,10 +51,25 @@ function Puff(di::DomainInfo; name = :puff)
     lev_idx = only(findall(v -> string(Symbol(v)) in ["lev(t)", "z(t)"], coords))
     lon_idx = only(findall(v -> string(Symbol(v)) in ["lon(t)", "x(t)"], coords))
     lat_idx = only(findall(v -> string(Symbol(v)) in ["lat(t)", "y(t)"], coords))
-    # Mirror boundary condition at the ground and model top.
+    # Boundary condition at the ground and model top.
+    uc = get_unit(coords[lev_idx])
+    @constants(
+        offset=0.05, [unit = uc, description="Offset for boundary conditions"],
+        glo=grd[lev_idx][begin], [unit=uc, description="lower bound"],
+        ghi=grd[lev_idx][end], [unit=uc, description="upper bound"],
+        v_zero=0, [unit = get_unit(eqs[lev_idx].rhs)],
+    )
+    @variables v_vertical(t) [unit = get_unit(eqs[lev_idx].rhs)]
+    push!(eqs, v_vertical ~ eqs[lev_idx].rhs)
+    eqs[lev_idx] = let
+        eq = eqs[lev_idx]
+        c = coords[lev_idx]
+        eq.lhs ~ ifelse(c - offset < glo, max(v_zero, v_vertical),
+            ifelse(c + offset > ghi, min(v_zero, v_vertical), v_vertical))
+    end
     lower_bound = coords[lev_idx] ~ grd[lev_idx][begin]
     upper_bound = coords[lev_idx] ~ grd[lev_idx][end]
-    vertical_boundary = [lower_bound, upper_bound] => [vs[lev_idx] ~ -vs[lev_idx]]
+    vertical_boundary = [lower_bound, upper_bound]
     # Stop simulation if we reach the lateral boundaries.
     affect!(integrator, u, p, ctx) = terminate!(integrator)
     wb = coords[lon_idx] ~ grd[lon_idx][begin]

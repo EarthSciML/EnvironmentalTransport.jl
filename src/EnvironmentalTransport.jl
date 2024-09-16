@@ -5,7 +5,7 @@ using SciMLOperators
 using LinearAlgebra
 using SciMLBase: NullParameters
 using ModelingToolkit: t, D, get_unit, getdefault, ODESystem, @variables, @parameters,
-    get_variables, substitute
+    @constants, get_variables, substitute
 using SciMLBase: terminate!
 using EarthSciMLBase
 

@@ -18,6 +18,7 @@ makedocs(;
     pages=[
         "Home" => "index.md",
         "Advection" => "advection.md",
+        "Puff Model" => "puff.md",
         "API" => "api.md",
         "🔗 Benchmarks" => "benchmarks.md",
     ],

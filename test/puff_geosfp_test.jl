@@ -12,7 +12,7 @@ using Dates
 starttime = DateTime(2022, 5, 1)
 endtime = DateTime(2022, 5, 1, 3)
 
-geosfp, geosfp_updater = GEOSFP("0.5x0.625_NA"; dtype = Float64,
+geosfp, geosfp_updater = GEOSFP("4x5"; dtype = Float64,
     coord_defaults = Dict(:lon => deg2rad(-97), :lat => deg2rad(40), :lev => 1.0),
     cache_size = 3)
 EarthSciData.lazyload!(geosfp_updater, datetime2unix(starttime))
