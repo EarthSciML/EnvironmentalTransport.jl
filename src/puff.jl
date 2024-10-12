@@ -25,6 +25,11 @@ function Puff(di::DomainInfo; name = :puff)
     end
     @assert length(coords)==3 "DomainInfo must have 3 coordinates for puff model but currently has $(length(coords)): $coords"
 
+    lev_idx = only(findall(v -> string(Symbol(v)) in ["lev(t)", "z(t)"], coords))
+    lon_idx = only(findall(v -> string(Symbol(v)) in ["lon(t)", "x(t)"], coords))
+    lat_idx = only(findall(v -> string(Symbol(v)) in ["lat(t)", "y(t)"], coords))
+    grd = EarthSciMLBase.grid(di, [1, 1, 1]) # TODO(CT): Use Δs from DomainInfo.
+
     # Get transforms for e.g. longitude to meters.
     trans = EarthSciMLBase.partialderivative_transforms(di)
     for (it, tr) in enumerate(trans) # Make sure using correct coords.
@@ -32,7 +37,11 @@ function Puff(di::DomainInfo; name = :puff)
             vars = get_variables(tr)
             iloc = findfirst(isequal(p), vars)
             if !isnothing(iloc)
-                trans[it] = substitute(trans[it], vars[iloc] => coords[ip])
+                c = coords[ip]
+                if ip == lev_idx # Clamp vertical coordinate to model top and bottom.
+                    c = clamp(c, grd[lev_idx][begin], grd[lev_idx][end])
+                end
+                trans[it] = substitute(trans[it], vars[iloc] => c)
             end
         end
     end
@@ -47,10 +56,6 @@ function Puff(di::DomainInfo; name = :puff)
     end
     eqs = D.(coords) .~ vs .* trans
 
-    grd = EarthSciMLBase.grid(di, [1, 1, 1])
-    lev_idx = only(findall(v -> string(Symbol(v)) in ["lev(t)", "z(t)"], coords))
-    lon_idx = only(findall(v -> string(Symbol(v)) in ["lon(t)", "x(t)"], coords))
-    lat_idx = only(findall(v -> string(Symbol(v)) in ["lat(t)", "y(t)"], coords))
     # Boundary condition at the ground and model top.
     uc = get_unit(coords[lev_idx])
     @constants(

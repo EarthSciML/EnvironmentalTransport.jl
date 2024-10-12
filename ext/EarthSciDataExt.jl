@@ -10,9 +10,9 @@ function EarthSciMLBase.couple2(p::PuffCoupler, g::GEOSFPCoupler)
     p = param_to_var(p, :v_lon, :v_lat, :v_lev)
     g = param_to_var(g, :lon, :lat, :lev)
     ConnectorSystem([
-        p.lon ~ g.lon
-        p.lat ~ g.lat
-        p.lev ~ g.lev
+        g.lon ~ p.lon
+        g.lat ~ p.lat
+        g.lev ~ clamp(p.lev, 1, 72)
         p.v_lon ~ g.A3dyn₊U
         p.v_lat ~ g.A3dyn₊V
         p.v_lev ~ g.A3dyn₊OMEGA

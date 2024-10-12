@@ -38,8 +38,8 @@ sys = convert(ODESystem, model)
 sys, _ = EarthSciMLBase.prune_observed(sys)
 
 @test length(equations(sys)) == 3
-@test occursin("PS", string(equations(sys))) # Check that we're using the GEOSFP pressure data.
+@test occursin("PS", string(observed(sys))) # Check that we're using the GEOSFP pressure data.
 @test issetequal([Symbol("puff₊lon(t)"), Symbol("puff₊lat(t)"), Symbol("puff₊lev(t)")],
     Symbol.(unknowns(sys)))
 @test length(parameters(sys)) == 0
-@test length(observed(sys)) == 9
+@test length(observed(sys)) == 10

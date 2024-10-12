@@ -18,7 +18,7 @@ firelat = deg2rad(40)
 fireradius = 0.05 # Degrees
 samplerate = 1800.0 # Seconds
 samples_per_time = 10 # Samples per each emission time
-fireheight = 15.0 # Vertical level (Allowing this to be automatically calculated is a work in progress).
+fireheight = 3.0 # Vertical level (Allowing this to be automatically calculated is a work in progress).
 emis_rate = 1.0 # kg/s, fire emission rate
 
 
