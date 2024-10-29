@@ -8,47 +8,38 @@ using DynamicQuantities
 using DifferentialEquations
 using Plots
 using Dates
-using DomainSets
 
 firestart = DateTime(2021, 10, 1)
 firelength = 4 * 3600 # Seconds
 simulationlength = 1 # Days
 firelon = deg2rad(-97)
 firelat = deg2rad(40)
-fireradius = 0.05 # Degrees
+fireradius = deg2rad(0.05) # Degrees
 samplerate = 1800.0 # Seconds
 samples_per_time = 10 # Samples per each emission time
 fireheight = 3.0 # Vertical level (Allowing this to be automatically calculated is a work in progress).
 emis_rate = 1.0 # kg/s, fire emission rate
 
-
-geosfp, _ = GEOSFP("0.5x0.625_NA"; dtype = Float64,
-    coord_defaults = Dict(:lon => deg2rad(-97), :lat => deg2rad(40), :lev => 1.0), 
-    cache_size=simulationlength*24÷3+2)
-
-@parameters lon = firelon [unit=u"rad"]
-@parameters lat = firelat [unit=u"rad"]
-@parameters lev = fireheight
-
 sim_end = firestart + Day(simulationlength)
+
 domain = DomainInfo(
-    [partialderivatives_δxyδlonlat,
-        partialderivatives_δPδlev_geosfp(geosfp)],
-    constIC(16.0, t ∈ Interval(firestart, sim_end)),
-    constBC(16.0,
-        lon ∈ Interval(deg2rad(-115), deg2rad(-68.75)),
-        lat ∈ Interval(deg2rad(25), deg2rad(53.7)),
-        lev ∈ Interval(1, 72)),
+    firestart, sim_end;
+    lonrange = deg2rad(-115):deg2rad(-68.75),
+    latrange = deg2rad(25):deg2rad(53.7),
+    levrange = 1:72,
     dtype = Float64)
+
+geosfp = GEOSFP("4x5", domain; stream_data = false)
+
+domain = EarthSciMLBase.add_partial_derivative_func(domain, partialderivatives_δPδlev_geosfp(geosfp))
 
 puff = Puff(domain)
 
 model = couple(puff, geosfp)
-sys = convert(ODESystem, model)
-sys, _ = EarthSciMLBase.prune_observed(sys)
+sys, _ = convert(ODESystem, model, simplify=true)
 
 u0 = ModelingToolkit.get_defaults(sys)
-tspan = (datetime2unix(firestart), datetime2unix(sim_end))
+tspan = EarthSciMLBase.tspan(domain)
 prob=ODEProblem(sys, u0, tspan)
 sol = solve(prob, Tsit5()) # Solve once to make sure data is loaded.
 function prob_func(prob, i, repeat)

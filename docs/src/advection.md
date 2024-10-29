@@ -10,7 +10,8 @@ To demonstrate how it works, let's first set up our environment:
 ```@example adv
 using EnvironmentalTransport
 using EarthSciMLBase, EarthSciData
-using ModelingToolkit, DomainSets, DifferentialEquations
+using ModelingToolkit, DifferentialEquations
+using ProgressLogging
 using ModelingToolkit: t, D
 using DynamicQuantities
 using Distributions, LinearAlgebra
@@ -22,28 +23,28 @@ nothing #hide
 ## Emissions
 
 Next, let's set up an emissions scenario to advect.
-We have some emissions centered around Portland, starting at the beginning of the simulation and then tapering off:
+We'll make the emissions start at the beginning of the simulation and then taper off:
 
 ```@example adv
-starttime = datetime2unix(DateTime(2022, 5, 1, 0, 0))
-endtime = datetime2unix(DateTime(2022, 6, 1, 0, 0))
-
-@parameters(
-    lon=-97.0, [unit=u"rad"],
-    lat=30.0, [unit=u"rad"],
-    lev=1.0,
-)
+starttime = DateTime(2022, 5, 1)
+endtime = DateTime(2022, 6, 1)
 
 function emissions(μ_lon, μ_lat, σ)
+    @parameters(
+        lon=-97.0, [unit=u"rad"],
+        lat=30.0, [unit=u"rad"],
+        lev=1.0,
+    )
     @variables c(t) = 0.0 [unit=u"kg"]
     @constants v_emis = 50.0 [unit=u"kg/s"]
     @constants t_unit = 1.0 [unit=u"s"] # Needed so that arguments to `pdf` are unitless.
-    dist = MvNormal([starttime, μ_lon, μ_lat, 1], Diagonal(map(abs2, [3600.0*24*3, σ, σ, 1])))
+    dist = MvNormal([datetime2unix(starttime), μ_lon, μ_lat, 1], 
+        Diagonal(map(abs2, [3600.0*24*3, σ, σ, 1])))
     ODESystem([D(c) ~ pdf(dist, [t/t_unit, lon, lat, lev]) * v_emis],
         t, name = :emissions)
 end
 
-emis = emissions(deg2rad(-122.6), deg2rad(45.5), deg2rad(1))
+emis = emissions(deg2rad(-97.0), deg2rad(40.0), deg2rad(1))
 ```
 
 ## Coupled System
@@ -56,53 +57,49 @@ We also set up an [outputter](https://data.earthsci.dev/stable/api/#EarthSciData
 single system.
 
 ```@example adv
-geosfp, geosfp_updater = GEOSFP("0.5x0.625_NA"; dtype = Float64,
-    coord_defaults = Dict(:lon => -97.0, :lat => 30.0, :lev => 1.0))
 
 domain = DomainInfo(
-    [partialderivatives_δxyδlonlat,
-        partialderivatives_δPδlev_geosfp(geosfp)],
-    constIC(16.0, t ∈ Interval(starttime, endtime)),
-    constBC(16.0,
-        lon ∈ Interval(deg2rad(-129), deg2rad(-61)),
-        lat ∈ Interval(deg2rad(11), deg2rad(59)),
-        lev ∈ Interval(1, 30)),
+    starttime, endtime;
+    lonrange = deg2rad(-115):deg2rad(1):deg2rad(-68.75),
+    latrange = deg2rad(25):deg2rad(1):deg2rad(53.7),
+    levrange = 1:1:15,
     dtype = Float64)
+
+geosfp = GEOSFP("0.5x0.625_NA", domain)
+
+domain = EarthSciMLBase.add_partial_derivative_func(domain, partialderivatives_δPδlev_geosfp(geosfp))
 
 outfile = ("RUNNER_TEMP" ∈ keys(ENV) ? ENV["RUNNER_TEMP"] : tempname()) * "out.nc" # This is just a location to save the output.
 output = NetCDFOutputter(outfile, 3600.0)
 
-csys = couple(emis, domain, geosfp, geosfp_updater, output) 
+csys = couple(emis, domain, geosfp, output) 
 ```
 ## Advection Operator
 
 Next, we create an [`AdvectionOperator`](@ref) to perform advection. 
-We need to specify a time step (600 s in this case), as stencil algorithm to do the advection (current options are [`l94_stencil`](@ref) and [`ppm_stencil`](@ref)).
+We need to specify a time step (300 s in this case), as stencil algorithm to do the advection (current options are [`l94_stencil`](@ref) and [`ppm_stencil`](@ref)).
 We also specify zero gradient boundary conditions.
 
 Then, we couple the advection operator to the rest of the system.
-
-!!! warning
-    The advection operator will automatically couple itself to available wind fields such as those from GEOS-FP, but the wind-field component (e.g.. `geosfp`) must already be present
-    in the coupled system for this to work correctly.
 
 ```@example adv
 adv = AdvectionOperator(300.0, upwind1_stencil, ZeroGradBC())
 
 csys = couple(csys, adv)
 ```
-Now, we initialize a [`Simulator`](https://base.earthsci.dev/dev/simulator/) to run our demonstration. 
-We specify a horizontal resolution of 4 degrees and a vertical resolution of 1 level, and use the `Tsit5` time integrator for our emissions system of equations, and a time integration scheme for our advection operator (`SSPRK22` in this case).
+Now, we initialize a [`ODEProblem`](https://docs.sciml.ai/DiffEqDocs/stable/types/ode_types/) to run our demonstration. 
+We use the `Tsit5` time integrator for our emissions system of equations, and a time integration scheme for our advection operator (`SSPRK22` in this case).
 Refer [here](https://docs.sciml.ai/DiffEqDocs/stable/solvers/ode_solve/) for the available time integrator choices.
-We also choose a operator splitting interval of 600 seconds.
+We also choose a operator splitting interval of 300 seconds.
 Then, we run the simulation.
 
 ```@example adv
-sim = Simulator(csys, [deg2rad(1), deg2rad(1), 1])
-st = SimulatorStrangThreads(Tsit5(), SSPRK22(), 300.0)
+st = SolverStrangThreads(Tsit5(), 300.0)
+prob = ODEProblem(csys, st)
 
-@time run!(sim, st, save_on=false, save_start=false, save_end=false, 
-    initialize_save=false)
+
+@time solve(prob, SSPRK22(), dt=300, save_on=false, save_start=false, save_end=false, 
+    initialize_save=false, progress=true, progress_steps=1)
 ```
 
 ## Visualization
@@ -113,13 +110,15 @@ Finally, we can visualize the results of our simulation:
 ds = NCDataset(outfile, "r")
 
 imax = argmax(reshape(maximum(ds["emissions₊c"][:, :, :, :], dims=(1, 3, 4)), :))
+grid = EarthSciMLBase.grid(domain)
 anim = @animate for i ∈ 1:size(ds["emissions₊c"])[4]
     plot(
-        heatmap(rad2deg.(sim.grid[1]), rad2deg.(sim.grid[2]), 
+        heatmap(rad2deg.(grid[1]), rad2deg.(grid[2]), 
             ds["emissions₊c"][:, :, 1, i]', title="Ground-Level", xlabel="Longitude", ylabel="Latitude"),
-        heatmap(rad2deg.(sim.grid[1]), sim.grid[3], ds["emissions₊c"][:, imax, :, i]', 
-            title="Vertical Cross-Section (lat=$(round(rad2deg(sim.grid[2][imax]), digits=1)))", 
+        heatmap(rad2deg.(grid[1]), grid[3], ds["emissions₊c"][:, imax, :, i]', 
+            title="Vertical Cross-Section (lat=$(round(rad2deg(grid[2][imax]), digits=1)))", 
             xlabel="Longitude", ylabel="Vertical Level"),
+        size=(1200, 400)
     )
 end
 gif(anim, fps = 15)

@@ -4,6 +4,7 @@ import EarthSciMLBase
 using EarthSciMLBase: param_to_var, ConnectorSystem, CoupledSystem, get_coupletype
 using EarthSciData: GEOSFPCoupler
 using EnvironmentalTransport: PuffCoupler, AdvectionOperator
+using EnvironmentalTransport
 
 function EarthSciMLBase.couple2(p::PuffCoupler, g::GEOSFPCoupler)
     p, g = p.sys, g.sys
@@ -19,24 +20,15 @@ function EarthSciMLBase.couple2(p::PuffCoupler, g::GEOSFPCoupler)
     ], p, g)
 end
 
-"""
-$(SIGNATURES)
-
-Couple the advection operator into the CoupledSystem.
-This function mutates the operator to add the windfield variables.
-There must already be a source of wind data in the coupled system for this to work.
-Currently the only valid source of wind data is `EarthSciData.GEOSFP`.
-"""
-function EarthSciMLBase.couple(c::CoupledSystem, op::AdvectionOperator)::CoupledSystem
+function EnvironmentalTransport.get_wind_funcs(c::CoupledSystem, ::AdvectionOperator)
     found = 0
+    vardict = Dict()
     for sys in c.systems
         if EarthSciMLBase.get_coupletype(sys) == GEOSFPCoupler
             found += 1
-            op.vardict = Dict(
-                "lon" => sys.A3dyn₊U,
-                "lat" => sys.A3dyn₊V,
-                "lev" => sys.A3dyn₊OMEGA
-            )
+            vardict["lon"] = sys.A3dyn₊U
+            vardict["lat"] = sys.A3dyn₊V
+            vardict["lev"] = sys.A3dyn₊OMEGA
         end
     end
     if found == 0
@@ -44,8 +36,7 @@ function EarthSciMLBase.couple(c::CoupledSystem, op::AdvectionOperator)::Coupled
     elseif found > 1
         error("Found multiple sources of wind data in the coupled system. Valid sources are currently {EarthSciData.GEOSFP}")
     end
-    push!(c.ops, op)
-    c
+    vardict
 end
 
 end

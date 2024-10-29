@@ -5,38 +5,39 @@ using EarthSciMLBase, EarthSciData
 using ModelingToolkit, DomainSets
 using Dates
 
-starttime = datetime2unix(DateTime(2022, 5, 1))
+starttime_date = DateTime(2022, 5, 1)
+starttime = datetime2unix(starttime_date)
+endtime = DateTime(2022, 5, 1, 1, 0, 5)
 
 function setup_advection_simulator(lonres, latres, stencil)
-    @parameters lon=0.0 lat=0.0 lev=1.0 t
-    endtime = datetime2unix(DateTime(2022, 5, 1, 1, 0, 5))
-
-    geosfp, updater = GEOSFP("0.25x0.3125_NA"; dtype = Float64,
-        coord_defaults = Dict(:lon => 0.0, :lat => 0.0, :lev => 1.0))
-
     domain = DomainInfo(
-        [partialderivatives_δxyδlonlat,
-            partialderivatives_δPδlev_geosfp(geosfp)],
-        constIC(16.0, t ∈ Interval(starttime, endtime)),
-        constBC(16.0,
-            lon ∈ Interval(deg2rad(-129), deg2rad(-61)),
-            lat ∈ Interval(deg2rad(11), deg2rad(59)),
-            lev ∈ Interval(1, 3)))
+        starttime_date, endtime;
+        lonrange = deg2rad(-129):deg2rad(lonres):deg2rad(-61),
+        latrange = deg2rad(11):deg2rad(latres):deg2rad(59),
+        levrange = 1:1:3,
+        dtype = Float64)
+
+    geosfp = GEOSFP("0.25x0.3125_NA", domain)
+
+    domain = EarthSciMLBase.add_partial_derivative_func(
+        domain, partialderivatives_δPδlev_geosfp(geosfp))
 
     function emissions(t)
+        @parameters(lon=-97.0,
+            lat=30.0,
+            lev=1.0,)
         @variables c(t) = 1.0
         D = Differential(t)
         ODESystem([D(c) ~ lat + lon + lev], t, name = :emissions)
     end
 
-    emis = emissions(t)
+    emis = emissions(ModelingToolkit.t_nounits)
 
-    csys = couple(emis, domain, geosfp, updater)
     op = AdvectionOperator(100.0, stencil, ZeroGradBC())
-    csys = couple(csys, op)
-    sim = Simulator(csys, [deg2rad(lonres), deg2rad(latres), 1])
-    scimlop = EarthSciMLBase.get_scimlop(only(csys.ops), sim)
-    scimlop, init_u(sim)
+    csys = couple(emis, domain, geosfp, op)
+    st = SolverIMEX()
+    prob = ODEProblem(csys, st)
+    return prob.f.f2, prob.u0
 end
 
 suite = BenchmarkGroup()
@@ -57,8 +58,8 @@ for stencil in [l94_stencil, ppm_stencil]
     end
 end
 
-#op, u = setup_advection_simulator(0.1, 0.1, l94_stencil)
-#@profview op(u[:], u[:], [0.0], starttime)
+# op, u = setup_advection_simulator(0.1, 0.1, l94_stencil)
+# @profview op(u[:], u[:], [0.0], starttime)
 
 tune!(suite)
 results = run(suite, verbose = true)

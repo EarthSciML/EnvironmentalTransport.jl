@@ -1,7 +1,7 @@
 name = "EnvironmentalTransport"
 uuid = "9e73f4c4-d7e8-4c78-8a11-cd2430746631"
 authors = ["EarthSciML authors and contributors"]
-version = "0.3.1"
+version = "0.4"
 
 [deps]
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
@@ -11,6 +11,9 @@ ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 
+[weakdeps]
+EarthSciData = "a293c155-435f-439d-9c11-a083b6b47337"
+
 [extensions]
 EarthSciDataExt = "EarthSciData"
 
@@ -18,8 +21,8 @@ EarthSciDataExt = "EarthSciData"
 DocStringExtensions = "0.9"
 DomainSets = "0.7"
 DynamicQuantities = "1"
-EarthSciData = "0.9, 0.10"
-EarthSciMLBase = "0.19"
+EarthSciData = "0.10.1"
+EarthSciMLBase = "0.19.1"
 ModelingToolkit = "9"
 OrdinaryDiffEq = "6"
 SciMLBase = "2"

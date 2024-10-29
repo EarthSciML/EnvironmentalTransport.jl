@@ -140,7 +140,8 @@ $(SIGNATURES)
 
 Return a function that gets the grid spacing at a given place and time for the given `varname`.
 """
-function get_Δ(domain::EarthSciMLBase.DomainInfo, coordinate_transform_functions, varname::AbstractString)
+function get_Δ(domain::EarthSciMLBase.DomainInfo,
+        coordinate_transform_functions, varname::AbstractString)
     pvaridx = findfirst(
         isequal(varname), String.(Symbol.(EarthSciMLBase.pvars(domain))))
     tff = coordinate_transform_functions[pvaridx]
@@ -157,29 +158,38 @@ Advection is performed using the given `stencil` operator
 (e.g. `l94_stencil` or `ppm_stencil`).
 `p` is an optional parameter set to be used by the stencil operator.
 `bc_type` is the boundary condition type, e.g. `ZeroGradBC()`.
+
+Wind field data will be added in automatically if available.
+Currently the only valid source of wind data is `EarthSciData.GEOSFP`.
 """
 mutable struct AdvectionOperator <: EarthSciMLBase.Operator
     Δt::Any
     stencil::Any
     bc_type::Any
-    vardict::Any
 
     function AdvectionOperator(Δt, stencil, bc_type)
-        new(Δt, stencil, bc_type, nothing)
+        new(Δt, stencil, bc_type)
     end
 end
 
-function EarthSciMLBase.get_scimlop(op::AdvectionOperator, mtk_sys, domain::DomainInfo, obs_functions, coordinate_transform_functions, u0, p)
+function EarthSciMLBase.get_scimlop(op::AdvectionOperator, csys::CoupledSystem, mtk_sys,
+        domain::DomainInfo, obs_functions, coordinate_transform_functions, u0, p)
     pvars = EarthSciMLBase.pvars(domain)
     pvarstrs = [String(Symbol(pv)) for pv in pvars]
 
     v_fs = []
     Δ_fs = []
+    wind_func_dict = get_wind_funcs(csys, op)
     for varname in pvarstrs
-        data_f = obs_functions(op.vardict[varname])
+        data_f = obs_functions(wind_func_dict[varname])
         push!(v_fs, get_vf(domain, varname, data_f))
         push!(Δ_fs, get_Δ(domain, coordinate_transform_functions, varname))
     end
     scimlop = advection_op(u0, op.stencil, v_fs, Δ_fs, op.Δt, op.bc_type, p = p)
     cache_operator(scimlop, u0[:])
+end
+
+# Actual implementation is in EarthSciDataExt.jl.
+function get_wind_funcs(::Any, ::Any)
+    error("Could not find a source of wind data in the coupled system. Valid sources are currently {EarthSciData.GEOSFP}.")
 end
