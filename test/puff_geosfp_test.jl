@@ -5,37 +5,27 @@ using EarthSciData
 using ModelingToolkit
 using ModelingToolkit: t
 using DynamicQuantities
-using DomainSets
 using OrdinaryDiffEq
 using Dates
 
 starttime = DateTime(2022, 5, 1)
 endtime = DateTime(2022, 5, 1, 3)
 
-geosfp, geosfp_updater = GEOSFP("4x5"; dtype = Float64,
-    coord_defaults = Dict(:lon => deg2rad(-97), :lat => deg2rad(40), :lev => 1.0),
-    cache_size = 3)
-EarthSciData.lazyload!(geosfp_updater, datetime2unix(starttime))
-
-@parameters lon=deg2rad(-97) [unit = u"rad"]
-@parameters lat=deg2rad(40) [unit = u"rad"]
-@parameters lev = 3.0
-
 di = DomainInfo(
-    [partialderivatives_δxyδlonlat,
-        partialderivatives_δPδlev_geosfp(geosfp)],
-    constIC(16.0, t ∈ Interval(starttime, endtime)),
-    constBC(16.0,
-        lon ∈ Interval(deg2rad(-115), deg2rad(-68.75)),
-        lat ∈ Interval(deg2rad(25), deg2rad(53.7)),
-        lev ∈ Interval(1, 15)),
+    starttime, endtime;
+    lonrange = deg2rad(-115):deg2rad(-68.75),
+    latrange = deg2rad(25):deg2rad(53.7),
+    levrange = 1:15,
     dtype = Float64)
+
+geosfp = GEOSFP("4x5", di; stream_data = false)
+
+di = EarthSciMLBase.add_partial_derivative_func(di, partialderivatives_δPδlev_geosfp(geosfp))
 
 puff = Puff(di)
 
 model = couple(puff, geosfp)
-sys = convert(ODESystem, model)
-sys, _ = EarthSciMLBase.prune_observed(sys)
+sys, _ = convert(ODESystem, model; simplify=true)
 
 @test length(equations(sys)) == 3
 @test occursin("PS", string(observed(sys))) # Check that we're using the GEOSFP pressure data.

@@ -28,7 +28,7 @@ function Puff(di::DomainInfo; name = :puff)
     lev_idx = only(findall(v -> string(Symbol(v)) in ["lev(t)", "z(t)"], coords))
     lon_idx = only(findall(v -> string(Symbol(v)) in ["lon(t)", "x(t)"], coords))
     lat_idx = only(findall(v -> string(Symbol(v)) in ["lat(t)", "y(t)"], coords))
-    grd = EarthSciMLBase.grid(di, [1, 1, 1]) # TODO(CT): Use Δs from DomainInfo.
+    endpts = EarthSciMLBase.endpoints(di)
 
     # Get transforms for e.g. longitude to meters.
     trans = EarthSciMLBase.partialderivative_transforms(di)
@@ -39,7 +39,7 @@ function Puff(di::DomainInfo; name = :puff)
             if !isnothing(iloc)
                 c = coords[ip]
                 if ip == lev_idx # Clamp vertical coordinate to model top and bottom.
-                    c = clamp(c, grd[lev_idx][begin], grd[lev_idx][end])
+                    c = clamp(c, endpts[lev_idx]...)
                 end
                 trans[it] = substitute(trans[it], vars[iloc] => c)
             end
@@ -60,8 +60,8 @@ function Puff(di::DomainInfo; name = :puff)
     uc = get_unit(coords[lev_idx])
     @constants(
         offset=0.05, [unit = uc, description="Offset for boundary conditions"],
-        glo=grd[lev_idx][begin], [unit=uc, description="lower bound"],
-        ghi=grd[lev_idx][end], [unit=uc, description="upper bound"],
+        glo=endpts[lev_idx][begin], [unit=uc, description="lower bound"],
+        ghi=endpts[lev_idx][end], [unit=uc, description="upper bound"],
         v_zero=0, [unit = get_unit(eqs[lev_idx].rhs)],
     )
     @variables v_vertical(t) [unit = get_unit(eqs[lev_idx].rhs)]
@@ -72,15 +72,15 @@ function Puff(di::DomainInfo; name = :puff)
         eq.lhs ~ ifelse(c - offset < glo, max(v_zero, v_vertical),
             ifelse(c + offset > ghi, min(v_zero, v_vertical), v_vertical))
     end
-    lower_bound = coords[lev_idx] ~ grd[lev_idx][begin]
-    upper_bound = coords[lev_idx] ~ grd[lev_idx][end]
+    lower_bound = coords[lev_idx] ~ endpts[lev_idx][begin]
+    upper_bound = coords[lev_idx] ~ endpts[lev_idx][end]
     vertical_boundary = [lower_bound, upper_bound]
     # Stop simulation if we reach the lateral boundaries.
     affect!(integrator, u, p, ctx) = terminate!(integrator)
-    wb = coords[lon_idx] ~ grd[lon_idx][begin]
-    eb = coords[lon_idx] ~ grd[lon_idx][end]
-    sb = coords[lat_idx] ~ grd[lat_idx][begin]
-    nb = coords[lat_idx] ~ grd[lat_idx][end]
+    wb = coords[lon_idx] ~ endpts[lon_idx][begin]
+    eb = coords[lon_idx] ~ endpts[lon_idx][end]
+    sb = coords[lat_idx] ~ endpts[lat_idx][begin]
+    nb = coords[lat_idx] ~ endpts[lat_idx][end]
     lateral_boundary = [wb, eb, sb, nb] => (affect!, [], [], [], nothing)
     ODESystem(eqs, EarthSciMLBase.ivar(di); name = name,
         metadata = Dict(:coupletype => PuffCoupler),

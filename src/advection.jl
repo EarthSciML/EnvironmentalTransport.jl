@@ -108,18 +108,19 @@ Return a function that gets the wind velocity at a given place and time for the 
 `data_f` should be a function that takes a time and three spatial coordinates and returns the value of
 the wind speed in the direction indicated by `varname`.
 """
-function get_vf(sim, varname::AbstractString, data_f)
+function get_vf(domain, varname::AbstractString, data_f)
+    grd = EarthSciMLBase.grid(domain)
     if varname ∈ ("lon", "x")
         vf = Base.Fix2(
-            vf_x, (data_f, sim.grid[1], sim.grid[2], sim.grid[3], sim.Δs[1]))
+            vf_x, (data_f, grd[1], grd[2], grd[3], domain.grid_spacing[1]))
         return tuplefunc(vf)
     elseif varname ∈ ("lat", "y")
         vf = Base.Fix2(
-            vf_y, (data_f, sim.grid[1], sim.grid[2], sim.grid[3], sim.Δs[2]))
+            vf_y, (data_f, grd[1], grd[2], grd[3], domain.grid_spacing[2]))
         return tuplefunc(vf)
     elseif varname == "lev"
         vf = Base.Fix2(
-            vf_z, (data_f, sim.grid[1], sim.grid[2], sim.grid[3], sim.Δs[3]))
+            vf_z, (data_f, grd[1], grd[2], grd[3], domain.grid_spacing[3]))
         return tuplefunc(vf)
     else
         error("Invalid variable name $(varname).")
@@ -139,13 +140,13 @@ $(SIGNATURES)
 
 Return a function that gets the grid spacing at a given place and time for the given `varname`.
 """
-function get_Δ(sim::EarthSciMLBase.Simulator, varname::AbstractString)
+function get_Δ(domain::EarthSciMLBase.DomainInfo, coordinate_transform_functions, varname::AbstractString)
     pvaridx = findfirst(
-        isequal(varname), String.(Symbol.(EarthSciMLBase.pvars(sim.domaininfo))))
-    tff = sim.tf_fs[pvaridx]
-
+        isequal(varname), String.(Symbol.(EarthSciMLBase.pvars(domain))))
+    tff = coordinate_transform_functions[pvaridx]
+    grd = EarthSciMLBase.grid(domain)
     tuplefunc(Base.Fix2(
-        Δf, (tff, sim.Δs[pvaridx], sim.grid[1], sim.grid[2], sim.grid[3])))
+        Δf, (tff, domain.grid_spacing[pvaridx], grd[1], grd[2], grd[3])))
 end
 
 """
@@ -168,18 +169,17 @@ mutable struct AdvectionOperator <: EarthSciMLBase.Operator
     end
 end
 
-function EarthSciMLBase.get_scimlop(op::AdvectionOperator, sim::Simulator, u = nothing)
-    u = isnothing(u) ? init_u(sim) : u
-    pvars = EarthSciMLBase.pvars(sim.domaininfo)
+function EarthSciMLBase.get_scimlop(op::AdvectionOperator, mtk_sys, domain::DomainInfo, obs_functions, coordinate_transform_functions, u0, p)
+    pvars = EarthSciMLBase.pvars(domain)
     pvarstrs = [String(Symbol(pv)) for pv in pvars]
 
     v_fs = []
     Δ_fs = []
     for varname in pvarstrs
-        data_f = sim.obs_fs[sim.obs_fs_idx[op.vardict[varname]]]
-        push!(v_fs, get_vf(sim, varname, data_f))
-        push!(Δ_fs, get_Δ(sim, varname))
+        data_f = obs_functions(op.vardict[varname])
+        push!(v_fs, get_vf(domain, varname, data_f))
+        push!(Δ_fs, get_Δ(domain, coordinate_transform_functions, varname))
     end
-    scimlop = advection_op(u, op.stencil, v_fs, Δ_fs, op.Δt, op.bc_type, p = sim.p)
-    cache_operator(scimlop, u[:])
+    scimlop = advection_op(u0, op.stencil, v_fs, Δ_fs, op.Δt, op.bc_type, p = p)
+    cache_operator(scimlop, u0[:])
 end
