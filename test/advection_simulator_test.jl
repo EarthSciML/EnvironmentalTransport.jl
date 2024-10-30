@@ -49,11 +49,7 @@ sol = solve(prob, SSPRK22(), dt = dt)
 
 op = AdvectionOperator(100.0, l94_stencil, ZeroGradBC())
 
-@test isnothing(op.vardict) # Before coupling, there shouldn't be anything here.
-
 csys = couple(csys, op)
-
-@test !isnothing(op.vardict) # after coupling, there should be something here.
 
 prob = ODEProblem(csys, st)
 
@@ -66,18 +62,20 @@ sys_mtk, obs_eqs = convert(ODESystem, csys; simplify = true)
 tf_fs = EarthSciMLBase.coord_trans_functions(obs_eqs, domain)
 obs_fs = EarthSciMLBase.obs_functions(obs_eqs, domain)
 
+vardict = EnvironmentalTransport.get_wind_funcs(csys, op)
+
 @testset "get_vf lon" begin
-    f = obs_fs(op.vardict["lon"])
+    f = obs_fs(vardict["lon"])
     @test get_vf(domain, "lon", f)(2, 3, 1, starttime) ≈ -6.816295428727573
 end
 
 @testset "get_vf lat" begin
-    f = obs_fs(op.vardict["lat"])
+    f = obs_fs(vardict["lat"])
     @test get_vf(domain, "lat", f)(3, 2, 1, starttime) ≈ -5.443038969820774
 end
 
 @testset "get_vf lev" begin
-    f = obs_fs(op.vardict["lev"])
+    f = obs_fs(vardict["lev"])
     @test get_vf(domain, "lev", f)(3, 1, 2, starttime) ≈ -0.019995461793337128
 end
 
