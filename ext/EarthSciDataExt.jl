@@ -20,15 +20,13 @@ function EarthSciMLBase.couple2(p::PuffCoupler, g::GEOSFPCoupler)
     ], p, g)
 end
 
-function EnvironmentalTransport.get_wind_funcs(c::CoupledSystem, ::AdvectionOperator)
+function EarthSciMLBase.get_needed_vars(::AdvectionOperator, csys, mtk_sys, domain::EarthSciMLBase.DomainInfo)
     found = 0
-    vardict = Dict()
-    for sys in c.systems
+    windvars = []
+    for sys in csys.systems
         if EarthSciMLBase.get_coupletype(sys) == GEOSFPCoupler
             found += 1
-            vardict["lon"] = sys.A3dyn₊U
-            vardict["lat"] = sys.A3dyn₊V
-            vardict["lev"] = sys.A3dyn₊OMEGA
+            push!(windvars, sys.A3dyn₊U, sys.A3dyn₊V, sys.A3dyn₊OMEGA)
         end
     end
     if found == 0
@@ -36,7 +34,8 @@ function EnvironmentalTransport.get_wind_funcs(c::CoupledSystem, ::AdvectionOper
     elseif found > 1
         error("Found multiple sources of wind data in the coupled system. Valid sources are currently {EarthSciData.GEOSFP}")
     end
-    vardict
+    ts = EarthSciMLBase.partialderivative_transform_vars(mtk_sys, domain)
+    return vcat(windvars, ts)
 end
 
 end

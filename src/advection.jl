@@ -20,23 +20,23 @@ function advection_kernel_4d(u, stencil, vs, Δs, Δt, idx, p = NullParameters()
 end
 function advection_kernel_4d_builder(stencil, v_fs, Δ_fs)
     function advect_f(u, idx, Δt, t, p = NullParameters())
-        vs = get_vs(v_fs, idx, t)
-        Δs = get_Δs(Δ_fs, idx, t)
+        vs = get_vs(v_fs, idx, p, t)
+        Δs = get_Δs(Δ_fs, idx, p, t)
         advection_kernel_4d(u, stencil, vs, Δs, Δt, idx, p)
     end
 end
 
-function get_vs(v_fs, i, j, k, t)
+function get_vs(v_fs, i, j, k, p, t)
     (
-        (v_fs[1](i, j, k, t), v_fs[1](i + 1, j, k, t)),
-        (v_fs[2](i, j, k, t), v_fs[2](i, j + 1, k, t)),
-        (v_fs[3](i, j, k, t), v_fs[3](i, j, k + 1, t))
+        (v_fs[1](i, j, k, p, t), v_fs[1](i + 1, j, k, p, t)),
+        (v_fs[2](i, j, k, p, t), v_fs[2](i, j + 1, k, p, t)),
+        (v_fs[3](i, j, k, p, t), v_fs[3](i, j, k + 1, p, t))
     )
 end
-get_vs(v_fs, idx::CartesianIndex{4}, t) = get_vs(v_fs, idx[2], idx[3], idx[4], t)
+get_vs(v_fs, idx::CartesianIndex{4}, p, t) = get_vs(v_fs, idx[2], idx[3], idx[4], p, t)
 
-get_Δs(Δ_fs, i, j, k, t) = (Δ_fs[1](i, j, k, t), Δ_fs[2](i, j, k, t), Δ_fs[3](i, j, k, t))
-get_Δs(Δ_fs, idx::CartesianIndex{4}, t) = get_Δs(Δ_fs, idx[2], idx[3], idx[4], t)
+get_Δs(Δ_fs, i, j, k, p, t) = (Δ_fs[1](i, j, k, p, t), Δ_fs[2](i, j, k, p, t), Δ_fs[3](i, j, k, p, t))
+get_Δs(Δ_fs, idx::CartesianIndex{4}, p, t) = get_Δs(Δ_fs, idx[2], idx[3], idx[4], p, t)
 
 #=
 A function to create an advection operator for a 4D array,
@@ -56,50 +56,51 @@ function advection_op(u_prototype, stencil, v_fs, Δ_fs, Δt, bc_type;
     sz = size(u_prototype)
     v_fs = tuple(v_fs...)
     Δ_fs = tuple(Δ_fs...)
+    II = CartesianIndices(u_prototype)
     adv_kernel = advection_kernel_4d_builder(stencil, v_fs, Δ_fs)
     function advection(u, p, t) # Out-of-place
         u = bc_type(reshape(u, sz...))
-        du = adv_kernel.((u,), CartesianIndices(u), (Δt,), (t,), (p,))
+        du = adv_kernel.((u,), II, (Δt,), (t,), (p,))
         reshape(du, :)
     end
     function advection(du, u, p, t) # In-place
         u = bc_type(reshape(u, sz...))
         du = reshape(du, sz...)
-        du .= adv_kernel.((u,), CartesianIndices(u), (Δt,), (t,), (p,))
+        du .= adv_kernel.((u,), II, (Δt,), (t,), (p,))
     end
     FunctionOperator(advection, reshape(u_prototype, :), p = p)
 end
 
 "Get a value from the x-direction velocity field."
 function vf_x(args1, args2)
-    i, j, k, t = args1
+    i, j, k, p, t = args1
     data_f, grid1, grid2, grid3, Δ = args2
     x1 = grid1[min(i, length(grid1))] - Δ / 2 # Staggered grid
     x2 = grid2[j]
     x3 = grid3[k]
-    data_f(t, x1, x2, x3)
+    data_f(p, t, x1, x2, x3)
 end
 
 "Get a value from the y-direction velocity field."
 function vf_y(args1, args2)
-    i, j, k, t = args1
+    i, j, k, p, t = args1
     data_f, grid1, grid2, grid3, Δ = args2
     x1 = grid1[i]
     x2 = grid2[min(j, length(grid2))] - Δ / 2 # Staggered grid
     x3 = grid3[k]
-    data_f(t, x1, x2, x3)
+    data_f(p, t, x1, x2, x3)
 end
 
 "Get a value from the z-direction velocity field."
 function vf_z(args1, args2)
-    i, j, k, t = args1
+    i, j, k, p, t = args1
     data_f, grid1, grid2, grid3, Δ = args2
     x1 = grid1[i]
     x2 = grid2[j]
     x3 = k > 1 ? grid3[min(k, length(grid3))] - Δ / 2 : grid3[k]
-    data_f(t, x1, x2, x3) # Staggered grid
+    data_f(p, t, x1, x2, x3) # Staggered grid
 end
-tuplefunc(vf) = (i, j, k, t) -> vf((i, j, k, t))
+tuplefunc(vf) = (i, j, k, p, t) -> vf((i, j, k, p, t))
 
 """
 $(SIGNATURES)
@@ -129,10 +130,10 @@ end
 
 "function to get grid deltas."
 function Δf(args1, args2)
-    i, j, k, t = args1
+    i, j, k, p, t = args1
     tff, Δ, grid1, grid2, grid3 = args2
     c1, c2, c3 = grid1[i], grid2[j], grid3[k]
-    Δ / tff(t, c1, c2, c3)
+    Δ / tff(p, t, c1, c2, c3)
 end
 
 """
@@ -140,11 +141,7 @@ $(SIGNATURES)
 
 Return a function that gets the grid spacing at a given place and time for the given `varname`.
 """
-function get_Δ(domain::EarthSciMLBase.DomainInfo,
-        coordinate_transform_functions, varname::AbstractString)
-    pvaridx = findfirst(
-        isequal(varname), String.(Symbol.(EarthSciMLBase.pvars(domain))))
-    tff = coordinate_transform_functions[pvaridx]
+function get_Δ(domain::EarthSciMLBase.DomainInfo, tff, pvaridx)
     grd = EarthSciMLBase.grid(domain)
     tuplefunc(Base.Fix2(
         Δf, (tff, domain.grid_spacing[pvaridx], grd[1], grd[2], grd[3])))
@@ -172,24 +169,46 @@ mutable struct AdvectionOperator <: EarthSciMLBase.Operator
     end
 end
 
-function EarthSciMLBase.get_scimlop(op::AdvectionOperator, csys::CoupledSystem, mtk_sys,
-        domain::DomainInfo, obs_functions, coordinate_transform_functions, u0, p)
+function obs_function(mtk_sys, v, coord_setter, T)
+    obs_f! = build_explicit_observed_function(mtk_sys, v, checkbounds=false)
+    obscache = zeros(T, length(unknowns(mtk_sys))) # Not used for anything (hopefully).
+    function data_f(p, t, x1, x2, x3)
+        coord_setter(p, (x1, x2, x3))
+        obs_f!(obscache, p, t)
+    end
+    data_f
+end
+
+function get_datafs(op, csys, mtk_sys, domain)
+    vars = EarthSciMLBase.get_needed_vars(op, csys, mtk_sys, domain)
+    @assert length(vars) == 6 # x_wind, y_wind, z_wind, x_ts, y_ts, z_ts
+    coords = EarthSciMLBase.coord_params(mtk_sys, domain)
+    coord_setter = setp(mtk_sys, coords)
     pvars = EarthSciMLBase.pvars(domain)
     pvarstrs = [String(Symbol(pv)) for pv in pvars]
-
     v_fs = []
-    Δ_fs = []
-    wind_func_dict = get_wind_funcs(csys, op)
-    for varname in pvarstrs
-        data_f = obs_functions(wind_func_dict[varname])
-        push!(v_fs, get_vf(domain, varname, data_f))
-        push!(Δ_fs, get_Δ(domain, coordinate_transform_functions, varname))
+    for i in 1:3
+        v = vars[i]
+        data_f = obs_function(mtk_sys, v, coord_setter, EarthSciMLBase.dtype(domain))
+        push!(v_fs, get_vf(domain, pvarstrs[i], data_f))
     end
+    Δ_fs = []
+    for (i, v) in enumerate(vars[4:6])
+        data_f = obs_function(mtk_sys, v, coord_setter, EarthSciMLBase.dtype(domain))
+        push!(Δ_fs, get_Δ(domain, data_f, i))
+    end
+    v_fs, Δ_fs
+end
+
+function EarthSciMLBase.get_scimlop(op::AdvectionOperator, csys::CoupledSystem, mtk_sys,
+        domain::DomainInfo, u0, p)
+
+    v_fs, Δ_fs = get_datafs(op, csys, mtk_sys, domain)
     scimlop = advection_op(u0, op.stencil, v_fs, Δ_fs, op.Δt, op.bc_type, p = p)
     cache_operator(scimlop, u0[:])
 end
 
 # Actual implementation is in EarthSciDataExt.jl.
-function get_wind_funcs(::Any, ::Any)
+function EarthSciMLBase.get_needed_vars(::AdvectionOperator, csys, mtk_sys, domain)
     error("Could not find a source of wind data in the coupled system. Valid sources are currently {EarthSciData.GEOSFP}.")
 end

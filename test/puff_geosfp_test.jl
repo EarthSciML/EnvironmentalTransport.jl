@@ -18,14 +18,14 @@ di = DomainInfo(
     levrange = 1:15,
     dtype = Float64)
 
-geosfp = GEOSFP("4x5", di; stream_data = false)
+geosfp = GEOSFP("4x5", di; stream = false)
 
 di = EarthSciMLBase.add_partial_derivative_func(di, partialderivatives_δPδlev_geosfp(geosfp))
 
 puff = Puff(di)
 
 model = couple(puff, geosfp)
-sys, _ = convert(ODESystem, model; simplify=true)
+sys = convert(ODESystem, model; simplify=true)
 
 @test length(equations(sys)) == 3
 @test occursin("PS", string(observed(sys))) # Check that we're using the GEOSFP pressure data.

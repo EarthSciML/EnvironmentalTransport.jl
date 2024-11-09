@@ -1,5 +1,5 @@
 using EnvironmentalTransport
-using EnvironmentalTransport: get_vf, get_Δ
+using EnvironmentalTransport: get_vf, get_Δ, get_datafs
 
 using Test
 using EarthSciMLBase, EarthSciData
@@ -23,7 +23,11 @@ geosfp = GEOSFP("4x5", domain)
 domain = EarthSciMLBase.add_partial_derivative_func(
     domain, partialderivatives_δPδlev_geosfp(geosfp))
 
-function emissions(μ_lon, μ_lat, σ)
+struct EmissionsCoupler
+    sys
+end
+
+function Emissions(μ_lon, μ_lat, σ)
     @parameters(lon=0.0, [unit = u"rad"],
         lat=0.0, [unit = u"rad"],
         lev=1.0)
@@ -32,10 +36,20 @@ function emissions(μ_lon, μ_lat, σ)
     @constants t_unit=1.0 [unit = u"s"] # Needed so that arguments to `pdf` are unitless.
     dist = MvNormal([starttime, μ_lon, μ_lat, 1], Diagonal(map(abs2, [3600.0, σ, σ, 1])))
     ODESystem([D(c) ~ pdf(dist, [t / t_unit, lon, lat, lev]) * v_emis],
-        t, name = :Test₊emissions)
+        t, name = :Test₊emissions, metadata=Dict(:coupletype => EmissionsCoupler))
 end
 
-emis = emissions(deg2rad(-122.6), deg2rad(45.5), 0.1)
+function EarthSciMLBase.couple2(e::EmissionsCoupler, g::EarthSciData.GEOSFPCoupler)
+    e, g = e.sys, g.sys
+    e = param_to_var(e, :lon, :lat, :lev)
+    ConnectorSystem([
+            e.lat ~ g.lat,
+            e.lon ~ g.lon,
+            e.lev ~ g.lev,
+        ], e, g)
+end
+
+emis = Emissions(deg2rad(-122.6), deg2rad(45.5), 0.1)
 
 csys = couple(emis, domain, geosfp)
 
@@ -58,29 +72,27 @@ sol = solve(prob, SSPRK22(), dt = dt)
 # With advection, the norm should be lower because the pollution is more spread out.
 @test 310 < norm(sol.u[end]) < 350
 
-sys_mtk, obs_eqs = convert(ODESystem, csys; simplify = true)
-tf_fs = EarthSciMLBase.coord_trans_functions(obs_eqs, domain)
-obs_fs = EarthSciMLBase.obs_functions(obs_eqs, domain)
+sys_mtk = convert(ODESystem, csys; simplify = true)
+vars = EarthSciMLBase.get_needed_vars(op, csys, sys_mtk, domain)
+@test length(vars) == 6
+p = EarthSciMLBase.default_params(sys_mtk)
 
-vardict = EnvironmentalTransport.get_wind_funcs(csys, op)
+v_fs, Δ_fs = get_datafs(op, csys, sys_mtk, domain)
 
 @testset "get_vf lon" begin
-    f = obs_fs(vardict["lon"])
-    @test get_vf(domain, "lon", f)(2, 3, 1, starttime) ≈ -6.816295428727573
+    @test v_fs[1](2, 3, 1, p, starttime) ≈ -6.816295428727573
 end
 
 @testset "get_vf lat" begin
-    f = obs_fs(vardict["lat"])
-    @test get_vf(domain, "lat", f)(3, 2, 1, starttime) ≈ -5.443038969820774
+    @test v_fs[2](3, 2, 1, p, starttime) ≈ -5.443038969820774
 end
 
 @testset "get_vf lev" begin
-    f = obs_fs(vardict["lev"])
-    @test get_vf(domain, "lev", f)(3, 1, 2, starttime) ≈ -0.019995461793337128
+    @test v_fs[3](3, 1, 2, p, starttime) ≈ -0.019995461793337128
 end
 
 @testset "get_Δ" begin
-    @test get_Δ(domain, tf_fs, "lat")(2, 3, 1, starttime) ≈ 445280.0
-    @test get_Δ(domain, tf_fs, "lon")(3, 2, 1, starttime) ≈ 432517.0383085161
-    @test get_Δ(domain, tf_fs, "lev")(3, 1, 2, starttime) ≈ -1516.7789198950632
+    @test Δ_fs[1](2, 3, 1, p, starttime) ≈ 424080.6852300487
+    @test Δ_fs[2](3, 2, 1, p, starttime) ≈ 445280.0
+    @test Δ_fs[3](3, 1, 2, p, starttime) ≈ -1516.7789198950632
 end
