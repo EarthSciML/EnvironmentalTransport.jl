@@ -3,7 +3,9 @@ using EnvironmentalTransport
 
 using EarthSciMLBase, EarthSciData
 using ModelingToolkit, DomainSets
+using ModelingToolkit: t, D
 using Dates
+using DynamicQuantities
 
 starttime_date = DateTime(2022, 5, 1)
 starttime = datetime2unix(starttime_date)
@@ -22,22 +24,21 @@ function setup_advection_simulator(lonres, latres, stencil)
     domain = EarthSciMLBase.add_partial_derivative_func(
         domain, partialderivatives_δPδlev_geosfp(geosfp))
 
-    function emissions(t)
-        @parameters(lon=-97.0,
-            lat=30.0,
-            lev=1.0,)
+    function emissions()
+        @parameters(lonx=-97.0, [unit = 1u"s^-1"],
+            latx=30.0, [unit = 1u"s^-1"],
+            levx=1.0, [unit = 1u"s^-1"])
         @variables c(t) = 1.0
-        D = Differential(t)
-        ODESystem([D(c) ~ lat + lon + lev], t, name = :emissions)
+        ODESystem([D(c) ~ latx + lonx + levx], t, name = :emissions)
     end
 
-    emis = emissions(ModelingToolkit.t_nounits)
+    emis = emissions()
 
     op = AdvectionOperator(100.0, stencil, ZeroGradBC())
     csys = couple(emis, domain, geosfp, op)
     st = SolverIMEX()
     prob = ODEProblem(csys, st)
-    return prob.f.f2, prob.u0
+    return prob.f.f2, prob.u0, prob.p
 end
 
 suite = BenchmarkGroup()
@@ -50,11 +51,11 @@ for stencil in [l94_stencil, ppm_stencil]
     suite["Advection Simulator"]["out-of-place"][stencil] = BenchmarkGroup()
     for (lonres, latres) in ((0.625, 0.5), (0.3125, 0.25))
         @info "setting up $lonres x $latres with $stencil"
-        op, u = setup_advection_simulator(lonres, latres, stencil)
+        op, u, p = setup_advection_simulator(lonres, latres, stencil)
         suite["Advection Simulator"]["in-place"][stencil]["$lonres x $latres (N=$(length(u)))"] = @benchmarkable $(op)(
-            $(u[:]), $(u[:]), [0.0], $starttime)
+            $(u[:]), $(u[:]), $(p), $starttime)
         suite["Advection Simulator"]["out-of-place"][stencil]["$lonres x $latres (N=$(length(u)))"] = @benchmarkable $(op)(
-            $(u[:]), [0.0], $starttime)
+            $(u[:]), $(p), $starttime)
     end
 end
 
