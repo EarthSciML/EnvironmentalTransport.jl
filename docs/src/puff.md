@@ -29,19 +29,17 @@ domain = DomainInfo(
     levrange = 1:72,
     dtype = Float64)
 
-geosfp = GEOSFP("4x5", domain; stream_data = false)
-
-domain = EarthSciMLBase.add_partial_derivative_func(domain, partialderivatives_δPδlev_geosfp(geosfp))
+geosfp = GEOSFP("4x5", domain; stream = false)
 
 puff = Puff(domain)
 
 model = couple(puff, geosfp)
-sys, _ = convert(ODESystem, model, simplify=true)
-
+sys = convert(ODESystem, model)
 u0 = ModelingToolkit.get_defaults(sys)
-tspan = EarthSciMLBase.tspan(domain)
+tspan = EarthSciMLBase.get_tspan(domain)
 prob=ODEProblem(sys, u0, tspan)
 sol = solve(prob, Tsit5()) # Solve once to make sure data is loaded.
+
 function prob_func(prob, i, repeat)
     r = rand() * fireradius
     θ = rand() * 2π

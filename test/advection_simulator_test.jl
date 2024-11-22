@@ -3,7 +3,7 @@ using EnvironmentalTransport: get_vf, get_Δ, get_datafs
 
 using Test
 using EarthSciMLBase, EarthSciData
-using ModelingToolkit, DomainSets, OrdinaryDiffEq
+using ModelingToolkit, OrdinaryDiffEq
 using ModelingToolkit: t, D
 using Distributions, LinearAlgebra
 using DynamicQuantities
@@ -24,7 +24,7 @@ domain = EarthSciMLBase.add_partial_derivative_func(
     domain, partialderivatives_δPδlev_geosfp(geosfp))
 
 struct EmissionsCoupler
-    sys
+    sys::Any
 end
 
 function Emissions(μ_lon, μ_lat, σ)
@@ -36,7 +36,7 @@ function Emissions(μ_lon, μ_lat, σ)
     @constants t_unit=1.0 [unit = u"s"] # Needed so that arguments to `pdf` are unitless.
     dist = MvNormal([starttime, μ_lon, μ_lat, 1], Diagonal(map(abs2, [3600.0, σ, σ, 1])))
     ODESystem([D(c) ~ pdf(dist, [t / t_unit, lon, lat, lev]) * v_emis],
-        t, name = :Test₊emissions, metadata=Dict(:coupletype => EmissionsCoupler))
+        t, name = :Test₊emissions, metadata = Dict(:coupletype => EmissionsCoupler))
 end
 
 function EarthSciMLBase.couple2(e::EmissionsCoupler, g::EarthSciData.GEOSFPCoupler)
@@ -45,7 +45,7 @@ function EarthSciMLBase.couple2(e::EmissionsCoupler, g::EarthSciData.GEOSFPCoupl
     ConnectorSystem([
             e.lat ~ g.lat,
             e.lon ~ g.lon,
-            e.lev ~ g.lev,
+            e.lev ~ g.lev
         ], e, g)
 end
 
@@ -65,12 +65,12 @@ op = AdvectionOperator(100.0, l94_stencil, ZeroGradBC())
 
 csys = couple(csys, op)
 
-prob = ODEProblem(csys, st)
-
-sol = solve(prob, SSPRK22(), dt = dt)
-
-# With advection, the norm should be lower because the pollution is more spread out.
-@test 310 < norm(sol.u[end]) < 350
+@testset "solve" begin
+    prob = ODEProblem(csys, st)
+    sol = solve(prob, SSPRK22(), dt = dt)
+    # With advection, the norm should be lower because the pollution is more spread out.
+    @test 310 < norm(sol.u[end]) < 350
+end
 
 sys_mtk = convert(ODESystem, csys; simplify = true)
 vars = EarthSciMLBase.get_needed_vars(op, csys, sys_mtk, domain)
@@ -94,5 +94,5 @@ end
 @testset "get_Δ" begin
     @test Δ_fs[1](2, 3, 1, p, starttime) ≈ 424080.6852300487
     @test Δ_fs[2](3, 2, 1, p, starttime) ≈ 445280.0
-    @test Δ_fs[3](3, 1, 2, p, starttime) ≈ -1516.7789198950632
+    @test Δ_fs[3](3, 1, 2, p, starttime) ≈ -1511.6930930013798
 end

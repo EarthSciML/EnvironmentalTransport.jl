@@ -1,5 +1,5 @@
 using Test
-using Main.EnvironmentalTransport
+using EnvironmentalTransport
 using EarthSciMLBase
 using ModelingToolkit
 using ModelingToolkit: t
@@ -27,7 +27,7 @@ puff = structural_simplify(puff)
 
 @test length(equations(puff)) == 3
 @test issetequal([Symbol("z(t)"), Symbol("x(t)"), Symbol("y(t)")], Symbol.(unknowns(puff)))
-@test issetequal([:v_x, :v_y, :v_z], Symbol.(parameters(puff)))
+@test issetequal([:v_x, :v_y, :v_z, :x_trans, :y_trans, :lev_trans], Symbol.(parameters(puff)))
 
 prob = ODEProblem(puff, [], (starttime, endtime), [])
 

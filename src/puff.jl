@@ -31,20 +31,15 @@ function Puff(di::DomainInfo; name = :puff)
     endpts = EarthSciMLBase.endpoints(di)
 
     # Get transforms for e.g. longitude to meters.
-    trans = EarthSciMLBase.partialderivative_transforms(di)
-    for (it, tr) in enumerate(trans) # Make sure using correct coords.
-        for (ip, p) in enumerate(pv)
-            vars = get_variables(tr)
-            iloc = findfirst(isequal(p), vars)
-            if !isnothing(iloc)
-                c = coords[ip]
-                if ip == lev_idx # Clamp vertical coordinate to model top and bottom.
-                    c = clamp(c, endpts[lev_idx]...)
-                end
-                trans[it] = substitute(trans[it], vars[iloc] => c)
-            end
-        end
-    end
+    @parameters x_trans=1 [unit = get_unit(coords[lon_idx]) / 1u"m",
+        description = "x-coordinate to meters transform"]
+    @parameters y_trans=1 [unit = get_unit(coords[lat_idx]) / 1u"m",
+        description = "y-coordinate to meters transform"]
+    @parameters lev_trans=1 [unit = get_unit(coords[lev_idx]) / 1u"Pa",
+        description = "level to pressure transform"]
+    trans = [lev_trans, lev_trans, lev_trans]
+    trans[lon_idx] = x_trans
+    trans[lat_idx] = y_trans
 
     # Create placeholder velocity variables.
     vs = []
@@ -58,12 +53,10 @@ function Puff(di::DomainInfo; name = :puff)
 
     # Boundary condition at the ground and model top.
     uc = get_unit(coords[lev_idx])
-    @constants(
-        offset=0.05, [unit = uc, description="Offset for boundary conditions"],
-        glo=endpts[lev_idx][begin], [unit=uc, description="lower bound"],
-        ghi=endpts[lev_idx][end], [unit=uc, description="upper bound"],
-        v_zero=0, [unit = get_unit(eqs[lev_idx].rhs)],
-    )
+    @constants(offset=0.05, [unit = uc, description = "Offset for boundary conditions"],
+        glo=endpts[lev_idx][begin], [unit = uc, description = "lower bound"],
+        ghi=endpts[lev_idx][end], [unit = uc, description = "upper bound"],
+        v_zero=0, [unit = get_unit(eqs[lev_idx].rhs)],)
     @variables v_vertical(t) [unit = get_unit(eqs[lev_idx].rhs)]
     push!(eqs, v_vertical ~ eqs[lev_idx].rhs)
     eqs[lev_idx] = let

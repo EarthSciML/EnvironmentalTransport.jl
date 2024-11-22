@@ -27,8 +27,9 @@ We'll make the emissions start at the beginning of the simulation and then taper
 
 ```@example adv
 starttime = DateTime(2022, 5, 1)
-endtime = DateTime(2022, 6, 1)
+endtime = DateTime(2022, 5, 10)
 
+struct EmissionsCoupler sys end
 function emissions(μ_lon, μ_lat, σ)
     @parameters(
         lon=-97.0, [unit=u"rad"],
@@ -41,7 +42,12 @@ function emissions(μ_lon, μ_lat, σ)
     dist = MvNormal([datetime2unix(starttime), μ_lon, μ_lat, 1], 
         Diagonal(map(abs2, [3600.0*24*3, σ, σ, 1])))
     ODESystem([D(c) ~ pdf(dist, [t/t_unit, lon, lat, lev]) * v_emis],
-        t, name = :emissions)
+        t, name = :emissions, metadata=Dict(:coupletype => EmissionsCoupler))
+end
+function EarthSciMLBase.couple2(e::EmissionsCoupler, g::EarthSciData.GEOSFPCoupler)
+    e, g = e.sys, g.sys
+    e = param_to_var(e, :lat, :lon, :lev)
+    ConnectorSystem([e.lat ~ g.lat, e.lon ~ g.lon, e.lev ~ g.lev], e, g)
 end
 
 emis = emissions(deg2rad(-97.0), deg2rad(40.0), deg2rad(1))
@@ -66,8 +72,8 @@ domain = DomainInfo(
     dtype = Float64)
 
 geosfp = GEOSFP("0.5x0.625_NA", domain)
+geosfp = EarthSciMLBase.copy_with_change(geosfp, discrete_events=[]) # Workaround for bug.
 
-domain = EarthSciMLBase.add_partial_derivative_func(domain, partialderivatives_δPδlev_geosfp(geosfp))
 
 outfile = ("RUNNER_TEMP" ∈ keys(ENV) ? ENV["RUNNER_TEMP"] : tempname()) * "out.nc" # This is just a location to save the output.
 output = NetCDFOutputter(outfile, 3600.0)
@@ -94,9 +100,8 @@ We also choose a operator splitting interval of 300 seconds.
 Then, we run the simulation.
 
 ```@example adv
-st = SolverStrangThreads(Tsit5(), 300.0)
+st = SolverStrangSerial(Tsit5(), 300.0)
 prob = ODEProblem(csys, st)
-
 
 @time solve(prob, SSPRK22(), dt=300, save_on=false, save_start=false, save_end=false, 
     initialize_save=false, progress=true, progress_steps=1)

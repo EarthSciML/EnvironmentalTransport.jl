@@ -7,6 +7,7 @@ using SciMLBase: NullParameters
 using ModelingToolkit: t, D, get_unit, getdefault, ODESystem, @variables, @parameters,
     @constants, get_variables, substitute, build_explicit_observed_function, setp, unknowns
 using SciMLBase: terminate!
+using DynamicQuantities: @u_str
 using EarthSciMLBase
 
 include("advection_stencils.jl")

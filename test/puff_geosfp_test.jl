@@ -1,15 +1,16 @@
 using Test
-using Main.EnvironmentalTransport
+using EnvironmentalTransport
 using EarthSciMLBase
 using EarthSciData
 using ModelingToolkit
 using ModelingToolkit: t
 using DynamicQuantities
 using OrdinaryDiffEq
+import SciMLBase
 using Dates
 
 starttime = DateTime(2022, 5, 1)
-endtime = DateTime(2022, 5, 1, 3)
+endtime = DateTime(2022, 5, 1, 0, 1)
 
 di = DomainInfo(
     starttime, endtime;
@@ -20,8 +21,6 @@ di = DomainInfo(
 
 geosfp = GEOSFP("4x5", di; stream = false)
 
-di = EarthSciMLBase.add_partial_derivative_func(di, partialderivatives_δPδlev_geosfp(geosfp))
-
 puff = Puff(di)
 
 model = couple(puff, geosfp)
@@ -31,5 +30,11 @@ sys = convert(ODESystem, model; simplify=true)
 @test occursin("PS", string(observed(sys))) # Check that we're using the GEOSFP pressure data.
 @test issetequal([Symbol("puff₊lon(t)"), Symbol("puff₊lat(t)"), Symbol("puff₊lev(t)")],
     Symbol.(unknowns(sys)))
-@test length(parameters(sys)) == 0
-@test length(observed(sys)) == 10
+@test length(parameters(sys)) == 72
+@test length(observed(sys)) == 17
+
+u0 = ModelingToolkit.get_defaults(sys)
+tspan = EarthSciMLBase.get_tspan(di)
+prob=ODEProblem(sys, u0, tspan)
+sol = solve(prob, Tsit5())
+@test sol.retcode == SciMLBase.ReturnCode.Success

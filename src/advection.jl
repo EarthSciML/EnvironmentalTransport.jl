@@ -133,7 +133,7 @@ function Δf(args1, args2)
     i, j, k, p, t = args1
     tff, Δ, grid1, grid2, grid3 = args2
     c1, c2, c3 = grid1[i], grid2[j], grid3[k]
-    Δ / tff(p, t, c1, c2, c3)
+    Δ * tff(p, t, c1, c2, c3)
 end
 
 """
