@@ -10,14 +10,14 @@ using Plots
 using Dates
 
 firestart = DateTime(2021, 10, 1)
-firelength = 4 * 3600 # Seconds
-simulationlength = 1 # Days
+firelength = 10 * 24 * 3600 # Seconds
+simulationlength = 20 # Days
 firelon = deg2rad(-97)
 firelat = deg2rad(40)
 fireradius = deg2rad(0.05) # Degrees
-samplerate = 1800.0 # Seconds
-samples_per_time = 10 # Samples per each emission time
-fireheight = 3.0 # Vertical level (Allowing this to be automatically calculated is a work in progress).
+samplerate = 3600.0 # Seconds
+samples_per_time = 3 # Samples per each emission time
+fireheight = 2.0 # Vertical level (Allowing this to be automatically calculated is a work in progress).
 emis_rate = 1.0 # kg/s, fire emission rate
 
 sim_end = firestart + Day(simulationlength)
@@ -47,7 +47,7 @@ function prob_func(prob, i, repeat)
     ts = (tspan[1] + floor(i / samples_per_time) * samplerate, tspan[2])
     remake(prob, u0 = u0, tspan = ts)
 end
-eprob = EnsembleProblem(prob, prob_func = prob_func)
+eprob = EnsembleProblem(prob, prob_func = prob_func, safetycopy=false)
 esol = solve(eprob, Tsit5(); trajectories=ceil(firelength/samplerate*samples_per_time))
 
 vars = [sys.puff₊lon, sys.puff₊lat, sys.puff₊lev]
