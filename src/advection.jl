@@ -53,6 +53,7 @@ Arguments:
 =#
 function advection_op(u_prototype, stencil, v_fs, Δ_fs, Δt, bc_type;
         p = NullParameters())
+    @assert length(size(u_prototype)) == 4 "Advection operator only supports 4D arrays."
     sz = size(u_prototype)
     v_fs = tuple(v_fs...)
     Δ_fs = tuple(Δ_fs...)
@@ -202,7 +203,7 @@ end
 
 function EarthSciMLBase.get_scimlop(op::AdvectionOperator, csys::CoupledSystem, mtk_sys,
         domain::DomainInfo, u0, p)
-
+    u0 = reshape(u0, :, length.(EarthSciMLBase.grid(EarthSciMLBase.domain(csys)))...)
     v_fs, Δ_fs = get_datafs(op, csys, mtk_sys, domain)
     scimlop = advection_op(u0, op.stencil, v_fs, Δ_fs, op.Δt, op.bc_type, p = p)
     cache_operator(scimlop, u0[:])
