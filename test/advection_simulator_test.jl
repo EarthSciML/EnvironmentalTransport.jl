@@ -20,9 +20,6 @@ domain = DomainInfo(
 )
 geosfp = GEOSFP("4x5", domain)
 
-domain = EarthSciMLBase.add_partial_derivative_func(
-    domain, partialderivatives_δPδlev_geosfp(geosfp))
-
 struct EmissionsCoupler
     sys::Any
 end
@@ -72,27 +69,28 @@ csys = couple(csys, op)
     @test 310 < norm(sol.u[end]) < 350
 end
 
-sys_mtk = convert(ODESystem, csys; simplify = true)
-vars = EarthSciMLBase.get_needed_vars(op, csys, sys_mtk, domain)
+mtk_sys = convert(ODESystem, csys)
+sys_coords, coord_args = EarthSciMLBase._prepare_coord_sys(mtk_sys, domain)
+vars = EarthSciMLBase.get_needed_vars(op, csys, sys_coords, domain)
 @test length(vars) == 6
-p = EarthSciMLBase.default_params(sys_mtk)
+p = EarthSciMLBase.default_params(sys_coords)
 
-v_fs, Δ_fs = get_datafs(op, csys, sys_mtk, domain)
+v_fs, Δ_fs = get_datafs(op, csys, sys_coords, coord_args, domain)
 
 @testset "get_vf lon" begin
-    @test v_fs[1](2, 3, 1, p, starttime) ≈ -6.816295428727573
+    @test only(v_fs[1](2, 3, 1, p, starttime)) ≈ -6.816295428727573
 end
 
 @testset "get_vf lat" begin
-    @test v_fs[2](3, 2, 1, p, starttime) ≈ -5.443038969820774
+    @test only(v_fs[2](3, 2, 1, p, starttime)) ≈ -5.443038969820774
 end
 
 @testset "get_vf lev" begin
-    @test v_fs[3](3, 1, 2, p, starttime) ≈ -0.019995461793337128
+    @test only(v_fs[3](3, 1, 2, p, starttime)) ≈ -0.019995461793337128
 end
 
 @testset "get_Δ" begin
-    @test Δ_fs[1](2, 3, 1, p, starttime) ≈ 424080.6852300487
-    @test Δ_fs[2](3, 2, 1, p, starttime) ≈ 445280.0
-    @test Δ_fs[3](3, 1, 2, p, starttime) ≈ -1511.6930930013798
+    @test only(Δ_fs[1](2, 3, 1, p, starttime)) ≈ 424080.6852300487
+    @test only(Δ_fs[2](3, 2, 1, p, starttime)) ≈ 445280.0
+    @test only(Δ_fs[3](3, 1, 2, p, starttime)) ≈ -1511.6930930013798
 end

@@ -1,5 +1,6 @@
 using EnvironmentalTransport: advection_op
 using EnvironmentalTransport
+using EarthSciMLBase: MapBroadcast
 using Test
 using LinearAlgebra
 using SciMLOperators
@@ -17,7 +18,7 @@ v_fs = ((i, j, k, p, t) -> v[i], (i, j, k, p, t) -> v[j], (i, j, k, p, t) -> v[k
 Δ_fs = ((i, j, k, p, t) -> Δz, (i, j, k, p, t) -> Δz, (i, j, k, p, t) -> Δz)
 
 @testset "4d advection op" begin
-    adv_op = advection_op(c, upwind1_stencil, v_fs, Δ_fs, Δt, ZeroGradBC())
+    adv_op = advection_op(c, upwind1_stencil, v_fs, Δ_fs, Δt, ZeroGradBC(), MapBroadcast())
     adv_op = cache_operator(adv_op, c)
 
     result_oop = adv_op(c[:], NullParameters(), 0.0)

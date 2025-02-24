@@ -51,7 +51,7 @@ Arguments:
     * `Δt`: The time step size, which is assumed to be fixed.
     * `bc_type`: The boundary condition type, e.g. `ZeroGradBC()`.
 =#
-function advection_op(u_prototype, stencil, v_fs, Δ_fs, Δt, bc_type;
+function advection_op(u_prototype, stencil, v_fs, Δ_fs, Δt, bc_type, alg::MapAlgorithm;
         p = NullParameters())
     @assert length(size(u_prototype)) == 4 "Advection operator only supports 4D arrays."
     sz = size(u_prototype)
@@ -61,13 +61,16 @@ function advection_op(u_prototype, stencil, v_fs, Δ_fs, Δt, bc_type;
     adv_kernel = advection_kernel_4d_builder(stencil, v_fs, Δ_fs)
     function advection(u, p, t) # Out-of-place
         u = bc_type(reshape(u, sz...))
-        du = adv_kernel.((u,), II, (Δt,), (t,), (p,))
+        kernelII(II) = adv_kernel(u, II, Δt, t, p)
+        du = map_closure_to_range(kernelII, II, alg)
         reshape(du, :)
     end
     function advection(du, u, p, t) # In-place
         u = bc_type(reshape(u, sz...))
         du = reshape(du, sz...)
-        du .= adv_kernel.((u,), II, (Δt,), (t,), (p,))
+        kernelII(II) = du[II] = adv_kernel(u, II, Δt, t, p)
+        map_closure_to_range(kernelII, II, alg)
+        nothing
     end
     FunctionOperator(advection, reshape(u_prototype, :), p = p)
 end
@@ -170,42 +173,40 @@ mutable struct AdvectionOperator <: EarthSciMLBase.Operator
     end
 end
 
-function obs_function(mtk_sys, v, coord_setter, T)
-    obs_f! = build_explicit_observed_function(mtk_sys, v, checkbounds=false)
+function obs_function(mtk_sys, coord_args, v, T)
+    obs_f = EarthSciMLBase.build_coord_observed_function(mtk_sys, coord_args, v;
+        eval_module=@__MODULE__)
     obscache = zeros(T, length(unknowns(mtk_sys))) # Not used for anything (hopefully).
     function data_f(p, t, x1, x2, x3)
-        coord_setter(p, (x1, x2, x3))
-        obs_f!(obscache, p, t)
+        only(obs_f(obscache, p, t, x1, x2, x3))
     end
     data_f
 end
 
-function get_datafs(op, csys, mtk_sys, domain)
+function get_datafs(op, csys, mtk_sys, coord_args, domain)
     vars = EarthSciMLBase.get_needed_vars(op, csys, mtk_sys, domain)
     @assert length(vars) == 6 # x_wind, y_wind, z_wind, x_ts, y_ts, z_ts
-    coords = EarthSciMLBase.coord_params(mtk_sys, domain)
-    coord_setter = setp(mtk_sys, coords)
     pvars = EarthSciMLBase.pvars(domain)
     pvarstrs = [String(Symbol(pv)) for pv in pvars]
     v_fs = []
     for i in 1:3
         v = vars[i]
-        data_f = obs_function(mtk_sys, v, coord_setter, EarthSciMLBase.dtype(domain))
+        data_f = obs_function(mtk_sys,coord_args, v, EarthSciMLBase.dtype(domain))
         push!(v_fs, get_vf(domain, pvarstrs[i], data_f))
     end
     Δ_fs = []
     for (i, v) in enumerate(vars[4:6])
-        data_f = obs_function(mtk_sys, v, coord_setter, EarthSciMLBase.dtype(domain))
+        data_f = obs_function(mtk_sys, coord_args, v, EarthSciMLBase.dtype(domain))
         push!(Δ_fs, get_Δ(domain, data_f, i))
     end
     v_fs, Δ_fs
 end
 
 function EarthSciMLBase.get_scimlop(op::AdvectionOperator, csys::CoupledSystem, mtk_sys,
-        domain::DomainInfo, u0, p)
+        coord_args, domain::DomainInfo, u0, p, alg::MapAlgorithm)
     u0 = reshape(u0, :, length.(EarthSciMLBase.grid(EarthSciMLBase.domain(csys)))...)
-    v_fs, Δ_fs = get_datafs(op, csys, mtk_sys, domain)
-    scimlop = advection_op(u0, op.stencil, v_fs, Δ_fs, op.Δt, op.bc_type, p = p)
+    v_fs, Δ_fs = get_datafs(op, csys, mtk_sys, coord_args, domain)
+    scimlop = advection_op(u0, op.stencil, v_fs, Δ_fs, op.Δt, op.bc_type, alg, p = p)
     cache_operator(scimlop, u0[:])
 end
 

@@ -9,6 +9,9 @@ using ModelingToolkit: t, D, get_unit, getdefault, ODESystem, @variables, @param
 using SciMLBase: terminate!
 using DynamicQuantities: @u_str
 using EarthSciMLBase
+using RuntimeGeneratedFunctions
+
+RuntimeGeneratedFunctions.init(@__MODULE__)
 
 include("advection_stencils.jl")
 include("boundary_conditions.jl")
