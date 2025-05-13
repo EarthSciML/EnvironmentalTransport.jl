@@ -53,10 +53,10 @@ function Puff(di::DomainInfo; name = :puff)
 
     # Boundary condition at the ground and model top.
     uc = get_unit(coords[lev_idx])
-    @constants(offset=0.05, [unit = uc, description = "Offset for boundary conditions"],
-        glo=endpts[lev_idx][begin], [unit = uc, description = "lower bound"],
-        ghi=endpts[lev_idx][end], [unit = uc, description = "upper bound"],
-        v_zero=0, [unit = get_unit(eqs[lev_idx].rhs)],)
+    @constants(offset=0.05, [unit=uc, description="Offset for boundary conditions"],
+        glo=endpts[lev_idx][begin], [unit=uc, description="lower bound"],
+        ghi=endpts[lev_idx][end], [unit=uc, description="upper bound"],
+        v_zero=0, [unit=get_unit(eqs[lev_idx].rhs)],)
     @variables v_vertical(t) [unit = get_unit(eqs[lev_idx].rhs)]
     push!(eqs, v_vertical ~ eqs[lev_idx].rhs)
     eqs[lev_idx] = let

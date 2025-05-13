@@ -47,25 +47,25 @@ function prob_func(prob, i, repeat)
     ts = (tspan[1] + floor(i / samples_per_time) * samplerate, tspan[2])
     remake(prob, u0 = u0, tspan = ts)
 end
-eprob = EnsembleProblem(prob, prob_func = prob_func, safetycopy=false)
-esol = solve(eprob, Tsit5(); trajectories=ceil(firelength/samplerate*samples_per_time))
+eprob = EnsembleProblem(prob, prob_func = prob_func, safetycopy = false)
+esol = solve(eprob, Tsit5(); trajectories = ceil(firelength/samplerate*samples_per_time))
 
 vars = [sys.puff₊lon, sys.puff₊lat, sys.puff₊lev]
 ranges = [(Inf, -Inf), (Inf, -Inf), (Inf, -Inf)]
 for sol in esol
     for (i, var) in enumerate(vars)
         rng = (minimum(sol[var]), maximum(sol[var]))
-        ranges[i] = (min(ranges[i][1], rng[1]), 
+        ranges[i] = (min(ranges[i][1], rng[1]),
             max(ranges[i][2], rng[2]))
     end
 end
 
 anim = @animate for t in datetime2unix(firestart):samplerate:datetime2unix(sim_end)
     p = plot(
-        xlim=rad2deg.(ranges[1]), ylim=rad2deg.(ranges[2]), zlim=ranges[3],
+        xlim = rad2deg.(ranges[1]), ylim = rad2deg.(ranges[2]), zlim = ranges[3],
         title = "Time: $(unix2datetime(t))",
-        xlabel = "Longitude (deg)", ylabel = "Latitude (deg)", 
-        zlabel = "Vertical Level",
+        xlabel = "Longitude (deg)", ylabel = "Latitude (deg)",
+        zlabel = "Vertical Level"
     )
     for sol in esol
         if t < sol.t[1] || t > sol.t[end]
@@ -73,9 +73,9 @@ anim = @animate for t in datetime2unix(firestart):samplerate:datetime2unix(sim_e
         end
         scatter!(p,
             [rad2deg(sol(t)[1])], [rad2deg(sol(t)[2])], [sol(t)[3]],
-            label = :none, markercolor=:black, markersize=1.5,
+            label = :none, markercolor = :black, markersize = 1.5
         )
     end
 end
-gif(anim, fps=15)
+gif(anim, fps = 15)
 ```

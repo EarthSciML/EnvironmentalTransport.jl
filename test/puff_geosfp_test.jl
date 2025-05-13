@@ -24,7 +24,7 @@ geosfp = GEOSFP("4x5", di; stream = false)
 puff = Puff(di)
 
 model = couple(puff, geosfp)
-sys = convert(ODESystem, model; simplify=true)
+sys = convert(ODESystem, model; simplify = true)
 
 @test length(equations(sys)) == 3
 @test occursin("PS", string(observed(sys))) # Check that we're using the GEOSFP pressure data.

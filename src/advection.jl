@@ -35,7 +35,9 @@ function get_vs(v_fs, i, j, k, p, t)
 end
 get_vs(v_fs, idx::CartesianIndex{4}, p, t) = get_vs(v_fs, idx[2], idx[3], idx[4], p, t)
 
-get_Δs(Δ_fs, i, j, k, p, t) = (Δ_fs[1](i, j, k, p, t), Δ_fs[2](i, j, k, p, t), Δ_fs[3](i, j, k, p, t))
+function get_Δs(Δ_fs, i, j, k, p, t)
+    (Δ_fs[1](i, j, k, p, t), Δ_fs[2](i, j, k, p, t), Δ_fs[3](i, j, k, p, t))
+end
 get_Δs(Δ_fs, idx::CartesianIndex{4}, p, t) = get_Δs(Δ_fs, idx[2], idx[3], idx[4], p, t)
 
 #=
@@ -75,7 +77,9 @@ function advection_op(u_prototype, stencil, v_fs, Δ_fs, Δt, bc_type, alg::MapA
     FunctionOperator(advection, reshape(u_prototype, :), p = p)
 end
 
-"Get a value from the x-direction velocity field."
+"""
+Get a value from the x-direction velocity field.
+"""
 function vf_x(args1, args2)
     i, j, k, p, t = args1
     data_f, grid1, grid2, grid3, Δ = args2
@@ -85,7 +89,9 @@ function vf_x(args1, args2)
     data_f(p, t, x1, x2, x3)
 end
 
-"Get a value from the y-direction velocity field."
+"""
+Get a value from the y-direction velocity field.
+"""
 function vf_y(args1, args2)
     i, j, k, p, t = args1
     data_f, grid1, grid2, grid3, Δ = args2
@@ -95,7 +101,9 @@ function vf_y(args1, args2)
     data_f(p, t, x1, x2, x3)
 end
 
-"Get a value from the z-direction velocity field."
+"""
+Get a value from the z-direction velocity field.
+"""
 function vf_z(args1, args2)
     i, j, k, p, t = args1
     data_f, grid1, grid2, grid3, Δ = args2
@@ -132,7 +140,9 @@ function get_vf(domain, varname::AbstractString, data_f)
     end
 end
 
-"function to get grid deltas."
+"""
+function to get grid deltas.
+"""
 function Δf(args1, args2)
     i, j, k, p, t = args1
     tff, Δ, grid1, grid2, grid3 = args2
@@ -175,7 +185,7 @@ end
 
 function obs_function(mtk_sys, coord_args, v, T)
     obs_f = EarthSciMLBase.build_coord_observed_function(mtk_sys, coord_args, v;
-        eval_module=@__MODULE__)
+        eval_module = @__MODULE__)
     obscache = zeros(T, length(unknowns(mtk_sys))) # Not used for anything (hopefully).
     function data_f(p, t, x1, x2, x3)
         only(obs_f(obscache, p, t, x1, x2, x3))
@@ -191,7 +201,7 @@ function get_datafs(op, csys, mtk_sys, coord_args, domain)
     v_fs = []
     for i in 1:3
         v = vars[i]
-        data_f = obs_function(mtk_sys,coord_args, v, EarthSciMLBase.dtype(domain))
+        data_f = obs_function(mtk_sys, coord_args, v, EarthSciMLBase.dtype(domain))
         push!(v_fs, get_vf(domain, pvarstrs[i], data_f))
     end
     Δ_fs = []

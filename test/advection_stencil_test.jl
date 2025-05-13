@@ -113,7 +113,8 @@ end
             v_opts = [("c", ones(N + 1)), ("up", 1.0:(N + 1)),
                 ("down", (N + 1):-1:1.0), ("neg up", -(1.0:(N + 1))),
                 ("neg down", -((N + 1):-1:1.0)), ("rand", rand(N + 1) .* 2 .- 1)]
-            Δz_opts = [("c", ones(N)), ("up", 1.0:N), ("down", N:-1:1.0), ("neg", -N:-1.0)]
+            Δz_opts = [
+                ("c", ones(N)), ("up", 1.0:N), ("down", N:-1:1.0), ("neg", (-N):-1.0)]
             for (d1, u0_in) in u0_opts
                 @testset "u0 $d1" begin
                     u0 = zeros(N)
