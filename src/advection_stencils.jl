@@ -4,10 +4,10 @@ $(SIGNATURES)
 
 L94 advection in 1-D (Lin et al., 1994)
 
-* ϕ is the scalar field at the current time step, it should be a vector of length 5.
-* U is the velocity at both edges of the central grid cell, it should be a vector of length 2.
-* Δt is the length of the time step.
-* Δz is the grid spacing.
+  - ϕ is the scalar field at the current time step, it should be a vector of length 5.
+  - U is the velocity at both edges of the central grid cell, it should be a vector of length 2.
+  - Δt is the length of the time step.
+  - Δz is the grid spacing.
 
 The output will be time derivative of the central index (i.e. index 3)
 of the ϕ vector (i.e. dϕ/dt).
@@ -42,7 +42,6 @@ function l94_stencil(ϕ, U, Δt, Δz::Number; kwargs...)
     ϕ2(3)
 end
 
-
 function l94_stencil(ϕ, U, Δt, Δz::AbstractVector; kwargs...)
     δϕ1(i) = ϕ[i] - ϕ[i - 1]
 
@@ -69,7 +68,10 @@ function l94_stencil(ϕ, U, Δt, Δz::AbstractVector; kwargs...)
 
     ϕ2(3)
 end
-" Return the left and right stencil size of the L94 stencil. "
+
+"""
+Return the left and right stencil size of the L94 stencil.
+"""
 stencil_size(s::typeof(l94_stencil)) = (2, 2)
 
 """
@@ -77,10 +79,10 @@ $(SIGNATURES)
 
 PPM advection in 1-D (Collela and Woodward, 1984)
 
-* ϕ is the scalar field at the current time step, it should be a vector of length 8 (3 cells on the left, the central cell, and 4 cells on the right).
-* U is the velocity at both edges of the central grid cell, it should be a vector of length 2.
-* Δt is the length of the time step.
-* Δz is the grid spacing.
+  - ϕ is the scalar field at the current time step, it should be a vector of length 8 (3 cells on the left, the central cell, and 4 cells on the right).
+  - U is the velocity at both edges of the central grid cell, it should be a vector of length 2.
+  - Δt is the length of the time step.
+  - Δz is the grid spacing.
 
 The output will be time derivative of the central index (i.e. index 4)
 of the ϕ vector (i.e. dϕ/dt).
@@ -268,7 +270,10 @@ function ppm_stencil(ϕ, U, Δt, Δz::AbstractVector; kwargs...)
 end
 
 
-" Return the left and right stencil size of the PPM stencil. "
+
+"""
+Return the left and right stencil size of the PPM stencil.
+"""
 stencil_size(s::typeof(ppm_stencil)) = (3, 4)
 
 """
@@ -276,10 +281,10 @@ $(SIGNATURES)
 
 First-order upwind advection in 1-D: https://en.wikipedia.org/wiki/Upwind_scheme.
 
-* ϕ is the scalar field at the current time step, it should be a vector of length 3 (1 cell on the left, the central cell, and 1 cell on the right).
-* U is the velocity at both edges of the central grid cell, it should be a vector of length 2.
-* Δt is the length of the time step.
-* Δz is the grid spacing.
+  - ϕ is the scalar field at the current time step, it should be a vector of length 3 (1 cell on the left, the central cell, and 1 cell on the right).
+  - U is the velocity at both edges of the central grid cell, it should be a vector of length 2.
+  - Δt is the length of the time step.
+  - Δz is the grid spacing.
 
 The output will be time derivative of the central index (i.e. index 2)
 of the ϕ vector (i.e. dϕ/dt).
@@ -307,7 +312,10 @@ function upwind1_stencil(ϕ, U, Δt, Δz::AbstractVector; p = nothing)
     flux₋ = (ϕ[2]*ul₋ - ϕ[3]*ur₋) / Δz[1]
     flux₊ + flux₋
 end
-" Return the left and right stencil size of the first-order upwind stencil. "
+
+"""
+Return the left and right stencil size of the first-order upwind stencil.
+"""
 stencil_size(s::typeof(upwind1_stencil)) = (1, 1)
 
 """
@@ -315,10 +323,10 @@ $(SIGNATURES)
 
 Second-order upwind advection in 1-D, otherwise known as linear-upwind differencing (LUD): https://en.wikipedia.org/wiki/Upwind_scheme.
 
-* ϕ is the scalar field at the current time step, it should be a vector of length 5 (2 cells on the left, the central cell, and 2 cells on the right).
-* U is the velocity at both edges of the central grid cell, it should be a vector of length 2.
-* Δt is the length of the time step.
-* Δz is the grid spacing.
+  - ϕ is the scalar field at the current time step, it should be a vector of length 5 (2 cells on the left, the central cell, and 2 cells on the right).
+  - U is the velocity at both edges of the central grid cell, it should be a vector of length 2.
+  - Δt is the length of the time step.
+  - Δz is the grid spacing.
 
 The output will be time derivative of the central index (i.e. index 3)
 of the ϕ vector (i.e. dϕ/dt).
@@ -341,6 +349,8 @@ function upwind2_stencil(ϕ, U, Δt, Δz::AbstractVector; kwargs...)
     -(u₊ * ϕ₋ + u₋ * ϕ₊)
 end
 
-" Return the left and right stencil size of the second-order upwind stencil. "
+"""
+Return the left and right stencil size of the second-order upwind stencil.
+"""
 stencil_size(s::typeof(upwind2_stencil)) = (2, 2)
 

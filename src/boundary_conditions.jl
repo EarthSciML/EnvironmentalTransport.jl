@@ -1,6 +1,8 @@
 export ZeroGradBC
 
-"An array with external indexing implemented for boundary conditions."
+"""
+An array with external indexing implemented for boundary conditions.
+"""
 abstract type BCArray{T, N} <: AbstractArray{T, N} end
 
 """

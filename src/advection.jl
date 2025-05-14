@@ -20,23 +20,25 @@ function advection_kernel_4d(u, stencil, vs, Δs, Δt, idx, p = NullParameters()
 end
 function advection_kernel_4d_builder(stencil, v_fs, Δ_fs)
     function advect_f(u, idx, Δt, t, p = NullParameters())
-        vs = get_vs(v_fs, idx, t)
-        Δs = get_Δs(Δ_fs, idx, t)
+        vs = get_vs(v_fs, idx, p, t)
+        Δs = get_Δs(Δ_fs, idx, p, t)
         advection_kernel_4d(u, stencil, vs, Δs, Δt, idx, p)
     end
 end
 
-function get_vs(v_fs, i, j, k, t)
+function get_vs(v_fs, i, j, k, p, t)
     (
-        (v_fs[1](i, j, k, t), v_fs[1](i + 1, j, k, t)),
-        (v_fs[2](i, j, k, t), v_fs[2](i, j + 1, k, t)),
-        (v_fs[3](i, j, k, t), v_fs[3](i, j, k + 1, t))
+        (v_fs[1](i, j, k, p, t), v_fs[1](i + 1, j, k, p, t)),
+        (v_fs[2](i, j, k, p, t), v_fs[2](i, j + 1, k, p, t)),
+        (v_fs[3](i, j, k, p, t), v_fs[3](i, j, k + 1, p, t))
     )
 end
-get_vs(v_fs, idx::CartesianIndex{4}, t) = get_vs(v_fs, idx[2], idx[3], idx[4], t)
+get_vs(v_fs, idx::CartesianIndex{4}, p, t) = get_vs(v_fs, idx[2], idx[3], idx[4], p, t)
 
-get_Δs(Δ_fs, i, j, k, t) = (Δ_fs[1](i, j, k, t), Δ_fs[2](i, j, k, t), Δ_fs[3](i, j, k, t))
-get_Δs(Δ_fs, idx::CartesianIndex{4}, t) = get_Δs(Δ_fs, idx[2], idx[3], idx[4], t)
+function get_Δs(Δ_fs, i, j, k, p, t)
+    (Δ_fs[1](i, j, k, p, t), Δ_fs[2](i, j, k, p, t), Δ_fs[3](i, j, k, p, t))
+end
+get_Δs(Δ_fs, idx::CartesianIndex{4}, p, t) = get_Δs(Δ_fs, idx[2], idx[3], idx[4], p, t)
 
 #=
 A function to create an advection operator for a 4D array,
@@ -51,55 +53,66 @@ Arguments:
     * `Δt`: The time step size, which is assumed to be fixed.
     * `bc_type`: The boundary condition type, e.g. `ZeroGradBC()`.
 =#
-function advection_op(u_prototype, stencil, v_fs, Δ_fs, Δt, bc_type;
+function advection_op(u_prototype, stencil, v_fs, Δ_fs, Δt, bc_type, alg::MapAlgorithm;
         p = NullParameters())
+    @assert length(size(u_prototype)) == 4 "Advection operator only supports 4D arrays."
     sz = size(u_prototype)
     v_fs = tuple(v_fs...)
     Δ_fs = tuple(Δ_fs...)
+    II = CartesianIndices(u_prototype)
     adv_kernel = advection_kernel_4d_builder(stencil, v_fs, Δ_fs)
     function advection(u, p, t) # Out-of-place
         u = bc_type(reshape(u, sz...))
-        du = adv_kernel.((u,), CartesianIndices(u), (Δt,), (t,), (p,))
+        kernelII(II) = adv_kernel(u, II, Δt, t, p)
+        du = map_closure_to_range(kernelII, II, alg)
         reshape(du, :)
     end
     function advection(du, u, p, t) # In-place
         u = bc_type(reshape(u, sz...))
         du = reshape(du, sz...)
-        du .= adv_kernel.((u,), CartesianIndices(u), (Δt,), (t,), (p,))
+        kernelII(II) = du[II] = adv_kernel(u, II, Δt, t, p)
+        map_closure_to_range(kernelII, II, alg)
+        nothing
     end
     FunctionOperator(advection, reshape(u_prototype, :), p = p)
 end
 
-"Get a value from the x-direction velocity field."
+"""
+Get a value from the x-direction velocity field.
+"""
 function vf_x(args1, args2)
-    i, j, k, t = args1
+    i, j, k, p, t = args1
     data_f, grid1, grid2, grid3, Δ = args2
     x1 = grid1[min(i, length(grid1))] - Δ / 2 # Staggered grid
     x2 = grid2[j]
     x3 = grid3[k]
-    data_f(t, x1, x2, x3)
+    data_f(p, t, x1, x2, x3)
 end
 
-"Get a value from the y-direction velocity field."
+"""
+Get a value from the y-direction velocity field.
+"""
 function vf_y(args1, args2)
-    i, j, k, t = args1
+    i, j, k, p, t = args1
     data_f, grid1, grid2, grid3, Δ = args2
     x1 = grid1[i]
     x2 = grid2[min(j, length(grid2))] - Δ / 2 # Staggered grid
     x3 = grid3[k]
-    data_f(t, x1, x2, x3)
+    data_f(p, t, x1, x2, x3)
 end
 
-"Get a value from the z-direction velocity field."
+"""
+Get a value from the z-direction velocity field.
+"""
 function vf_z(args1, args2)
-    i, j, k, t = args1
+    i, j, k, p, t = args1
     data_f, grid1, grid2, grid3, Δ = args2
     x1 = grid1[i]
     x2 = grid2[j]
     x3 = k > 1 ? grid3[min(k, length(grid3))] - Δ / 2 : grid3[k]
-    data_f(t, x1, x2, x3) # Staggered grid
+    data_f(p, t, x1, x2, x3) # Staggered grid
 end
-tuplefunc(vf) = (i, j, k, t) -> vf((i, j, k, t))
+tuplefunc(vf) = (i, j, k, p, t) -> vf((i, j, k, p, t))
 
 """
 $(SIGNATURES)
@@ -108,30 +121,33 @@ Return a function that gets the wind velocity at a given place and time for the 
 `data_f` should be a function that takes a time and three spatial coordinates and returns the value of
 the wind speed in the direction indicated by `varname`.
 """
-function get_vf(sim, varname::AbstractString, data_f)
+function get_vf(domain, varname::AbstractString, data_f)
+    grd = EarthSciMLBase.grid(domain)
     if varname ∈ ("lon", "x")
         vf = Base.Fix2(
-            vf_x, (data_f, sim.grid[1], sim.grid[2], sim.grid[3], sim.Δs[1]))
+            vf_x, (data_f, grd[1], grd[2], grd[3], domain.grid_spacing[1]))
         return tuplefunc(vf)
     elseif varname ∈ ("lat", "y")
         vf = Base.Fix2(
-            vf_y, (data_f, sim.grid[1], sim.grid[2], sim.grid[3], sim.Δs[2]))
+            vf_y, (data_f, grd[1], grd[2], grd[3], domain.grid_spacing[2]))
         return tuplefunc(vf)
     elseif varname == "lev"
         vf = Base.Fix2(
-            vf_z, (data_f, sim.grid[1], sim.grid[2], sim.grid[3], sim.Δs[3]))
+            vf_z, (data_f, grd[1], grd[2], grd[3], domain.grid_spacing[3]))
         return tuplefunc(vf)
     else
         error("Invalid variable name $(varname).")
     end
 end
 
-"function to get grid deltas."
+"""
+function to get grid deltas.
+"""
 function Δf(args1, args2)
-    i, j, k, t = args1
+    i, j, k, p, t = args1
     tff, Δ, grid1, grid2, grid3 = args2
     c1, c2, c3 = grid1[i], grid2[j], grid3[k]
-    Δ / tff(t, c1, c2, c3)
+    Δ * tff(p, t, c1, c2, c3)
 end
 
 """
@@ -139,13 +155,10 @@ $(SIGNATURES)
 
 Return a function that gets the grid spacing at a given place and time for the given `varname`.
 """
-function get_Δ(sim::EarthSciMLBase.Simulator, varname::AbstractString)
-    pvaridx = findfirst(
-        isequal(varname), String.(Symbol.(EarthSciMLBase.pvars(sim.domaininfo))))
-    tff = sim.tf_fs[pvaridx]
-
+function get_Δ(domain::EarthSciMLBase.DomainInfo, tff, pvaridx)
+    grd = EarthSciMLBase.grid(domain)
     tuplefunc(Base.Fix2(
-        Δf, (tff, sim.Δs[pvaridx], sim.grid[1], sim.grid[2], sim.grid[3])))
+        Δf, (tff, domain.grid_spacing[pvaridx], grd[1], grd[2], grd[3])))
 end
 
 """
@@ -156,59 +169,58 @@ Advection is performed using the given `stencil` operator
 (e.g. `l94_stencil` or `ppm_stencil`).
 `p` is an optional parameter set to be used by the stencil operator.
 `bc_type` is the boundary condition type, e.g. `ZeroGradBC()`.
+
+Wind field data will be added in automatically if available.
+Currently the only valid source of wind data is `EarthSciData.GEOSFP`.
 """
 mutable struct AdvectionOperator <: EarthSciMLBase.Operator
     Δt::Any
     stencil::Any
     bc_type::Any
-    vardict::Any
 
     function AdvectionOperator(Δt, stencil, bc_type)
-        new(Δt, stencil, bc_type, nothing)
+        new(Δt, stencil, bc_type)
     end
 end
 
-function EarthSciMLBase.get_scimlop(op::AdvectionOperator, sim::Simulator, u = nothing)
-    u = isnothing(u) ? init_u(sim) : u
-    pvars = EarthSciMLBase.pvars(sim.domaininfo)
+function obs_function(mtk_sys, coord_args, v, T)
+    obs_f = EarthSciMLBase.build_coord_observed_function(mtk_sys, coord_args, v;
+        eval_module = @__MODULE__)
+    obscache = zeros(T, length(unknowns(mtk_sys))) # Not used for anything (hopefully).
+    function data_f(p, t, x1, x2, x3)
+        only(obs_f(obscache, p, t, x1, x2, x3))
+    end
+    data_f
+end
+
+function get_datafs(op, csys, mtk_sys, coord_args, domain)
+    vars = EarthSciMLBase.get_needed_vars(op, csys, mtk_sys, domain)
+    @assert length(vars) == 6 # x_wind, y_wind, z_wind, x_ts, y_ts, z_ts
+    pvars = EarthSciMLBase.pvars(domain)
     pvarstrs = [String(Symbol(pv)) for pv in pvars]
-
     v_fs = []
-    Δ_fs = []
-    for varname in pvarstrs
-        data_f = sim.obs_fs[sim.obs_fs_idx[op.vardict[varname]]]
-        push!(v_fs, get_vf(sim, varname, data_f))
-        push!(Δ_fs, get_Δ(sim, varname))
+    for i in 1:3
+        v = vars[i]
+        data_f = obs_function(mtk_sys, coord_args, v, EarthSciMLBase.dtype(domain))
+        push!(v_fs, get_vf(domain, pvarstrs[i], data_f))
     end
-    scimlop = advection_op(u, op.stencil, v_fs, Δ_fs, op.Δt, op.bc_type, p = sim.p)
-    cache_operator(scimlop, u[:])
+    Δ_fs = []
+    for (i, v) in enumerate(vars[4:6])
+        data_f = obs_function(mtk_sys, coord_args, v, EarthSciMLBase.dtype(domain))
+        push!(Δ_fs, get_Δ(domain, data_f, i))
+    end
+    v_fs, Δ_fs
 end
 
-"""
-$(SIGNATURES)
+function EarthSciMLBase.get_scimlop(op::AdvectionOperator, csys::CoupledSystem, mtk_sys,
+        coord_args, domain::DomainInfo, u0, p, alg::MapAlgorithm)
+    u0 = reshape(u0, :, length.(EarthSciMLBase.grid(EarthSciMLBase.domain(csys)))...)
+    v_fs, Δ_fs = get_datafs(op, csys, mtk_sys, coord_args, domain)
+    scimlop = advection_op(u0, op.stencil, v_fs, Δ_fs, op.Δt, op.bc_type, alg, p = p)
+    cache_operator(scimlop, u0[:])
+end
 
-Couple the advection operator into the CoupledSystem.
-This function mutates the operator to add the windfield variables.
-There must already be a source of wind data in the coupled system for this to work.
-Currently the only valid source of wind data is `EarthSciData.GEOSFP`.
-"""
-function EarthSciMLBase.couple(c::CoupledSystem, op::AdvectionOperator)::CoupledSystem
-    found = 0
-    for sys in c.systems
-        if EarthSciMLBase.get_coupletype(sys) == EarthSciData.GEOSFPCoupler
-            found += 1
-            op.vardict = Dict(
-                "lon" => sys.A3dyn₊U,
-                "lat" => sys.A3dyn₊V,
-                "lev" => sys.A3dyn₊OMEGA
-            )
-        end
-    end
-    if found == 0
-        error("Could not find a source of wind data in the coupled system. Valid sources are currently {EarthSciData.GEOSFP}.")
-    elseif found > 1
-        error("Found multiple sources of wind data in the coupled system. Valid sources are currently {EarthSciData.GEOSFP}")
-    end
-    push!(c.ops, op)
-    c
+# Actual implementation is in EarthSciDataExt.jl.
+function EarthSciMLBase.get_needed_vars(::AdvectionOperator, csys, mtk_sys, domain)
+    error("Could not find a source of wind data in the coupled system. Valid sources are currently {EarthSciData.GEOSFP}.")
 end
