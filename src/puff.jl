@@ -15,7 +15,7 @@ The model sets boundaries at the ground and model bottom and top,
 preventing the puff from crossing those boundaries. If the
 puff reaches one of the horizontal boundaries, the simulation is stopped.
 """
-function Puff(di::DomainInfo; name = :puff)
+function Puff(di::DomainInfo; name = :Puff)
     pv = EarthSciMLBase.pvars(di)
     coords = []
     for p in pv

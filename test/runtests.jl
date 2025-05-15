@@ -20,4 +20,7 @@ using Test, SafeTestsets
     @safetestset "Puff-GEOSFP" begin
         include("puff_geosfp_test.jl")
     end
+    @safetestset "Sofiev 2012 Plume Rise" begin
+        include("plume_rise/sofiev_2012_test.jl")
+    end
 end

@@ -35,8 +35,13 @@ function Sofiev2012PlumeRise(; name = :Sofiev2012PlumeRise)
         metadata = Dict(:coupletype => Sofiev2012PlumeRiseCoupler))
 end
 
-function EarthSciMLBase.couple2(s::Sofiev2012PlumeRiseCoupler, p::PuffCoupler)
-    s, p = s.sys, p.sys
-    ConnectorSystem([
-        ], s, p)
+using ModelingToolkit
+function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, puff::PuffCoupler)
+    s12, puff = s12.sys, puff.sys
+
+    @constants h_to_lev = 1.0, [unit = u"m", description = "Height to level transform"]
+
+    puff = EarthSciMLBase.change_ic(puff, :lev, s12.H_p / h_to_lev)
+
+    ConnectorSystem([], s12, puff)
 end
