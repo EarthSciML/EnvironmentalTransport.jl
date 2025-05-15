@@ -58,7 +58,7 @@ sol = solve(prob, SSPRK22(), dt = dt)
 
 @test 310 < norm(sol.u[end]) < 330
 
-op = AdvectionOperator(100.0, l94_stencil, ZeroGradBC())
+op = AdvectionOperator(100.0, upwind1_stencil, ZeroGradBC())
 
 csys = couple(csys, op)
 

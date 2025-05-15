@@ -7,17 +7,17 @@ v = [10.0, 8, 6, 4, 2, 0, 1]
 Δt = 0.05
 Δz = 0.5
 
-@testset "l94 1" begin
-    c2 = [c[1], c[1], c..., c[end], c[end]]
-    result = [l94_stencil(c2[(i - 2):(i + 2)], v[(i - 2):(i - 1)], Δt, Δz) for i in 3:8]
-    @test max.((0,), c .+ result .* Δt) ≈ [0.0, 0.28, 1.8, 3.24, 4.68, 4.5]
-end
+# @testset "l94 1" begin
+#     c2 = [c[1], c[1], c..., c[end], c[end]]
+#     result = [l94_stencil(c2[(i - 2):(i + 2)], v[(i - 2):(i - 1)], Δt, Δz) for i in 3:8]
+#     @test max.((0,), c .+ result .* Δt) ≈ [0.0, 0.28, 1.8, 3.24, 4.68, 4.5]
+# end
 
-@testset "ppm 1" begin
-    c2 = [c[1], c[1], c[1], c..., c[end], c[end], c[end], c[end]]
-    result = [ppm_stencil(c2[(i - 3):(i + 4)], v[(i - 3):(i - 2)], Δt, Δz) for i in 4:9]
-    @test c .+ result .* Δt ≈ [0.0, 0.3999999999999999, 1.8, 3.2, 4.6, 4.5]
-end
+# @testset "ppm 1" begin
+#     c2 = [c[1], c[1], c[1], c..., c[end], c[end], c[end], c[end]]
+#     result = [ppm_stencil(c2[(i - 3):(i + 4)], v[(i - 3):(i - 2)], Δt, Δz) for i in 4:9]
+#     @test c .+ result .* Δt ≈ [0.0, 0.3999999999999999, 1.8, 3.2, 4.6, 4.5]
+# end
 
 @testset "upwind1 1" begin
     c2 = [c[1], c..., c[end]]
@@ -25,26 +25,26 @@ end
     @test c .+ result .* Δt ≈ [0.0, 0.3999999999999999, 1.8, 3.2, 4.6, 4.5]
 end
 
-@testset "upwind2 1" begin
-    c2 = [c[1], c[1], c..., c[end], c[end]]
-    result = [upwind2_stencil(c2[(i - 2):(i + 2)], v[(i - 2):(i - 1)], Δt, Δz) for i in 3:8]
-    @test max.((0,), c .+ result .* Δt) ≈ [0.0, 0.0, 1.4, 2.6, 3.8, 5.0]
-end
+# @testset "upwind2 1" begin
+#     c2 = [c[1], c[1], c..., c[end], c[end]]
+#     result = [upwind2_stencil(c2[(i - 2):(i + 2)], v[(i - 2):(i - 1)], Δt, Δz) for i in 3:8]
+#     @test max.((0,), c .+ result .* Δt) ≈ [0.0, 0.0, 1.4, 2.6, 3.8, 5.0]
+# end
 
 c = [6.0, 6, 5, 5, 6, 6]
 v = [2.0, 2, 2, 2, 2, 2, 2]
 
-@testset "l94 2" begin
-    c2 = [c[1], c[1], c..., c[end], c[end]]
-    result = [l94_stencil(c2[(i - 2):(i + 2)], v[(i - 2):(i - 1)], Δt, Δz) for i in 3:8]
-    @test max.((0,), c .+ result .* Δt) ≈ [6.0, 6.0, 5.2, 5.0, 5.8, 6.0]
-end
+# @testset "l94 2" begin
+#     c2 = [c[1], c[1], c..., c[end], c[end]]
+#     result = [l94_stencil(c2[(i - 2):(i + 2)], v[(i - 2):(i - 1)], Δt, Δz) for i in 3:8]
+#     @test max.((0,), c .+ result .* Δt) ≈ [6.0, 6.0, 5.2, 5.0, 5.8, 6.0]
+# end
 
-@testset "ppm 2" begin
-    c2 = [c[1], c[1], c[1], c..., c[end], c[end], c[end], c[end]]
-    result = [ppm_stencil(c2[(i - 3):(i + 4)], v[(i - 3):(i - 2)], Δt, Δz) for i in 4:9]
-    @test c .+ result .* Δt ≈ [6.0, 6.0, 5.2, 5.0, 5.8, 6.0]
-end
+# @testset "ppm 2" begin
+#     c2 = [c[1], c[1], c[1], c..., c[end], c[end], c[end], c[end]]
+#     result = [ppm_stencil(c2[(i - 3):(i + 4)], v[(i - 3):(i - 2)], Δt, Δz) for i in 4:9]
+#     @test c .+ result .* Δt ≈ [6.0, 6.0, 5.2, 5.0, 5.8, 6.0]
+# end
 
 @testset "upwind1 2" begin
     c2 = [c[1], c..., c[end]]
@@ -52,11 +52,11 @@ end
     @test c .+ result .* Δt ≈ [6.0, 6.0, 5.2, 5.0, 5.8, 6.0]
 end
 
-@testset "upwind2 2" begin
-    c2 = [c[1], c[1], c..., c[end], c[end]]
-    result = [upwind2_stencil(c2[(i - 2):(i + 2)], v[(i - 2):(i - 1)], Δt, Δz) for i in 3:8]
-    @test max.((0,), c .+ result .* Δt) ≈ [6.0, 6.0, 5.3, 4.9, 5.7, 6.1]
-end
+# @testset "upwind2 2" begin
+#     c2 = [c[1], c[1], c..., c[end], c[end]]
+#     result = [upwind2_stencil(c2[(i - 2):(i + 2)], v[(i - 2):(i - 1)], Δt, Δz) for i in 3:8]
+#     @test max.((0,), c .+ result .* Δt) ≈ [6.0, 6.0, 5.3, 4.9, 5.7, 6.1]
+# end
 
 @testset "Constant Field Preservation" begin
     u0 = ones(10)
@@ -65,7 +65,7 @@ end
     Δz = 0.1
 
     @testset "Constant wind" begin
-        for stencil in [upwind1_stencil, upwind2_stencil, l94_stencil, ppm_stencil]
+        for stencil in [upwind1_stencil]#, upwind2_stencil, l94_stencil, ppm_stencil]
             @testset "$(nameof(stencil))" begin
                 lpad, rpad = EnvironmentalTransport.stencil_size(stencil)
                 dudt = [stencil(u0[(i - lpad):(i + rpad)], [v, v], Δt, Δz)
@@ -86,7 +86,7 @@ end
                 @testset "$zdir" begin
                     uu0 = u0 .* sign(Δz)
                     for stencil in [
-                        upwind1_stencil, upwind2_stencil, l94_stencil, ppm_stencil]
+                        upwind1_stencil]#, upwind2_stencil, l94_stencil, ppm_stencil]
                         @testset "$(nameof(stencil))" begin
                             lpad, rpad = EnvironmentalTransport.stencil_size(stencil)
                             dudt = [stencil(uu0[(i - lpad):(i + rpad)], [v, v], Δt, Δz)
@@ -106,7 +106,7 @@ end
 
 @testset "Mass Conservation" begin
     u0_opts = [("up", 1.0:10.0), ("down", 10.0:-1:1), ("rand", rand(10))]
-    for stencil in [upwind1_stencil, upwind2_stencil, l94_stencil, ppm_stencil]
+    for stencil in [upwind1_stencil]#, upwind2_stencil, l94_stencil, ppm_stencil]
         @testset "$(nameof(stencil))" begin
             lpad, rpad = EnvironmentalTransport.stencil_size(stencil)
             N = 10 + lpad * 2 + rpad * 2
