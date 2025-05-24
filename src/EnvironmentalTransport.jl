@@ -5,8 +5,8 @@ using SciMLOperators
 using LinearAlgebra
 using SciMLBase: NullParameters
 using ModelingToolkit: t, D, get_unit, getdefault, ODESystem, @variables, @parameters,
-                       @constants, get_variables, substitute, Equation,
-                       build_explicit_observed_function, setp, unknowns
+                       @constants, get_variables, substitute, Equation, subs_constants,
+                       build_explicit_observed_function, setp, unknowns, ParentScope
 using SciMLBase: terminate!
 using DynamicQuantities: @u_str
 using EarthSciMLBase

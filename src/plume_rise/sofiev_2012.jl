@@ -28,20 +28,21 @@ function Sofiev2012PlumeRise(; name = :Sofiev2012PlumeRise)
         [unit = u"1/s", description = "Free troposphere Brunt-Vaisala frequency"]
         P_fr = 5e6, [unit = u"W", description = "Fire radiative power"]
 
-        H_p = α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * N_ft^2 / N_0^2),
+        # TODO(CT): Shouldn't have to substitute constants, remove after underlying issue is fixed.
+        H_p = subs_constants(α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * N_ft^2 / N_0^2)),
         [unit = u"m", description = "Final plume top height"]
     end
     ODESystem(Equation[], t, [], params; name = name,
         metadata = Dict(:coupletype => Sofiev2012PlumeRiseCoupler))
 end
 
-using ModelingToolkit
 function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, puff::PuffCoupler)
     s12, puff = s12.sys, puff.sys
 
     @constants h_to_lev = 1.0, [unit = u"m", description = "Height to level transform"]
 
-    puff = EarthSciMLBase.change_ic(puff, :lev, s12.H_p / h_to_lev)
+    # Set level initial condition equal to the plume top height.
+    puff.lev = ParentScope(s12.H_p) #/ h_to_lev
 
     ConnectorSystem([], s12, puff)
 end

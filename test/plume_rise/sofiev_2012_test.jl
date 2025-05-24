@@ -14,7 +14,6 @@ di = DomainInfo(
     levrange = 1:15,
     dtype = Float64)
 
-
 puff = Puff(di)
 
 prob = ODEProblem(structural_simplify(puff))
@@ -23,7 +22,8 @@ prob = ODEProblem(structural_simplify(puff))
 s12 = Sofiev2012PlumeRise()
 
 model = couple(puff, s12)
-sys = convert(ODESystem, model)
-prob = ODEProblem(sys)#, symbolic_u0=true)
+sys = convert(ODESystem, model, prune=false)
 
-@test prob.ps[Initial(sys.PuffXXX₊lev)] != 8.0
+prob = ODEProblem(sys)
+
+@test prob.ps[Initial(sys.Puff₊lev)] ≈ 354.33145232587253

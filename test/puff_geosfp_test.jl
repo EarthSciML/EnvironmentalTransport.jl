@@ -28,10 +28,10 @@ sys = convert(ODESystem, model; simplify = true)
 
 @test length(equations(sys)) == 3
 @test occursin("PS", string(observed(sys))) # Check that we're using the GEOSFP pressure data.
-@test issetequal([Symbol("puff₊lon(t)"), Symbol("puff₊lat(t)"), Symbol("puff₊lev(t)")],
+@test issetequal([Symbol("Puff₊lon(t)"), Symbol("Puff₊lat(t)"), Symbol("Puff₊lev(t)")],
     Symbol.(unknowns(sys)))
 @test length(parameters(sys)) == 72
-@test length(observed(sys)) == 17
+@test length(observed(sys)) == 86
 
 u0 = ModelingToolkit.get_defaults(sys)
 tspan = EarthSciMLBase.get_tspan(di)
