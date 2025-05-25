@@ -38,6 +38,7 @@ prob = ODEProblem(puff, [], (starttime, endtime), [])
     sol = solve(prob2)
     @test sol.t[end] ≈ 0.5
     @test sol[puff.x][end] ≈ 1.0
+    @test sol.retcode == SciMLBase.ReturnCode.Terminated
 end
 
 @testset "x terminate -" begin
@@ -46,6 +47,7 @@ end
     sol = solve(prob2)
     @test sol.t[end] ≈ 0.5
     @test sol[puff.x][end] ≈ -1.0
+    @test sol.retcode == SciMLBase.ReturnCode.Terminated
 end
 
 @testset "y terminate +" begin
@@ -54,6 +56,7 @@ end
     sol = solve(prob2)
     @test sol.t[end] ≈ 0.5
     @test sol[puff.y][end] ≈ 1.0
+    @test sol.retcode == SciMLBase.ReturnCode.Terminated
 end
 
 @testset "y terminate -" begin
@@ -62,6 +65,7 @@ end
     sol = solve(prob2)
     @test sol.t[end] ≈ 0.5
     @test sol[puff.y][end] ≈ -1.0
+    @test sol.retcode == SciMLBase.ReturnCode.Terminated
 end
 
 @testset "z bounded +" begin
@@ -70,6 +74,7 @@ end
     sol = solve(prob2)
     @test sol.t[end] ≈ 1
     @test maximum(sol[puff.z]) ≈ 1.0
+    @test sol.retcode == SciMLBase.ReturnCode.Success
 end
 
 @testset "z bounded -" begin
@@ -78,4 +83,34 @@ end
     sol = solve(prob2)
     @test sol.t[end] ≈ 1
     @test minimum(sol[puff.z]) ≈ -1.0
+    @test sol.retcode == SciMLBase.ReturnCode.Success
+end
+
+@testset "puff coupling" begin
+    struct VelCoupler
+        sys
+    end
+
+    function Vel(; name = :Vel)
+        @parameters vp=2 [unit = u"m/s"]
+        @variables v(t) [unit = u"m/s"]
+        ODESystem(
+            Equation[v ~ vp], t; name = name, metadata = Dict(:coupletype => VelCoupler))
+    end
+
+    function EarthSciMLBase.couple2(p::EnvironmentalTransport.PuffCoupler, v::VelCoupler)
+        p, v = p.sys, v.sys
+        p = param_to_var(p, :v_x)
+        ConnectorSystem([
+                p.v_x ~ v.v
+            ], p, v)
+    end
+
+    puff = Puff(di)
+    v = Vel()
+    model = couple(puff, v)
+    sys = convert(ODESystem, model, simplify = true)
+    prob = ODEProblem(sys, [], (starttime, endtime))
+    sol = solve(prob)
+    @test sol.retcode == SciMLBase.ReturnCode.Terminated
 end

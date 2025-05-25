@@ -10,12 +10,12 @@ import SciMLBase
 using Dates
 
 starttime = DateTime(2022, 5, 1)
-endtime = DateTime(2022, 5, 1, 0, 1)
+endtime = DateTime(2022, 5, 2)
 
 di = DomainInfo(
     starttime, endtime;
-    lonrange = deg2rad(-115):deg2rad(1):deg2rad(-68.75),
-    latrange = deg2rad(25):deg2rad(1):deg2rad(53.7),
+    lonrange = deg2rad(-80):deg2rad(1):deg2rad(-75),
+    latrange = deg2rad(38):deg2rad(1):deg2rad(42),
     levrange = 1:15,
     dtype = Float64)
 
@@ -37,4 +37,4 @@ u0 = ModelingToolkit.get_defaults(sys)
 tspan = EarthSciMLBase.get_tspan(di)
 prob=ODEProblem(sys, u0, tspan)
 sol = solve(prob, Tsit5())
-@test sol.retcode == SciMLBase.ReturnCode.Success
+@test sol.retcode == SciMLBase.ReturnCode.Terminated

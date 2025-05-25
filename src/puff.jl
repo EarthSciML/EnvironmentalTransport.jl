@@ -14,8 +14,13 @@ Model boundaries are set by the DomainInfo argument.
 The model sets boundaries at the ground and model bottom and top,
 preventing the puff from crossing those boundaries. If the
 puff reaches one of the horizontal boundaries, the simulation is stopped.
+
+## Keyword arguments
+- buffer_cells: The distance (expressed in a number of DomainInfo grid cells) to use as a buffer
+around the horizontal edge of the domain to avoid data loader interpolation errors. The
+effective size of the domain will be reduce by 2× this amount (default = 1)
 """
-function Puff(di::DomainInfo; name = :Puff)
+function Puff(di::DomainInfo; buffer_cells=1, name = :Puff)
     pv = EarthSciMLBase.pvars(di)
     coords = []
     for p in pv
@@ -70,10 +75,10 @@ function Puff(di::DomainInfo; name = :Puff)
     vertical_boundary = [lower_bound, upper_bound]
     # Stop simulation if we reach the lateral boundaries.
     affect!(integrator, u, p, ctx) = terminate!(integrator)
-    wb = coords[lon_idx] ~ endpts[lon_idx][begin]
-    eb = coords[lon_idx] ~ endpts[lon_idx][end]
-    sb = coords[lat_idx] ~ endpts[lat_idx][begin]
-    nb = coords[lat_idx] ~ endpts[lat_idx][end]
+    wb = coords[lon_idx] ~ endpts[lon_idx][begin] + di.grid_spacing[lon_idx] * buffer_cells
+    eb = coords[lon_idx] ~ endpts[lon_idx][end] - di.grid_spacing[lon_idx] * buffer_cells
+    sb = coords[lat_idx] ~ endpts[lat_idx][begin] + di.grid_spacing[lat_idx] * buffer_cells
+    nb = coords[lat_idx] ~ endpts[lat_idx][end] - di.grid_spacing[lat_idx] * buffer_cells
     lateral_boundary = [wb, eb, sb, nb] => (affect!, [], [], [], nothing)
     ODESystem(eqs, EarthSciMLBase.ivar(di); name = name,
         metadata = Dict(:coupletype => PuffCoupler),
