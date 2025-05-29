@@ -16,11 +16,12 @@ preventing the puff from crossing those boundaries. If the
 puff reaches one of the horizontal boundaries, the simulation is stopped.
 
 ## Keyword arguments
-- buffer_cells: The distance (expressed in a number of DomainInfo grid cells) to use as a buffer
-around the horizontal edge of the domain to avoid data loader interpolation errors. The
-effective size of the domain will be reduce by 2× this amount (default = 1)
+
+  - buffer_cells: The distance (expressed in a number of DomainInfo grid cells) to use as a buffer
+    around the horizontal edge of the domain to avoid data loader interpolation errors. The
+    effective size of the domain will be reduce by 2× this amount (default = 1)
 """
-function Puff(di::DomainInfo; buffer_cells=1, name = :Puff)
+function Puff(di::DomainInfo; buffer_cells = 1, name = :Puff)
     pv = EarthSciMLBase.pvars(di)
     coords = []
     for p in pv
