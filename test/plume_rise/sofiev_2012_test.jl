@@ -1,8 +1,9 @@
 using EnvironmentalTransport
-using EarthSciMLBase
+using EarthSciMLBase, EarthSciData
 using ModelingToolkit
 using Dates
 using Test
+using OrdinaryDiffEq
 
 starttime = DateTime(2022, 5, 1)
 endtime = DateTime(2022, 5, 1, 0, 1)
@@ -19,11 +20,19 @@ puff = Puff(di)
 prob = ODEProblem(structural_simplify(puff))
 @test prob.ps[Initial(puff.lev)] == 8.0
 
+gfp = GEOSFP("4x5", di)
 s12 = Sofiev2012PlumeRise()
 
-model = couple(puff, s12)
-sys = convert(ODESystem, model, prune=false)
+model = couple(
+    puff,
+    s12,
+    gfp
+)
+sys = convert(ODESystem, model)
 
-prob = ODEProblem(sys)
+prob = ODEProblem(sys, [], get_tspan(di), [])
 
-@test prob.ps[Initial(sys.Puff₊lev)] ≈ 354.33145232587253
+@test prob.ps[Initial(sys.Puff₊lev)] ≈ 354.33145232587253 / 100.0
+
+sol = solve(prob, Tsit5())
+@test sol.retcode == SciMLBase.ReturnCode.Success

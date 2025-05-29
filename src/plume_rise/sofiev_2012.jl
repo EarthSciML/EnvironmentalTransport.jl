@@ -39,10 +39,10 @@ end
 function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, puff::PuffCoupler)
     s12, puff = s12.sys, puff.sys
 
-    @constants h_to_lev = 1.0, [unit = u"m", description = "Height to level transform"]
+    @constants h_to_lev = 100.0, [unit = u"m", description = "Height to level transform"]
 
     # Set level initial condition equal to the plume top height.
-    puff.lev = ParentScope(s12.H_p) #/ h_to_lev
+    puff.lev = subs_constants(ParentScope(s12.H_p) / h_to_lev)
 
     ConnectorSystem([], s12, puff)
 end

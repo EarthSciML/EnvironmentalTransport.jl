@@ -30,7 +30,7 @@ ModelingToolkit = "9"
 OrdinaryDiffEq = "6"
 RuntimeGeneratedFunctions = "0.5"
 SciMLBase = "2"
-SciMLOperators = "0.3"
+SciMLOperators = "0.3, 0.4"
 julia = "1.8"
 
 [extras]

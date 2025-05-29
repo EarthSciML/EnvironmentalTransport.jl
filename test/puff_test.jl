@@ -16,10 +16,11 @@ endtime = 1.0
 di = DomainInfo(
     constIC(16.0, t ∈ Interval(starttime, endtime)),
     constBC(16.0,
-        x ∈ Interval(-1.0, 1.0),
-        y ∈ Interval(-1.0, 1.0),
-        z ∈ Interval(-1.0, 1.0)
+        x ∈ Interval(-1.1, 1.1),
+        y ∈ Interval(-1.1, 1.1),
+        z ∈ Interval(-1, 1)
     ),
+    grid_spacing = [0.1, 0.1, 0.1],
     dtype = Float64)
 
 puff = Puff(di)

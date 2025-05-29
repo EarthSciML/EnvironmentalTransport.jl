@@ -3,7 +3,7 @@ using DocStringExtensions
 import EarthSciMLBase
 using EarthSciMLBase: param_to_var, ConnectorSystem, CoupledSystem, get_coupletype
 using EarthSciData: GEOSFPCoupler
-using EnvironmentalTransport: PuffCoupler, AdvectionOperator
+using EnvironmentalTransport: PuffCoupler, AdvectionOperator, Sofiev2012PlumeRiseCoupler
 using EnvironmentalTransport
 
 function EarthSciMLBase.couple2(p::PuffCoupler, g::GEOSFPCoupler)
@@ -42,5 +42,13 @@ function EarthSciMLBase.get_needed_vars(
     end
     return vcat(windvars)
 end
+
+# function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, gfp::GEOSFPCoupler)
+#     s12, gfp = s12.sys, gfp.sys
+
+#     gfp = param_to_var(gfp, :lev)
+
+#     ConnectorSystem([], s12, gfp)
+# end
 
 end
