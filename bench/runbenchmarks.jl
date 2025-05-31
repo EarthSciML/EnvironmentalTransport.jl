@@ -46,7 +46,7 @@ suite["Advection Simulator"] = BenchmarkGroup(["advection", "simulator"])
 suite["Advection Simulator"]["in-place"] = BenchmarkGroup()
 suite["Advection Simulator"]["out-of-place"] = BenchmarkGroup()
 
-for stencil in [l94_stencil, ppm_stencil]
+for stencil in [upwind1_stencil]
     suite["Advection Simulator"]["in-place"][stencil] = BenchmarkGroup()
     suite["Advection Simulator"]["out-of-place"][stencil] = BenchmarkGroup()
     for (lonres, latres) in ((0.625, 0.5), (0.3125, 0.25))
