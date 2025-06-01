@@ -44,9 +44,9 @@ function prob_func(prob, i, repeat)
     r = rand() * fireradius
     θ = rand() * 2π
     u0 = [
-        sys.Puff₊lon => firelon + r * cos(θ), 
-        sys.Puff₊lat => firelat + r * sin(θ), 
-        sys.Puff₊lev => fireheight,
+        sys.Puff₊lon => firelon + r * cos(θ),
+        sys.Puff₊lat => firelat + r * sin(θ),
+        sys.Puff₊lev => fireheight
     ]
     ts = (tspan[1] + floor(i / samples_per_time) * samplerate, tspan[2])
     remake(prob, u0 = u0, tspan = ts)
