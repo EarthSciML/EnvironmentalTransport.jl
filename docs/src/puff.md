@@ -16,7 +16,7 @@ firelon = deg2rad(-97)
 firelat = deg2rad(40)
 fireradius = deg2rad(0.05) # Degrees
 samplerate = 3600.0 # Seconds
-samples_per_time = 3 # Samples per each emission time
+samples_per_time = 1 # Samples per each emission time
 fireheight = 2.0 # Vertical level (Allowing this to be automatically calculated is a work in progress).
 emis_rate = 1.0 # kg/s, fire emission rate
 
@@ -34,7 +34,7 @@ geosfp = GEOSFP("4x5", domain; stream = false)
 puff = Puff(domain)
 
 model = couple(puff, geosfp)
-sys = convert(ODESystem, model)
+const sys = convert(ODESystem, model)
 u0 = ModelingToolkit.get_defaults(sys)
 tspan = EarthSciMLBase.get_tspan(domain)
 prob=ODEProblem(sys, u0, tspan)
@@ -43,14 +43,19 @@ sol = solve(prob, Tsit5()) # Solve once to make sure data is loaded.
 function prob_func(prob, i, repeat)
     r = rand() * fireradius
     θ = rand() * 2π
-    u0 = [firelon + r * cos(θ), firelat + r * sin(θ), fireheight]
+    u0 = [
+        sys.Puff₊lon => firelon + r * cos(θ), 
+        sys.Puff₊lat => firelat + r * sin(θ), 
+        sys.Puff₊lev => fireheight,
+    ]
     ts = (tspan[1] + floor(i / samples_per_time) * samplerate, tspan[2])
     remake(prob, u0 = u0, tspan = ts)
 end
 eprob = EnsembleProblem(prob, prob_func = prob_func, safetycopy = false)
 esol = solve(eprob, Tsit5(); trajectories = ceil(firelength/samplerate*samples_per_time))
 
-vars = [sys.puff₊lon, sys.puff₊lat, sys.puff₊lev]
+vars = [sys.Puff₊lon, sys.Puff₊lat, sys.Puff₊lev]
+varidxs = ModelingToolkit.variable_index.((sys,), vars)
 ranges = [(Inf, -Inf), (Inf, -Inf), (Inf, -Inf)]
 for sol in esol
     for (i, var) in enumerate(vars)
@@ -72,7 +77,7 @@ anim = @animate for t in datetime2unix(firestart):samplerate:datetime2unix(sim_e
             continue
         end
         scatter!(p,
-            [rad2deg(sol(t)[1])], [rad2deg(sol(t)[2])], [sol(t)[3]],
+            [rad2deg(sol(t)[varidxs[1]])], [rad2deg(sol(t)[varidxs[2]])], [sol(t)[varidxs[3]]],
             label = :none, markercolor = :black, markersize = 1.5
         )
     end
