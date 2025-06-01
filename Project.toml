@@ -21,17 +21,17 @@ EarthSciDataExt = "EarthSciData"
 
 [compat]
 Distributions = "0.25.113"
-DocStringExtensions = "0.9"
-DomainSets = "0.7"
+DocStringExtensions = "0.9.3"
+DomainSets = "0.7.15"
 DynamicQuantities = "1"
 EarthSciData = "0.12.7"
 EarthSciMLBase = "0.22.2"
-ModelingToolkit = "9"
+ModelingToolkit = "9.79.1"
 OrdinaryDiffEq = "6"
 RuntimeGeneratedFunctions = "0.5.13"
-SciMLBase = "2"
+SciMLBase = "2.90"
 SciMLOperators = "0.3, 0.4"
-julia = "1.8"
+julia = "1.10"
 
 [extras]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
