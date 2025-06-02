@@ -14,7 +14,7 @@ firelon = deg2rad(-97)
 firelat = deg2rad(40)
 fireradius = deg2rad(0.05) # Degrees
 samplerate = 3600.0 # Seconds
-samples_per_time = 3 # Samples per each emission time
+samples_per_time = 1 # Samples per each emission time
 fireheight = 2.0 # Vertical level (Allowing this to be automatically calculated is a work in progress).
 emis_rate = 1.0 # kg/s, fire emission rate
 
@@ -22,8 +22,8 @@ sim_end = firestart + Day(simulationlength)
 
 domain = DomainInfo(
     firestart, sim_end;
-    lonrange = deg2rad(-115):deg2rad(-68.75),
-    latrange = deg2rad(25):deg2rad(53.7),
+    lonrange = deg2rad(-115):deg2rad(1.25):deg2rad(-68.75),
+    latrange = deg2rad(25):deg2rad(1):deg2rad(53.7),
     levrange = 1:72,
     dtype = Float64)
 
@@ -32,7 +32,7 @@ geosfp = GEOSFP(&quot;4x5&quot;, domain; stream = false)
 puff = Puff(domain)
 
 model = couple(puff, geosfp)
-sys = convert(ODESystem, model)
+const sys = convert(ODESystem, model)
 u0 = ModelingToolkit.get_defaults(sys)
 tspan = EarthSciMLBase.get_tspan(domain)
 prob=ODEProblem(sys, u0, tspan)
@@ -41,14 +41,19 @@ sol = solve(prob, Tsit5()) # Solve once to make sure data is loaded.
 function prob_func(prob, i, repeat)
     r = rand() * fireradius
     θ = rand() * 2π
-    u0 = [firelon + r * cos(θ), firelat + r * sin(θ), fireheight]
+    u0 = [
+        sys.Puff₊lon =&gt; firelon + r * cos(θ),
+        sys.Puff₊lat =&gt; firelat + r * sin(θ),
+        sys.Puff₊lev =&gt; fireheight
+    ]
     ts = (tspan[1] + floor(i / samples_per_time) * samplerate, tspan[2])
     remake(prob, u0 = u0, tspan = ts)
 end
-eprob = EnsembleProblem(prob, prob_func = prob_func, safetycopy=false)
-esol = solve(eprob, Tsit5(); trajectories=ceil(firelength/samplerate*samples_per_time))
+eprob = EnsembleProblem(prob, prob_func = prob_func, safetycopy = false)
+esol = solve(eprob, Tsit5(); trajectories = ceil(firelength/samplerate*samples_per_time))
 
-vars = [sys.puff₊lon, sys.puff₊lat, sys.puff₊lev]
+vars = [sys.Puff₊lon, sys.Puff₊lat, sys.Puff₊lev]
+varidxs = ModelingToolkit.variable_index.((sys,), vars)
 ranges = [(Inf, -Inf), (Inf, -Inf), (Inf, -Inf)]
 for sol in esol
     for (i, var) in enumerate(vars)
@@ -60,19 +65,19 @@ end
 
 anim = @animate for t in datetime2unix(firestart):samplerate:datetime2unix(sim_end)
     p = plot(
-        xlim=rad2deg.(ranges[1]), ylim=rad2deg.(ranges[2]), zlim=ranges[3],
+        xlim = rad2deg.(ranges[1]), ylim = rad2deg.(ranges[2]), zlim = ranges[3],
         title = &quot;Time: $(unix2datetime(t))&quot;,
         xlabel = &quot;Longitude (deg)&quot;, ylabel = &quot;Latitude (deg)&quot;,
-        zlabel = &quot;Vertical Level&quot;,
+        zlabel = &quot;Vertical Level&quot;
     )
     for sol in esol
         if t &lt; sol.t[1] || t &gt; sol.t[end]
             continue
         end
         scatter!(p,
-            [rad2deg(sol(t)[1])], [rad2deg(sol(t)[2])], [sol(t)[3]],
-            label = :none, markercolor=:black, markersize=1.5,
+            [rad2deg(sol(t)[varidxs[1]])], [rad2deg(sol(t)[varidxs[2]])], [sol(t)[varidxs[3]]],
+            label = :none, markercolor = :black, markersize = 1.5
         )
     end
 end
-gif(anim, fps=15)</code></pre><img src="76113fbf.gif" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../advection/">« Advection</a><a class="docs-footer-nextpage" href="../api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.1 on <span class="colophon-date" title="Monday 24 February 2025 16:57">Monday 24 February 2025</span>. Using Julia version 1.11.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+gif(anim, fps = 15)</code></pre><img src="ea46bf00.gif" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../advection/">« Advection</a><a class="docs-footer-nextpage" href="../api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.4 on <span class="colophon-date" title="Monday 2 June 2025 00:12">Monday 2 June 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
