@@ -26,8 +26,8 @@ domain = DomainInfo(
     firestart, sim_end;
     lonrange = deg2rad(-115):deg2rad(1.25):deg2rad(-68.75),
     latrange = deg2rad(25):deg2rad(1):deg2rad(53.7),
-    levrange = 1:72,
-    dtype = Float64)
+    levrange = 1:72
+)
 
 geosfp = GEOSFP("4x5", domain; stream = false)
 
