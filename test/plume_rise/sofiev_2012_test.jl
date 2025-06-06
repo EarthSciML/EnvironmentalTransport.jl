@@ -32,7 +32,7 @@ sys = convert(ODESystem, model)
 
 prob = ODEProblem(sys, [], get_tspan(di), [])
 
-@test prob.ps[Initial(sys.Puff₊lev)] ≈ 354.33145232587253 / 100.0
+@test prob.ps[Initial(sys.Puff₊lev)] ≈ 4.39566616801431
 
 sol = solve(prob, Tsit5())
 @test sol.retcode == SciMLBase.ReturnCode.Success

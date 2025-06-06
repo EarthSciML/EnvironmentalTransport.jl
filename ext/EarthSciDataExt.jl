@@ -5,6 +5,7 @@ using EarthSciMLBase: param_to_var, ConnectorSystem, CoupledSystem, get_couplety
 using EarthSciData: GEOSFPCoupler
 using EnvironmentalTransport: PuffCoupler, AdvectionOperator, Sofiev2012PlumeRiseCoupler
 using EnvironmentalTransport
+using ModelingToolkit: ParentScope
 
 function EarthSciMLBase.couple2(p::PuffCoupler, g::GEOSFPCoupler)
     p, g = p.sys, g.sys
@@ -43,12 +44,13 @@ function EarthSciMLBase.get_needed_vars(
     return vcat(windvars)
 end
 
-# function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, gfp::GEOSFPCoupler)
-#     s12, gfp = s12.sys, gfp.sys
+function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, gfp::GEOSFPCoupler)
+    s12, gfp = s12.sys, gfp.sys
 
-#     gfp = param_to_var(gfp, :lev)
+    s12.H_abl = ParentScope(gfp.A1₊PBLH_itp)(ParentScope(gfp.t_ref),
+        ParentScope(gfp.lon), ParentScope(gfp.lat))
 
-#     ConnectorSystem([], s12, gfp)
-# end
+    ConnectorSystem([], s12, gfp)
+end
 
 end
