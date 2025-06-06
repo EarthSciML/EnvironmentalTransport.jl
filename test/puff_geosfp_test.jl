@@ -16,8 +16,8 @@ di = DomainInfo(
     starttime, endtime;
     lonrange = deg2rad(-80):deg2rad(1):deg2rad(-75),
     latrange = deg2rad(38):deg2rad(1):deg2rad(42),
-    levrange = 1:15,
-    dtype = Float64)
+    levrange = 1:15
+)
 
 geosfp = GEOSFP("4x5", di; stream = false)
 
@@ -30,7 +30,7 @@ sys = convert(ODESystem, model; simplify = true)
 @test occursin("PS", string(observed(sys))) # Check that we're using the GEOSFP pressure data.
 @test issetequal([Symbol("Puff₊lon(t)"), Symbol("Puff₊lat(t)"), Symbol("Puff₊lev(t)")],
     Symbol.(unknowns(sys)))
-@test length(parameters(sys)) == 72
+@test length(parameters(sys)) == 73
 @test length(observed(sys)) == 86
 
 u0 = ModelingToolkit.get_defaults(sys)

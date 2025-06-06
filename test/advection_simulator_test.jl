@@ -31,8 +31,9 @@ function Emissions(μ_lon, μ_lat, σ)
     @variables c(t)=0.0 [unit = u"kg"]
     @constants v_emis=50.0 [unit = u"kg/s"]
     @constants t_unit=1.0 [unit = u"s"] # Needed so that arguments to `pdf` are unitless.
+    @constants t_ref=starttime [unit = u"s"]
     dist = MvNormal([starttime, μ_lon, μ_lat, 1], Diagonal(map(abs2, [3600.0, σ, σ, 1])))
-    ODESystem([D(c) ~ pdf(dist, [t / t_unit, lon, lat, lev]) * v_emis],
+    ODESystem([D(c) ~ pdf(dist, [(t+t_ref) / t_unit, lon, lat, lev]) * v_emis],
         t, name = :Test₊emissions, metadata = Dict(:coupletype => EmissionsCoupler))
 end
 
@@ -78,19 +79,19 @@ p = EarthSciMLBase.default_params(sys_coords)
 v_fs, Δ_fs = get_datafs(op, csys, sys_coords, coord_args, domain)
 
 @testset "get_vf lon" begin
-    @test only(v_fs[1](2, 3, 1, p, starttime)) ≈ -6.816295428727573
+    @test only(v_fs[1](2, 3, 1, p, 0.0)) ≈ -6.816295428727573
 end
 
 @testset "get_vf lat" begin
-    @test only(v_fs[2](3, 2, 1, p, starttime)) ≈ -5.443038969820774
+    @test only(v_fs[2](3, 2, 1, p, 0.0)) ≈ -5.443038969820774
 end
 
 @testset "get_vf lev" begin
-    @test only(v_fs[3](3, 1, 2, p, starttime)) ≈ -0.019995461793337128
+    @test only(v_fs[3](3, 1, 2, p, 0.0)) ≈ -0.019995461793337128
 end
 
 @testset "get_Δ" begin
-    @test only(Δ_fs[1](2, 3, 1, p, starttime)) ≈ 424080.6852300487
-    @test only(Δ_fs[2](3, 2, 1, p, starttime)) ≈ 445280.0
-    @test only(Δ_fs[3](3, 1, 2, p, starttime)) ≈ -1511.6930930013798
+    @test only(Δ_fs[1](2, 3, 1, p, 0.0)) ≈ 424080.6852300487
+    @test only(Δ_fs[2](3, 2, 1, p, 0.0)) ≈ 445280.0
+    @test only(Δ_fs[3](3, 1, 2, p, 0.0)) ≈ -1511.6930930013798
 end

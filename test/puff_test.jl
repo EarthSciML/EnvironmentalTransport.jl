@@ -20,8 +20,8 @@ di = DomainInfo(
         y ∈ Interval(-1.1, 1.1),
         z ∈ Interval(-1, 1)
     ),
-    grid_spacing = [0.1, 0.1, 0.1],
-    dtype = Float64)
+    grid_spacing = [0.1, 0.1, 0.1]
+)
 
 puff = Puff(di)
 puff = structural_simplify(puff)
