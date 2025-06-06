@@ -16,8 +16,8 @@ function setup_advection_simulator(lonres, latres, stencil)
         starttime_date, endtime;
         lonrange = deg2rad(-129):deg2rad(lonres):deg2rad(-61),
         latrange = deg2rad(11):deg2rad(latres):deg2rad(59),
-        levrange = 1:1:3,
-        dtype = Float64)
+        levrange = 1:1:3
+    )
 
     geosfp = GEOSFP("0.25x0.3125_NA", domain)
 
