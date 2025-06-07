@@ -10,7 +10,7 @@ using Plots
 using Dates
 
 firestart = DateTime(2021, 10, 1)
-firelength = 10 * 24 * 3600 # Seconds
+firelength = 15 * 24 * 3600 # Seconds
 simulationlength = 20 # Days
 firelon = deg2rad(-97)
 firelat = deg2rad(40)
@@ -65,10 +65,12 @@ for sol in esol
     end
 end
 
-anim = @animate for t in datetime2unix(firestart):samplerate:datetime2unix(sim_end)
+t_ref = get_tref(domain)
+anim = @animate for dt in datetime2unix(firestart):samplerate:datetime2unix(sim_end)
+    t = dt - t_ref
     p = plot(
         xlim = rad2deg.(ranges[1]), ylim = rad2deg.(ranges[2]), zlim = ranges[3],
-        title = "Time: $(unix2datetime(t))",
+        title = "Time: $(unix2datetime(t + t_ref))",
         xlabel = "Longitude (deg)", ylabel = "Latitude (deg)",
         zlabel = "Vertical Level"
     )
@@ -76,9 +78,11 @@ anim = @animate for t in datetime2unix(firestart):samplerate:datetime2unix(sim_e
         if t < sol.t[1] || t > sol.t[end]
             continue
         end
+        lon, lat, lev = sol(t)[varidxs[1]], sol(t)[varidxs[2]], sol(t)[varidxs[3]]
+        color = lev < 2 ? :red : :black
         scatter!(p,
             [rad2deg(sol(t)[varidxs[1]])], [rad2deg(sol(t)[varidxs[2]])], [sol(t)[varidxs[3]]],
-            label = :none, markercolor = :black, markersize = 1.5
+            label = :none, markercolor = color, markerstrokecolor = color, markersize = 1.5
         )
     end
 end
