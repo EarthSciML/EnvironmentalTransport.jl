@@ -53,9 +53,9 @@ for stencil in [upwind1_stencil]
         @info "setting up $lonres x $latres with $stencil"
         op, u, p = setup_advection_simulator(lonres, latres, stencil)
         suite["Advection Simulator"]["in-place"][stencil]["$lonres x $latres (N=$(length(u)))"] = @benchmarkable $(op)(
-            $(u[:]), $(u[:]), $(p), $starttime)
+            $(u[:]), $(u[:]), $(p), 0.0)
         suite["Advection Simulator"]["out-of-place"][stencil]["$lonres x $latres (N=$(length(u)))"] = @benchmarkable $(op)(
-            $(u[:]), $(p), $starttime)
+            $(u[:]), $(p), 0.0)
     end
 end
 
