@@ -12,7 +12,7 @@ from wild-land fires using remote-sensing data, Atmos. Chem. Phys., 12, 1995–2
 https://doi.org/10.5194/acp-12-1995-2012, 2012.
 """
 function Sofiev2012PlumeRise(; name = :Sofiev2012PlumeRise)
-    @constants begin
+    params1 = @parameters begin # TODO(CT): Should be able to use @constants instead.
         P_f0 = 1e6, [unit = u"W", description = "Reference fire power"]
         N_0 = sqrt(2.5e-4),
         [unit = u"1/s", description = "Reference Brunt-Vaisala frequency"]
@@ -22,27 +22,30 @@ function Sofiev2012PlumeRise(; name = :Sofiev2012PlumeRise)
         δ = 0.6, [description = "Empirical constant"]
     end
 
-    params = @parameters begin
+    params2 = @parameters begin
         H_abl = 1000.0, [unit = u"m", description = "Atmospheric boundary layer height"]
         N_ft = 0.02, # TODO(CT): Calculate this from data.
         [unit = u"1/s", description = "Free troposphere Brunt-Vaisala frequency"]
         P_fr = 5e6, [unit = u"W", description = "Fire radiative power"]
 
-        # TODO(CT): Shouldn't have to substitute constants, remove after underlying issue is fixed.
-        H_p = subs_constants(α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * N_ft^2 / N_0^2)),
-        [unit = u"m", description = "Final plume top height"]
+        # TODO(CT): Make this automatically calculated.
+        h_to_lev = 100.0, [unit = u"m", description = "Height to level transform"]
+
+        H_p, [unit = u"m", description = "Final plume top height"]
+        lev_p, [description = "Vertical level of the plume top height"]
     end
-    ODESystem(Equation[], t, [], params; name = name,
+    pd = [H_p ~ α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * N_ft^2 / N_0^2),
+            lev_p ~ H_p / h_to_lev]
+    ODESystem(
+        Equation[], t, [], [params1; params2]; name = name, parameter_dependencies = pd,
         metadata = Dict(:coupletype => Sofiev2012PlumeRiseCoupler))
 end
 
 function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, puff::PuffCoupler)
     s12, puff = s12.sys, puff.sys
 
-    @constants h_to_lev = 100.0, [unit = u"m", description = "Height to level transform"]
-
     # Set level initial condition equal to the plume top height.
-    puff.lev = subs_constants(ParentScope(s12.H_p) / h_to_lev)
+    puff.lev = ParentScope(s12.lev_p)
 
     ConnectorSystem([], s12, puff)
 end
