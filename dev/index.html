@@ -3,7 +3,7 @@
 Pkg.add(&quot;EnvironmentalTransport&quot;)</code></pre><h2 id="Feature-Summary"><a class="docs-heading-anchor" href="#Feature-Summary">Feature Summary</a><a id="Feature-Summary-1"></a><a class="docs-heading-anchor-permalink" href="#Feature-Summary" title="Permalink"></a></h2><p>This package contains types and functions designed to simplify the process of constructing and composing symbolically-defined Earth Science model components together.</p><h2 id="Feature-List"><a class="docs-heading-anchor" href="#Feature-List">Feature List</a><a id="Feature-List-1"></a><a class="docs-heading-anchor-permalink" href="#Feature-List" title="Permalink"></a></h2><ul><li>Numerical Advection</li></ul><h2 id="Contributing"><a class="docs-heading-anchor" href="#Contributing">Contributing</a><a id="Contributing-1"></a><a class="docs-heading-anchor-permalink" href="#Contributing" title="Permalink"></a></h2><ul><li>Please refer to the <a href="https://github.com/SciML/ColPrac/blob/master/README.md">SciML ColPrac: Contributor&#39;s Guide on Collaborative Practices for Community Packages</a> for guidance on PRs, issues, and other matters relating to contributing.</li></ul><h2 id="Reproducibility"><a class="docs-heading-anchor" href="#Reproducibility">Reproducibility</a><a id="Reproducibility-1"></a><a class="docs-heading-anchor-permalink" href="#Reproducibility" title="Permalink"></a></h2><details><summary>The documentation of this EnvironmentalTransport package was built using these direct dependencies,</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Status `~/work/EnvironmentalTransport.jl/EnvironmentalTransport.jl/docs/Project.toml`
   [0c46a032] DifferentialEquations v7.16.1
   [31c24e10] Distributions v0.25.120
-  [e30172f5] Documenter v1.13.0
+  [e30172f5] Documenter v1.14.1
   [06fc5a27] DynamicQuantities v1.8.0
   [a293c155] EarthSciData v0.13.2
   [e53f1632] EarthSciMLBase v0.23.1
@@ -14,8 +14,8 @@ Pkg.add(&quot;EnvironmentalTransport&quot;)</code></pre><h2 id="Feature-Summary"
   [33c8b6b6] ProgressLogging v0.1.5
   [ade2ca70] Dates v1.11.0
   [37e2e46d] LinearAlgebra v1.11.0
-Info Packages marked with ⌅ have new versions available but compatibility constraints restrict them from upgrading. To see why use `status --outdated`</code></pre></details><details><summary>and using this machine and Julia version.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Julia Version 1.11.5
-Commit 760b2e5b739 (2025-04-14 06:53 UTC)
+Info Packages marked with ⌅ have new versions available but compatibility constraints restrict them from upgrading. To see why use `status --outdated`</code></pre></details><details><summary>and using this machine and Julia version.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Julia Version 1.11.6
+Commit 9615af0f269 (2025-07-09 12:58 UTC)
 Build Info:
   Official https://julialang.org/ release
 Platform Info:
@@ -44,7 +44,7 @@ Environment:
   [e2ed5e7c] Bijections v0.2.2
   [d1d4a3ce] BitFlags v0.1.9
   [62783981] BitTwiddlingConvenienceFunctions v0.1.6
-  [8e7c35d0] BlockArrays v1.6.3
+  [8e7c35d0] BlockArrays v1.7.0
   [764a87c0] BoundaryValueDiffEq v5.18.0
   [7227322d] BoundaryValueDiffEqAscher v1.8.0
   [56b672f2] BoundaryValueDiffEqCore v1.11.0
@@ -60,7 +60,7 @@ Environment:
   [d360d2e6] ChainRulesCore v1.25.2
   [fb6a15b2] CloseOpenIntervals v0.1.13
   [944b1d66] CodecZlib v0.7.8
-  [35d6a980] ColorSchemes v3.29.0
+  [35d6a980] ColorSchemes v3.30.0
   [3da002f7] ColorTypes v0.12.1
   [c3611d14] ColorVectorSpace v0.11.0
   [5ae59095] Colors v0.13.1
@@ -94,12 +94,12 @@ Environment:
   [b552c78f] DiffRules v1.15.1
   [0c46a032] DifferentialEquations v7.16.1
 ⌅ [a0c0ee7d] DifferentiationInterface v0.6.54
-  [3c3547ce] DiskArrays v0.4.13
-  [8d63f2c5] DispatchDoctor v0.4.23
+  [3c3547ce] DiskArrays v0.4.14
+  [8d63f2c5] DispatchDoctor v0.4.26
   [b4f34e82] Distances v0.10.12
   [31c24e10] Distributions v0.25.120
   [ffbed154] DocStringExtensions v0.9.5
-  [e30172f5] Documenter v1.13.0
+  [e30172f5] Documenter v1.14.1
   [5b8099bc] DomainSets v0.7.15
   [7c1d4256] DynamicPolynomials v0.6.2
   [06fc5a27] DynamicQuantities v1.8.0
@@ -185,7 +185,7 @@ Environment:
   [128add7d] MicroCollections v0.2.0
   [e1d29d7a] Missings v1.2.0
 ⌅ [961ee093] ModelingToolkit v9.79.1
-  [2e0e35c7] Moshi v0.3.6
+  [2e0e35c7] Moshi v0.3.7
   [46d2c3a1] MuladdMacro v0.2.4
   [102ac46a] MultivariatePolynomials v0.5.9
   [d8a4904e] MutableArithmetics v1.6.4
@@ -205,7 +205,7 @@ Environment:
   [1dea7af3] OrdinaryDiffEq v6.98.0
   [89bda076] OrdinaryDiffEqAdamsBashforthMoulton v1.2.0
   [6ad6398a] OrdinaryDiffEqBDF v1.6.0
-  [bbf590c4] OrdinaryDiffEqCore v1.26.1
+  [bbf590c4] OrdinaryDiffEqCore v1.26.2
   [50262376] OrdinaryDiffEqDefault v1.5.0
   [4302a76b] OrdinaryDiffEqDifferentiation v1.10.0
   [9286f039] OrdinaryDiffEqExplicitRK v1.1.0
@@ -306,7 +306,7 @@ Environment:
   [0c5d862f] Symbolics v6.43.0
   [3783bdb8] TableTraits v1.0.1
   [bd369af6] Tables v1.12.1
-  [ed4db957] TaskLocalValues v0.1.2
+  [ed4db957] TaskLocalValues v0.1.3
   [62fd8b95] TensorCore v0.1.1
   [8ea1fca8] TermInterface v2.0.0
   [1c621080] TestItems v1.0.0
@@ -380,7 +380,7 @@ Environment:
   [76ed43ae] SQLite_jll v3.48.0+0
 ⌅ [fb77eaff] Sundials_jll v5.2.3+0
   [a44049a8] Vulkan_Loader_jll v1.3.243+0
-  [a2964d1f] Wayland_jll v1.23.1+1
+  [a2964d1f] Wayland_jll v1.24.0+0
 ⌅ [02c8fc9c] XML2_jll v2.13.6+1
   [ffd25f8a] XZ_jll v5.8.1+0
   [f67eecfb] Xorg_libICE_jll v1.1.2+0
@@ -417,7 +417,7 @@ Environment:
   [f638f0a6] libfdk_aac_jll v2.0.4+0
   [36db933b] libinput_jll v1.28.1+0
   [b53b4c65] libpng_jll v1.6.50+0
-  [f27f6e37] libvorbis_jll v1.3.7+2
+  [f27f6e37] libvorbis_jll v1.3.8+0
   [337d8026] libzip_jll v1.11.3+0
   [009596ad] mtdev_jll v1.1.7+0
   [1317d2d5] oneTBB_jll v2022.0.0+0
@@ -474,4 +474,4 @@ Environment:
   [3f19e933] p7zip_jll v17.4.0+2
 Info Packages marked with ⌃ and ⌅ have new versions available. Those with ⌃ may be upgradable, but those with ⌅ are restricted by compatibility constraints from upgrading. To see why use `status --outdated -m`</code></pre></details>You can also download the 
 <a href="<p>https://github.com/EarthSciML/EnvironmentalTransport.jl/tree/gh-pages/v0.5.6/assets/Manifest.toml</p>">manifest</a> file and the
-<a href="<p>https://github.com/EarthSciML/EnvironmentalTransport.jl/tree/gh-pages/v0.5.6/assets/Project.toml</p>">project</a> file.</article><nav class="docs-footer"><a class="docs-footer-nextpage" href="advection/">Advection »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.13.0 on <span class="colophon-date" title="Friday 4 July 2025 04:02">Friday 4 July 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+<a href="<p>https://github.com/EarthSciML/EnvironmentalTransport.jl/tree/gh-pages/v0.5.6/assets/Project.toml</p>">project</a> file.</article><nav class="docs-footer"><a class="docs-footer-nextpage" href="advection/">Advection »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Friday 11 July 2025 04:07">Friday 11 July 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
