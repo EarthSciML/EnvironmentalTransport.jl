@@ -35,7 +35,7 @@ function Sofiev2012PlumeRise(; name = :Sofiev2012PlumeRise)
         lev_p, [description = "Vertical level of the plume top height"]
     end
     pd = [H_p ~ α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * N_ft^2 / N_0^2),
-            lev_p ~ H_p / h_to_lev]
+        lev_p ~ H_p / h_to_lev]
     ODESystem(
         Equation[], t, [], [params1; params2]; name = name, parameter_dependencies = pd,
         metadata = Dict(:coupletype => Sofiev2012PlumeRiseCoupler))
