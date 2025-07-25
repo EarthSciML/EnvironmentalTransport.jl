@@ -56,12 +56,19 @@ end
 function EarthSciMLBase.couple2(gd::GaussianDispersionCoupler, g::GEOSFPCoupler)
     d, m = gd.sys, g.sys
     ConnectorSystem([
+        d.lat ~ m.lat
+        d.lon ~ m.lon
         d.U10M ~ m.A1₊U10M
         d.V10M  ~ m.A1₊V10M
         d.SWGDN ~ m.A1₊SWGDN
         d.CLDTOT ~ m.A1₊CLDTOT
+        d.QV2M ~ m.A1₊QV2M
         d.T2M   ~ m.A1₊T2M
         d.T10M  ~ m.A1₊T10M
+        d.T  ~ m.I3₊T
+        d.P  ~ m.P
+        d.PS  ~ m.I3₊PS
+        d.QV  ~ m.I3₊QV
     ], d, m)
 end
 
