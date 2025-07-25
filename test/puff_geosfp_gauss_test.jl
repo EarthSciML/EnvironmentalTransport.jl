@@ -1,7 +1,7 @@
 using Test
 using Dates
 using EarthSciMLBase, EarthSciData, EnvironmentalTransport
-using ModelingToolkit, DifferentialEquations
+using ModelingToolkit, OrdinaryDiffEq
 using EnvironmentalTransport: PuffCoupler, GaussianDispersionCoupler
 
 starttime = DateTime(2022, 5, 1)
