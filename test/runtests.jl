@@ -23,4 +23,7 @@ using Test, SafeTestsets
     @safetestset "Sofiev 2012 Plume Rise" begin
         include("plume_rise/sofiev_2012_test.jl")
     end
+    @safetestset "Gaussian Dispersion" begin
+        include("puff_geosfp_gauss_test.jl")
+    end
 end

@@ -3,7 +3,7 @@ using DocStringExtensions
 import EarthSciMLBase
 using EarthSciMLBase: param_to_var, ConnectorSystem, CoupledSystem, get_coupletype
 using EarthSciData: GEOSFPCoupler
-using EnvironmentalTransport: PuffCoupler, AdvectionOperator, Sofiev2012PlumeRiseCoupler
+using EnvironmentalTransport: PuffCoupler, GaussianDispersionCoupler, AdvectionOperator, Sofiev2012PlumeRiseCoupler
 using EnvironmentalTransport
 using ModelingToolkit: ParentScope
 
@@ -51,6 +51,40 @@ function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, gfp::GEOSFPCoup
         ParentScope(gfp.lon), ParentScope(gfp.lat))
 
     ConnectorSystem([], s12, gfp)
+end
+
+function EarthSciMLBase.couple2(gd::GaussianDispersionCoupler, g::GEOSFPCoupler)
+    d, m = gd.sys, g.sys
+    ConnectorSystem([
+        d.lat ~ m.lat
+        d.lon ~ m.lon
+        d.U10M ~ m.A1₊U10M
+        d.V10M  ~ m.A1₊V10M
+        d.SWGDN ~ m.A1₊SWGDN
+        d.CLDTOT ~ m.A1₊CLDTOT
+        d.QV2M ~ m.A1₊QV2M
+        d.T2M   ~ m.A1₊T2M
+        d.T10M  ~ m.A1₊T10M
+        d.T  ~ m.I3₊T
+        d.P  ~ m.P
+        d.PS  ~ m.I3₊PS
+        d.QV  ~ m.I3₊QV
+    ], d, m)
+end
+
+function EarthSciMLBase.couple2(
+        gd::GaussianDispersionCoupler,
+        puff::PuffCoupler,
+)
+    g, p = gd.sys, puff.sys
+
+    ConnectorSystem(
+        [
+            g.lon ~ p.lon,
+            g.lat ~ p.lat,
+        ],
+        g, p
+    )
 end
 
 end
