@@ -23,8 +23,7 @@ model = couple(
 
 sys = convert(ODESystem, model)
 
-tspan = (datetime2unix(starttime),
-         datetime2unix(endtime))
+tspan = get_tspan(domain)
 
 u0 = [
     sys.Puff₊lon => deg2rad(lonv),
