@@ -1,18 +1,16 @@
 module EnvironmentalTransport
 
 using DocStringExtensions
-using SciMLOperators
 using LinearAlgebra
 using SciMLBase: NullParameters
-using ModelingToolkit: t, D, get_unit, getdefault, ODESystem, @variables, @parameters,
-                       @constants, get_variables, substitute, Equation, subs_constants,
-                       build_explicit_observed_function, setp, unknowns, ParentScope
+using ModelingToolkit: t, D, get_unit, getdefault, System, @variables, @parameters,
+                       @constants, Equation, unknowns, ParentScope, get_defaults, @unpack
 using SciMLBase: terminate!
 using DynamicQuantities: @u_str
 using EarthSciMLBase
-using RuntimeGeneratedFunctions
+import RuntimeGeneratedFunctions
 
-RuntimeGeneratedFunctions.init(@__MODULE__)
+RuntimeGeneratedFunctions.init(@__MODULE__) # Needed even though we don't use it directly.
 
 include("advection_stencils.jl")
 include("boundary_conditions.jl")

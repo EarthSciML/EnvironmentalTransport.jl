@@ -1,25 +1,24 @@
-using EnvironmentalTransport: advection_op
-using EnvironmentalTransport
-using EarthSciMLBase: MapBroadcast
-using Test
-using LinearAlgebra
-using SciMLOperators
-using SciMLBase: NullParameters
+@testsnippet AdvectionSetup begin
+    using EnvironmentalTransport: advection_op
+    using EnvironmentalTransport
+    using EarthSciMLBase: MapBroadcast
+    using LinearAlgebra
+    using SciMLBase: NullParameters
 
-c = zeros(3, 6, 6, 6)
-c[2, :, 3, 4] = [0.0, 1, 2, 3, 4, 5]
-c[2, 3, :, 4] = [0.0, 1, 2, 3, 4, 5]
-c[2, 3, 4, :] = [0.0, 1, 2, 3, 4, 5]
-const v = [10.0, 8, 6, 4, 2, 0, 1]
-const Δt = 0.05
-const Δz = 0.5
+    c = zeros(3, 6, 6, 6)
+    c[2, :, 3, 4] = [0.0, 1, 2, 3, 4, 5]
+    c[2, 3, :, 4] = [0.0, 1, 2, 3, 4, 5]
+    c[2, 3, 4, :] = [0.0, 1, 2, 3, 4, 5]
+    const v = [10.0, 8, 6, 4, 2, 0, 1]
+    const Δt = 0.05
+    const Δz = 0.5
 
-v_fs = ((i, j, k, p, t) -> v[i], (i, j, k, p, t) -> v[j], (i, j, k, p, t) -> v[k])
-Δ_fs = ((i, j, k, p, t) -> Δz, (i, j, k, p, t) -> Δz, (i, j, k, p, t) -> Δz)
+    v_fs = ((i, j, k, p, t) -> v[i], (i, j, k, p, t) -> v[j], (i, j, k, p, t) -> v[k])
+    Δ_fs = ((i, j, k, p, t) -> Δz, (i, j, k, p, t) -> Δz, (i, j, k, p, t) -> Δz)
+end
 
-@testset "4d advection op" begin
+@testitem "4d advection op" setup=[AdvectionSetup] begin
     adv_op = advection_op(c, upwind1_stencil, v_fs, Δ_fs, Δt, ZeroGradBC(), MapBroadcast())
-    adv_op = cache_operator(adv_op, c)
 
     result_oop = adv_op(c[:], NullParameters(), 0.0)
     result_iip = similar(result_oop)
