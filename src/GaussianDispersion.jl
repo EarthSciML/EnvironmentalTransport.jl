@@ -1,5 +1,5 @@
 export GaussianDispersion
-              
+
 struct GaussianDispersionCoupler
     sys::Any
 end
@@ -7,10 +7,10 @@ end
 """
 GaussianDispersion()
 
-Return a `ModelingToolkit.ODESystem` implementing a classic Gaussian plume dispersion model, parameterized 
+Return a `ModelingToolkit.ODESystem` implementing a classic Gaussian plume dispersion model, parameterized
 with Pasquill-Gifford-Briggs dispersion coefficients, following the formulations described in EPA guidance
-402-R-00-004 §12.1.6 
-(https://19january2017snapshot.epa.gov/sites/production/files/2015-05/documents/402-r-00-004.pdf) and the MMGRMA 
+402-R-00-004 §12.1.6
+(https://19january2017snapshot.epa.gov/sites/production/files/2015-05/documents/402-r-00-004.pdf) and the MMGRMA
 document, Table 6-7 (https://www.epa.gov/sites/default/files/2020-10/documents/mmgrma_0.pdf).
 
 
@@ -216,7 +216,7 @@ function GaussianDispersion()
     # σ_z = A_z · x · (1 + B_z x)⁻¹     (classes E–F: stable)
     sigma_z_expr = az * x * (1 + bz * x)^(-0.5)
     sigma_z_expr = ifelse(stab_cls .>= 5, az * x / (1 + bz * x), sigma_z_expr)
-    
+
     # ------------------------------------------------------------------
     # Down‑wind distance x (m) via haversine great‑circle formula
     # ------------------------------------------------------------------
@@ -254,7 +254,7 @@ function GaussianDispersion()
         C_gl ~ C_gl_expr,
     ]
 
-    ODESystem(
+    System(
         eqs,
         t,
         [lon, lat, x, sigma_h, sigma_z, z_agl, C_gl,
@@ -270,6 +270,6 @@ function GaussianDispersion()
             BZ_A, BZ_B, BZ_C, BZ_D, BZ_Ep, BZ_F,
             BY];
         name = :GaussianDispersion,
-        metadata = Dict(:coupletype => GaussianDispersionCoupler)
+        metadata = Dict(CoupleType => GaussianDispersionCoupler)
     )
 end
