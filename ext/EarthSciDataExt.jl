@@ -3,9 +3,10 @@ using DocStringExtensions
 import EarthSciMLBase
 using EarthSciMLBase: param_to_var, ConnectorSystem, CoupledSystem, get_coupletype
 using EarthSciData: GEOSFPCoupler
-using EnvironmentalTransport: PuffCoupler, GaussianDispersionCoupler, AdvectionOperator, Sofiev2012PlumeRiseCoupler
+using EnvironmentalTransport: PuffCoupler, GaussianPGBCoupler, GaussianHCoupler, AdvectionOperator, Sofiev2012PlumeRiseCoupler
 using EnvironmentalTransport
 using ModelingToolkit: ParentScope
+using ModelingToolkit: t
 
 function EarthSciMLBase.couple2(p::PuffCoupler, g::GEOSFPCoupler)
     p, g = p.sys, g.sys
@@ -53,7 +54,7 @@ function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, gfp::GEOSFPCoup
     ConnectorSystem([], s12, gfp)
 end
 
-function EarthSciMLBase.couple2(gd::GaussianDispersionCoupler, g::GEOSFPCoupler)
+function EarthSciMLBase.couple2(gd::GaussianPGBCoupler, g::GEOSFPCoupler)
     d, m = gd.sys, g.sys
     ConnectorSystem([
         d.lat ~ m.lat
@@ -73,7 +74,7 @@ function EarthSciMLBase.couple2(gd::GaussianDispersionCoupler, g::GEOSFPCoupler)
 end
 
 function EarthSciMLBase.couple2(
-        gd::GaussianDispersionCoupler,
+        gd::GaussianPGBCoupler,
         puff::PuffCoupler,
 )
     g, p = gd.sys, puff.sys
@@ -86,5 +87,48 @@ function EarthSciMLBase.couple2(
         g, p
     )
 end
+
+function EarthSciMLBase.couple2(gd::GaussianHCoupler, g::GEOSFPCoupler)
+    d, m = gd.sys, g.sys
+    Δλ = deg2rad(5.0)
+    Δφ = deg2rad(4.0)
+    ConnectorSystem([
+        d.lat ~ m.lat
+        d.lon ~ m.lon
+        d.lev ~ m.lev
+        d.U ~ m.A3dyn₊U
+        d.UE  ~ ParentScope(m.A3dyn₊U_itp)(t, ParentScope(m.lon) + Δλ/2, ParentScope(m.lat), ParentScope(m.lev))
+        d.UW  ~ ParentScope(m.A3dyn₊U_itp)(t, ParentScope(m.lon) - Δλ/2, ParentScope(m.lat), ParentScope(m.lev))
+        d.UN  ~ ParentScope(m.A3dyn₊U_itp)(t, ParentScope(m.lon), ParentScope(m.lat) + Δφ/2, ParentScope(m.lev))
+        d.US  ~ ParentScope(m.A3dyn₊U_itp)(t, ParentScope(m.lon), ParentScope(m.lat) - Δφ/2, ParentScope(m.lev))
+        d.V ~ m.A3dyn₊V
+        d.VE  ~ ParentScope(m.A3dyn₊V_itp)(t, ParentScope(m.lon) + Δλ/2, ParentScope(m.lat), ParentScope(m.lev))
+        d.VW  ~ ParentScope(m.A3dyn₊V_itp)(t, ParentScope(m.lon) - Δλ/2, ParentScope(m.lat), ParentScope(m.lev))
+        d.VN  ~ ParentScope(m.A3dyn₊V_itp)(t, ParentScope(m.lon), ParentScope(m.lat) + Δφ/2, ParentScope(m.lev))
+        d.VS  ~ ParentScope(m.A3dyn₊V_itp)(t, ParentScope(m.lon), ParentScope(m.lat) - Δφ/2, ParentScope(m.lev))
+        d.QV2M ~ m.A1₊QV2M
+        d.T2M   ~ m.A1₊T2M
+        d.T  ~ m.I3₊T
+        d.P  ~ m.P
+        d.PS  ~ m.I3₊PS
+        d.QV  ~ m.I3₊QV
+    ], d, m)
+end
+
+function EarthSciMLBase.couple2(
+        gd::GaussianHCoupler,
+        puff::PuffCoupler,
+)
+    g, p = gd.sys, puff.sys
+
+    ConnectorSystem(
+        [
+            g.lon ~ p.lon,
+            g.lat ~ p.lat,
+        ],
+        g, p
+    )
+end
+
 
 end

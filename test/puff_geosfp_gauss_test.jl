@@ -2,11 +2,11 @@ using Test
 using Dates
 using EarthSciMLBase, EarthSciData, EnvironmentalTransport
 using ModelingToolkit, OrdinaryDiffEq
-using EnvironmentalTransport: PuffCoupler, GaussianDispersionCoupler
+using EnvironmentalTransport: PuffCoupler, GaussianPGBCoupler, GaussianHCoupler
 
-starttime = DateTime(2022, 5, 1)
-endtime = DateTime(2022, 5, 2)
-lonv, latv, levv = (-108, 38, 2)
+starttime = DateTime(2022, 5, 1, 0)
+endtime = DateTime(2022, 5, 1, 5)
+lonv, latv, levv = (-108, 38, 1.4)
 
 domain = DomainInfo(
     starttime, endtime;
@@ -15,31 +15,64 @@ domain = DomainInfo(
     levrange = 1:72,
 )
 
-model = couple(
-    Puff(domain),
-    GEOSFP("4x5", domain; stream=false),
-    GaussianDispersion()
-)
+@testset "GaussianPGB" begin
+    model = couple(
+        Puff(domain),
+        GEOSFP("4x5", domain; stream=false),
+        GaussianPGB()
+    )
 
-sys = convert(ODESystem, model)
+    sys = convert(ODESystem, model)
 
-tspan = get_tspan(domain)
+    tspan = get_tspan(domain)
 
-u0 = [
-    sys.Puff₊lon => deg2rad(lonv),
-    sys.Puff₊lat => deg2rad(latv),
-    sys.Puff₊lev => levv,
-]
-p = [
-    sys.GaussianDispersion₊lon0 => deg2rad(lonv),
-    sys.GaussianDispersion₊lat0 => deg2rad(latv),
-]
+    u0 = [
+        sys.Puff₊lon => deg2rad(lonv),
+        sys.Puff₊lat => deg2rad(latv),
+        sys.Puff₊lev => levv,
+    ]
+    p = [
+        sys.GaussianPGB₊lon0 => deg2rad(lonv),
+        sys.GaussianPGB₊lat0 => deg2rad(latv),
+    ]
 
-prob = ODEProblem(sys, u0, tspan, p)
-sol = solve(prob, Tsit5())
+    prob = ODEProblem(sys, u0, tspan, p)
+    sol = solve(prob, Tsit5())
 
-C_gl_val    = sol[sys.GaussianDispersion₊C_gl][end]
-C_gl_want = 2.47e-13
+    C_gl_val    = sol[sys.GaussianPGB₊C_gl][end]
+    C_gl_want = 5.85e-11
 
-@test isapprox(C_gl_val, C_gl_want; rtol = 1e-2)
+    @test isapprox(C_gl_val, C_gl_want; rtol = 1e-2)
+end
 
+
+
+@testset "GaussianH" begin
+    model = couple(
+        Puff(domain),
+        GEOSFP("4x5", domain; stream=false),
+        GaussianH()
+    )
+
+    sys = convert(ODESystem, model)
+
+    tspan = get_tspan(domain)
+
+    u0 = [
+        sys.Puff₊lon => deg2rad(lonv),
+        sys.Puff₊lat => deg2rad(latv),
+        sys.Puff₊lev => levv,
+        sys.GaussianH₊sigma_h => 0.0,
+    ]
+    p = [
+        sys.GaussianH₊Δz => 500,
+    ]
+
+    prob = ODEProblem(sys, u0, tspan, p)
+    sol = solve(prob, Tsit5())
+
+    C_gl_val    = sol[sys.GaussianH₊C_gl][end]
+    C_gl_want = 5.83e-13
+
+    @test isapprox(C_gl_val, C_gl_want; rtol = 1e-2)
+end
