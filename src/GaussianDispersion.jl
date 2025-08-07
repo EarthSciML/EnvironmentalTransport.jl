@@ -52,10 +52,12 @@ using ModelingToolkit, DifferentialEquations
 
 t0 = DateTime(2022, 5, 1)
 t1 = DateTime(2022, 5, 2)
+Δλ      = deg2rad(5.0)
+Δφ      = deg2rad(4.0)
 
 dom = DomainInfo(t0, t1; levrange=1:72,
-                 lonrange = deg2rad(-125):deg2rad(5):deg2rad(-70),
-                 latrange = deg2rad(25):deg2rad(4):deg2rad(54))
+                    lonrange = deg2rad(-130):Δλ:deg2rad(-60),
+                    latrange = deg2rad(25):Δφ:deg2rad(61))
 
 mdl = couple(Puff(dom),
              GEOSFP("4x5", dom; stream=false),
@@ -67,7 +69,7 @@ u0 = [sys.Puff₊lon => deg2rad(-105),
       sys.Puff₊lat => deg2rad(  38),
       sys.Puff₊lev => 2]
 
-p  = [sys.GaussianPGB₊lon0 => deg2rad(-108),
+p  = [sys.GaussianPGB₊lon0 => deg2rad(-105),
       sys.GaussianPGB₊lat0 => deg2rad(  38)]
 
 prob = ODEProblem(sys, u0, (datetime2unix(t0), datetime2unix(t1)), p)
@@ -308,10 +310,12 @@ using ModelingToolkit, DifferentialEquations
 
 t0 = DateTime(2022, 5, 1)
 t1 = DateTime(2022, 5, 2)
+Δλ      = deg2rad(5.0)
+Δφ      = deg2rad(4.0)
 
 dom = DomainInfo(t0, t1; levrange=1:72,
-                 lonrange = deg2rad(-125):deg2rad(5):deg2rad(-70),
-                 latrange = deg2rad(25):deg2rad(4):deg2rad(54))
+                    lonrange = deg2rad(-130):Δλ:deg2rad(-60),
+                    latrange = deg2rad(25):Δφ:deg2rad(61))
 
 mdl = couple(Puff(dom),
              GEOSFP("4x5", dom; stream=false),
@@ -322,9 +326,13 @@ sys  = convert(ODESystem, mdl)
 u0 = [sys.Puff₊lon => deg2rad(-105),
       sys.Puff₊lat => deg2rad(  38),
       sys.Puff₊lev => 2,
-      sys.GaussianH₊sigma_h => 0.0,]
+      sys.GaussianH₊sigma_h => 0.0]
 
-prob = ODEProblem(sys, u0, (datetime2unix(t0), datetime2unix(t1)))
+p = [
+        sys.GaussianH₊Δλ => Δλ,
+        sys.GaussianH₊Δφ => Δφ]
+
+prob = ODEProblem(sys, u0, (datetime2unix(t0), datetime2unix(t1)), p)
 sol = solve(prob, Tsit5();)
 
 sigma_h = sol[sys.GaussianH₊sigma_h]

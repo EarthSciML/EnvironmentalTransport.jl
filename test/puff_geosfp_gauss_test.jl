@@ -7,12 +7,14 @@ using EnvironmentalTransport: PuffCoupler, GaussianPGBCoupler, GaussianHCoupler
 starttime = DateTime(2022, 5, 1, 0)
 endtime = DateTime(2022, 5, 1, 5)
 lonv, latv, levv = (-108, 38, 1.4)
+Δλ      = deg2rad(5.0)
+Δφ      = deg2rad(4.0)
 
 domain = DomainInfo(
     starttime, endtime;
-    lonrange = deg2rad(-125):deg2rad(1.25):deg2rad(-68.75),
-    latrange = deg2rad(25.0):deg2rad(1.00):deg2rad(53.7),
-    levrange = 1:72,
+    lonrange = deg2rad(-130):Δλ:deg2rad(-60),
+    latrange = deg2rad(25):Δφ:deg2rad(61),
+    levrange = 1:72
 )
 
 @testset "GaussianPGB" begin
@@ -29,18 +31,18 @@ domain = DomainInfo(
     u0 = [
         sys.Puff₊lon => deg2rad(lonv),
         sys.Puff₊lat => deg2rad(latv),
-        sys.Puff₊lev => levv,
+        sys.Puff₊lev => levv
     ]
     p = [
         sys.GaussianPGB₊lon0 => deg2rad(lonv),
-        sys.GaussianPGB₊lat0 => deg2rad(latv),
+        sys.GaussianPGB₊lat0 => deg2rad(latv)
     ]
 
     prob = ODEProblem(sys, u0, tspan, p)
     sol = solve(prob, Tsit5())
 
     C_gl_val    = sol[sys.GaussianPGB₊C_gl][end]
-    C_gl_want = 5.85e-11
+    C_gl_want = 8.23e-11
 
     @test isapprox(C_gl_val, C_gl_want; rtol = 1e-2)
 end
@@ -62,17 +64,19 @@ end
         sys.Puff₊lon => deg2rad(lonv),
         sys.Puff₊lat => deg2rad(latv),
         sys.Puff₊lev => levv,
-        sys.GaussianH₊sigma_h => 0.0,
+        sys.GaussianH₊sigma_h => 0.0
     ]
     p = [
-        sys.GaussianH₊Δz => 500,
+        sys.GaussianH₊Δλ => Δλ,
+        sys.GaussianH₊Δφ => Δφ,
+        sys.GaussianH₊Δz => 500
     ]
 
     prob = ODEProblem(sys, u0, tspan, p)
     sol = solve(prob, Tsit5())
 
     C_gl_val    = sol[sys.GaussianH₊C_gl][end]
-    C_gl_want = 5.83e-13
+    C_gl_want = 6.58e-13
 
     @test isapprox(C_gl_val, C_gl_want; rtol = 1e-2)
 end

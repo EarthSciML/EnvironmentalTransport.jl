@@ -90,22 +90,20 @@ end
 
 function EarthSciMLBase.couple2(gd::GaussianHCoupler, g::GEOSFPCoupler)
     d, m = gd.sys, g.sys
-    Δλ = deg2rad(5.0)
-    Δφ = deg2rad(4.0)
     ConnectorSystem([
         d.lat ~ m.lat
         d.lon ~ m.lon
         d.lev ~ m.lev
         d.U ~ m.A3dyn₊U
-        d.UE  ~ ParentScope(m.A3dyn₊U_itp)(t, ParentScope(m.lon) + Δλ/2, ParentScope(m.lat), ParentScope(m.lev))
-        d.UW  ~ ParentScope(m.A3dyn₊U_itp)(t, ParentScope(m.lon) - Δλ/2, ParentScope(m.lat), ParentScope(m.lev))
-        d.UN  ~ ParentScope(m.A3dyn₊U_itp)(t, ParentScope(m.lon), ParentScope(m.lat) + Δφ/2, ParentScope(m.lev))
-        d.US  ~ ParentScope(m.A3dyn₊U_itp)(t, ParentScope(m.lon), ParentScope(m.lat) - Δφ/2, ParentScope(m.lev))
+        d.UE  ~ ParentScope(m.A3dyn₊U_itp)(t, ParentScope(m.lon) + d.Δλ/2, ParentScope(m.lat), ParentScope(m.lev))
+        d.UW  ~ ParentScope(m.A3dyn₊U_itp)(t, ParentScope(m.lon) - d.Δλ/2, ParentScope(m.lat), ParentScope(m.lev))
+        d.UN  ~ ParentScope(m.A3dyn₊U_itp)(t, ParentScope(m.lon), ParentScope(m.lat) + d.Δφ/2, ParentScope(m.lev))
+        d.US  ~ ParentScope(m.A3dyn₊U_itp)(t, ParentScope(m.lon), ParentScope(m.lat) - d.Δφ/2, ParentScope(m.lev))
         d.V ~ m.A3dyn₊V
-        d.VE  ~ ParentScope(m.A3dyn₊V_itp)(t, ParentScope(m.lon) + Δλ/2, ParentScope(m.lat), ParentScope(m.lev))
-        d.VW  ~ ParentScope(m.A3dyn₊V_itp)(t, ParentScope(m.lon) - Δλ/2, ParentScope(m.lat), ParentScope(m.lev))
-        d.VN  ~ ParentScope(m.A3dyn₊V_itp)(t, ParentScope(m.lon), ParentScope(m.lat) + Δφ/2, ParentScope(m.lev))
-        d.VS  ~ ParentScope(m.A3dyn₊V_itp)(t, ParentScope(m.lon), ParentScope(m.lat) - Δφ/2, ParentScope(m.lev))
+        d.VE  ~ ParentScope(m.A3dyn₊V_itp)(t, ParentScope(m.lon) + d.Δλ/2, ParentScope(m.lat), ParentScope(m.lev))
+        d.VW  ~ ParentScope(m.A3dyn₊V_itp)(t, ParentScope(m.lon) - d.Δλ/2, ParentScope(m.lat), ParentScope(m.lev))
+        d.VN  ~ ParentScope(m.A3dyn₊V_itp)(t, ParentScope(m.lon), ParentScope(m.lat) + d.Δφ/2, ParentScope(m.lev))
+        d.VS  ~ ParentScope(m.A3dyn₊V_itp)(t, ParentScope(m.lon), ParentScope(m.lat) - d.Δφ/2, ParentScope(m.lev))
         d.QV2M ~ m.A1₊QV2M
         d.T2M   ~ m.A1₊T2M
         d.T  ~ m.I3₊T
