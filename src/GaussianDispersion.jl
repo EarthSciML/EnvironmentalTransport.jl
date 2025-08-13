@@ -1,18 +1,28 @@
-export GaussianDispersion
+export GaussianPGB
+export GaussianH
+
+import ModelingToolkit: Differential
+
               
-struct GaussianDispersionCoupler
+struct GaussianPGBCoupler
+    sys::Any
+end
+
+struct GaussianHCoupler
     sys::Any
 end
 
 """
-GaussianDispersion()
+GaussianPGB()
 
 Return a `ModelingToolkit.ODESystem` implementing a classic Gaussian plume dispersion model, parameterized 
 with Pasquill-Gifford-Briggs dispersion coefficients, following the formulations described in EPA guidance
 402-R-00-004 §12.1.6 
 (https://19january2017snapshot.epa.gov/sites/production/files/2015-05/documents/402-r-00-004.pdf) and the MMGRMA 
 document, Table 6-7 (https://www.epa.gov/sites/default/files/2020-10/documents/mmgrma_0.pdf).
-
+Good for: quasi-steady (piecewise-steady) applications where emissions and meteorology can be treated steady over 
+each model time step; near-field ranges (typically ≤ 50 km); and cases where the effective plume height remains 
+within the planetary boundary layer.
 
 What this does:
 
@@ -31,7 +41,7 @@ What this does:
 
 - Ground-level concentration: Computes the Gaussian ground-level concentration
   at the puff center for one unit of puff mass:
-      C_gl = 1 / ((2π)^{3/2} σ_h² . σ_z) * exp(-z_agl² / (2 σ_z²)).
+      C_gl = 1 / ((2π)^{3/2} · σ_h² · σ_z) * exp(-z_agl² / (2 σ_z²)).
 
 
 Example:
@@ -42,34 +52,36 @@ using ModelingToolkit, DifferentialEquations
 
 t0 = DateTime(2022, 5, 1)
 t1 = DateTime(2022, 5, 2)
+Δλ      = deg2rad(5.0)
+Δφ      = deg2rad(4.0)
 
 dom = DomainInfo(t0, t1; levrange=1:72,
-                 lonrange = deg2rad(-125):deg2rad(5):deg2rad(-70),
-                 latrange = deg2rad(25):deg2rad(4):deg2rad(54))
+                    lonrange = deg2rad(-130):Δλ:deg2rad(-60),
+                    latrange = deg2rad(25):Δφ:deg2rad(61))
 
 mdl = couple(Puff(dom),
              GEOSFP("4x5", dom; stream=false),
-             GaussianDispersion())
+             GaussianPGB())
 
 sys  = convert(ODESystem, mdl)
 
 u0 = [sys.Puff₊lon => deg2rad(-105),
       sys.Puff₊lat => deg2rad(  38),
-      sys.Puff₊lev => 3]
+      sys.Puff₊lev => 2]
 
-p  = [sys.GaussianDispersion₊lon0 => deg2rad(-108),
-      sys.GaussianDispersion₊lat0 => deg2rad(  38)]
+p  = [sys.GaussianPGB₊lon0 => deg2rad(-105),
+      sys.GaussianPGB₊lat0 => deg2rad(  38)]
 
 prob = ODEProblem(sys, u0, (datetime2unix(t0), datetime2unix(t1)), p)
 sol = solve(prob, Tsit5();)
 
-sigma_h = sol[sys.GaussianDispersion₊sigma_h]
-sigma_z = sol[sys.GaussianDispersion₊sigma_z]
-C_gl    = sol[sys.GaussianDispersion₊C_gl]
+sigma_h = sol[sys.GaussianPGB₊sigma_h]
+sigma_z = sol[sys.GaussianPGB₊sigma_z]
+C_gl    = sol[sys.GaussianPGB₊C_gl]
 
 ```
 """
-function GaussianDispersion()
+function GaussianPGB()
     @parameters begin
         lon0 = 0.0, [unit = u"rad",  description = "Source longitude (radians)"]
         lat0 = 0.0, [unit = u"rad",  description = "Source latitude  (radians)"]
@@ -240,7 +252,7 @@ function GaussianDispersion()
     # Ground‑level concentration at puff center for unit mass (Gaussian)
     # C = 1 / ((2π)^(3/2) σ_h^2 σ_z) * exp(-z_agl^2/(2 σ_z^2))
     # ------------------------------------------------------------------
-    C_gl_expr = 1 / ((2*pi)^(3/2) * sigma_h^2 * sigma_z) *
+    C_gl_expr = 1 / ((2*π)^(3/2) * sigma_h^2 * sigma_z) *
                    exp(- (z_agl^2) / (2 * sigma_z^2))
 
     # ------------------------------------------------------------------
@@ -269,7 +281,141 @@ function GaussianDispersion()
             AZ_A, AZ_B, AZ_C, AZ_D, AZ_Ep, AZ_F,
             BZ_A, BZ_B, BZ_C, BZ_D, BZ_Ep, BZ_F,
             BY];
-        name = :GaussianDispersion,
-        metadata = Dict(:coupletype => GaussianDispersionCoupler)
+        name = :GaussianPGB,
+        metadata = Dict(:coupletype => GaussianPGBCoupler)
+    )
+end
+
+"""
+GaussianH()
+
+Returns a `ModelingToolkit.ODESystem` that calculates horizontal dispersion (σ_h) from 
+velocity deformation (Smagorinsky/Deardorff), and computes hypsometric height (z_agl) 
+and ground-level centerline concentration per unit mass. The ground-level concentration is 
+only evaluated when the puff is within the ground layer (z_agl ≤ Δz); otherwise it is set to zero.
+
+References (NOAA ARL MetMag report):
+https://www.arl.noaa.gov/documents/reports/MetMag.pdf
+
+- Horizontal mixing coefficient: Eq. 12
+- Standard deviation of the turbulent velocity: Eq. 15
+- σ_h tendency: Eq. 16
+- Centerline ground-level concentration: Eq. 18
+
+Example:
+
+```
+using Dates, EarthSciMLBase, EarthSciData, EnvironmentalTransport
+using ModelingToolkit, DifferentialEquations
+
+t0 = DateTime(2022, 5, 1)
+t1 = DateTime(2022, 5, 2)
+Δλ      = deg2rad(5.0)
+Δφ      = deg2rad(4.0)
+
+dom = DomainInfo(t0, t1; levrange=1:72,
+                    lonrange = deg2rad(-130):Δλ:deg2rad(-60),
+                    latrange = deg2rad(25):Δφ:deg2rad(61))
+
+mdl = couple(Puff(dom),
+             GEOSFP("4x5", dom; stream=false),
+             GaussianH())
+
+sys  = convert(ODESystem, mdl)
+
+u0 = [sys.Puff₊lon => deg2rad(-105),
+      sys.Puff₊lat => deg2rad(  38),
+      sys.Puff₊lev => 2,
+      sys.GaussianH₊sigma_h => 0.0]
+
+p = [
+        sys.GaussianH₊Δλ => Δλ,
+        sys.GaussianH₊Δφ => Δφ]
+
+prob = ODEProblem(sys, u0, (datetime2unix(t0), datetime2unix(t1)), p)
+sol = solve(prob, Tsit5();)
+
+sigma_h = sol[sys.GaussianH₊sigma_h]
+C_gl    = sol[sys.GaussianH₊C_gl]
+
+```
+"""
+
+function GaussianH()
+
+    @parameters begin
+        Rd = 287.05, [unit = u"J/(kg*K)", description = "Dry-air gas constant"]
+        g  = 9.80665, [unit = u"m/s^2",   description = "Gravitational acceleration"]
+
+        R_earth = 6.371e6, [unit = u"m",  description = "Earth mean radius"]
+        c_smag  = 0.14,    [description = "Smagorinsky constant c"]
+        Δλ      = deg2rad(5.0), [unit = u"rad", description = "Longitude grid size (5° for GEOS-FP 4x5)"]
+        Δφ      = deg2rad(4.0), [unit = u"rad", description = "Latitude grid size (4° for GEOS-FP 4x5)"]
+        TLv = 10800.0, [unit = u"s", description = "Horizontal Lagrangian time scale"]
+        Δz = 50.0, [unit = u"m", description = "Grid-cell height. (m)"]
+        C_zero  = 0.0, [unit = u"m^-3", description = "Zero concentration"]
+    end
+
+    @variables begin
+        lon(t),   [unit = u"rad",  description = "longitude"]
+        lat(t),   [unit = u"rad",  description = "latitude"]
+        lev(t),   [description = "Vertical level (1–72 for GEOS-FP)"]
+        sigma_h(t), [unit = u"m",  description = "horizontal dispersion coefficient"]
+        U(t),         [unit = u"m/s",    description = "wind U component at puff level"]
+        UE(t),  [unit = u"m/s", description = "U wind at longitude +½ grid step (east neighbor)"]
+        UW(t),  [unit = u"m/s", description = "U wind at longitude −½ grid step (west neighbor)"]
+        UN(t),  [unit = u"m/s", description = "U wind at latitude  +½ grid step (north neighbor)"]
+        US(t),  [unit = u"m/s", description = "U wind at latitude  −½ grid step (south neighbor)"]
+        V(t),         [unit = u"m/s",    description = "wind V component at puff level"]
+        VE(t),  [unit = u"m/s", description = "V wind at longitude +½ grid step (east neighbor)"]
+        VW(t),  [unit = u"m/s", description = "V wind at longitude −½ grid step (west neighbor)"]
+        VN(t),  [unit = u"m/s", description = "V wind at latitude  +½ grid step (north neighbor)"]
+        VS(t),  [unit = u"m/s", description = "V wind at latitude  −½ grid step (south neighbor)"]
+
+        P(t),     [unit = u"Pa", description = "Pressure at puff level"]
+        PS(t),    [unit = u"Pa", description = "Surface pressure"]
+        T(t),     [unit = u"K",  description = "Air temperature at puff level"]
+        T2M(t),   [unit = u"K", description = "2 m air temperature"]
+        QV(t),    [description = "Specific humidity at puff level (kg/kg)"]
+        QV2M(t),  [description = "Specific humidity at 2 m (kg/kg)"]
+        z_agl(t), [unit = u"m",  description = "Height AGL from hypsometric equation"]
+        C_gl(t), [unit = u"m^-3", description = "Ground-level concentration at puff center for unit mass (Gaussian)"]
+    end
+
+    Tv_lvl = T   * (1 + 0.61 * QV)
+    Tv_sfc = T2M * (1 + 0.61 * QV2M)
+    Tv_bar = 0.5 * (Tv_lvl + Tv_sfc)
+
+    Δx = R_earth * cos(lat) * Δλ
+    Δy = R_earth * Δφ
+    X  = sqrt(Δx * Δy)  
+
+    dUdx = (UE - UW) / (Δx)
+    dUdy = (UN - US) / (Δy)
+    dVdx = (VE - VW) / (Δx)
+    dVdy = (VN - VS) / (Δy)
+
+    Kh   =  (c_smag * X)^2 / sqrt(2) * sqrt((dVdx + dUdy)^2 + (dUdx - dVdy)^2)
+
+    σu   = sqrt(Kh / TLv)
+
+    Dt = Differential(t)
+    C_expr  = 1 / (2*π * sigma_h^2 * Δz)
+
+    eqs = [
+        Dt(sigma_h) ~ sqrt(2) * σu,
+        z_agl       ~ (Rd * Tv_bar / g) * log(PS / P),
+        C_gl        ~ ifelse(z_agl <= Δz, C_expr, C_zero),
+    ]
+
+    return ODESystem(
+        eqs, t,
+        [lon, lat, lev, sigma_h, z_agl, C_gl,
+          P, PS, T, T2M, QV, QV2M, U, UE, UW, 
+          UN, US, V, VE, VW, VN, VS],
+        [Rd, g, R_earth, c_smag, Δλ, Δφ, TLv, 
+         Δz, C_zero];
+        name     = :GaussianH,
+        metadata = Dict(:coupletype => GaussianHCoupler,)
     )
 end

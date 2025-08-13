@@ -23,21 +23,28 @@ function Sofiev2012PlumeRise(; name = :Sofiev2012PlumeRise)
     end
 
     params2 = @parameters begin
-        H_abl = 1000.0, [unit = u"m", description = "Atmospheric boundary layer height"]
-        N_ft = 0.02, # TODO(CT): Calculate this from data.
-        [unit = u"1/s", description = "Free troposphere Brunt-Vaisala frequency"]
         P_fr = 5e6, [unit = u"W", description = "Fire radiative power"]
 
-        # TODO(CT): Make this automatically calculated.
+        # Used to calculate the initial guess of the plume top level
         h_to_lev = 100.0, [unit = u"m", description = "Height to level transform"]
 
-        H_p, [unit = u"m", description = "Final plume top height"]
-        lev_p, [description = "Vertical level of the plume top height"]
+        k_s12 = β * (P_fr / P_f0)^γ, [unit = u"m"]
     end
-    pd = [H_p ~ α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * N_ft^2 / N_0^2),
-        lev_p ~ H_p / h_to_lev]
+
+    # TODO(CT): Use as parameters.
+    @variables begin
+        H_abl(t),   [unit = u"m",  description = "Atmospheric boundary layer height"]
+        H_p(t),   [unit = u"m", description = "Plume top height"]
+        lev_p(t),   [description = "Vertical level of the plume top height"]
+        N_ft(t), [unit = u"1/s", description = "Free troposphere Brunt-Vaisala frequency"]
+    end
+    
+    eqs = [
+        H_p ~ α*H_abl + k_s12 * exp(-δ * (N_ft/N_0)^2)
+    ]
+
     ODESystem(
-        Equation[], t, [], [params1; params2]; name = name, parameter_dependencies = pd,
+        eqs, t, [H_abl, H_p, lev_p, N_ft], [params1; params2]; name = name,
         metadata = Dict(:coupletype => Sofiev2012PlumeRiseCoupler))
 end
 
