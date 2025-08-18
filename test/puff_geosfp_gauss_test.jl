@@ -2,7 +2,6 @@ using Test
 using Dates
 using EarthSciMLBase, EarthSciData, EnvironmentalTransport
 using ModelingToolkit, OrdinaryDiffEq
-using EnvironmentalTransport: PuffCoupler, GaussianPGBCoupler, GaussianHCoupler
 
 starttime = DateTime(2022, 5, 1, 0)
 endtime = DateTime(2022, 5, 1, 5)
@@ -49,11 +48,11 @@ end
 
 
 
-@testset "GaussianH" begin
+@testset "GaussianSD" begin
     model = couple(
         Puff(domain),
         GEOSFP("4x5", domain; stream=false),
-        GaussianH()
+        GaussianSD()
     )
 
     sys = convert(ODESystem, model)
@@ -64,18 +63,18 @@ end
         sys.Puff₊lon => deg2rad(lonv),
         sys.Puff₊lat => deg2rad(latv),
         sys.Puff₊lev => levv,
-        sys.GaussianH₊sigma_h => 0.0
+        sys.GaussianSD₊sigma_h => 0.0
     ]
     p = [
-        sys.GaussianH₊Δλ => Δλ,
-        sys.GaussianH₊Δφ => Δφ,
-        sys.GaussianH₊Δz => 500
+        sys.GaussianSD₊Δλ => Δλ,
+        sys.GaussianSD₊Δφ => Δφ,
+        sys.GaussianSD₊Δz => 500
     ]
 
     prob = ODEProblem(sys, u0, tspan, p)
     sol = solve(prob, Tsit5())
 
-    C_gl_val    = sol[sys.GaussianH₊C_gl][end]
+    C_gl_val    = sol[sys.GaussianSD₊C_gl][end]
     C_gl_want = 6.58e-13
 
     @test isapprox(C_gl_val, C_gl_want; rtol = 1e-2)

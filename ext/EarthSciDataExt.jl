@@ -3,7 +3,7 @@ using DocStringExtensions
 import EarthSciMLBase
 using EarthSciMLBase: param_to_var, ConnectorSystem, CoupledSystem, get_coupletype
 using EarthSciData: GEOSFPCoupler, Ap, Bp
-using EnvironmentalTransport: PuffCoupler, GaussianPGBCoupler, GaussianHCoupler, AdvectionOperator, Sofiev2012PlumeRiseCoupler
+using EnvironmentalTransport: PuffCoupler, GaussianPGBCoupler, GaussianSDCoupler, AdvectionOperator, Sofiev2012PlumeRiseCoupler
 using EnvironmentalTransport
 using ModelingToolkit: ParentScope
 using ModelingToolkit: t
@@ -67,9 +67,9 @@ function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, gfp::GEOSFPCoup
     T2M_itp  = ParentScope(gfp.A1₊T2M_itp)      # [K]     2-m temperature
     QV2M_itp = ParentScope(gfp.A1₊QV2M_itp)     # [kg/kg] 2-m water vapor mixing ratio
 
-    Rd     = ParentScope(gfp.Rd_sym)            # [J/(kg*K)] dry-air gas constant
-    g      = ParentScope(gfp.g_sym)             # [m/s^2]    gravity
-    P_unit = ParentScope(gfp.P_unit_sym)        # [Pa]       pressure unit (1 Pa)
+    Rd     = ParentScope(gfp.Rd_v)            # [J/(kg*K)] dry-air gas constant
+    g      = ParentScope(gfp.g_v)             # [m/s^2]    gravity
+    P_unit = ParentScope(gfp.P_unit_v)        # [Pa]       pressure unit (1 Pa)
 
     softclamp = (x, lo, hi) -> ifelse(x < lo, lo, ifelse(x > hi, hi, x))
 
@@ -159,7 +159,7 @@ function EarthSciMLBase.couple2(
     )
 end
 
-function EarthSciMLBase.couple2(gd::GaussianHCoupler, g::GEOSFPCoupler)
+function EarthSciMLBase.couple2(gd::GaussianSDCoupler, g::GEOSFPCoupler)
     d, m = gd.sys, g.sys
     ConnectorSystem([
         d.lat ~ m.lat
@@ -185,7 +185,7 @@ function EarthSciMLBase.couple2(gd::GaussianHCoupler, g::GEOSFPCoupler)
 end
 
 function EarthSciMLBase.couple2(
-        gd::GaussianHCoupler,
+        gd::GaussianSDCoupler,
         puff::PuffCoupler,
 )
     g, p = gd.sys, puff.sys
