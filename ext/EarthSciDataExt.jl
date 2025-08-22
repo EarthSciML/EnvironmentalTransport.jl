@@ -5,7 +5,7 @@ using EarthSciMLBase: param_to_var, ConnectorSystem, CoupledSystem, get_couplety
 using EarthSciData: GEOSFPCoupler, Ap, Bp
 using EnvironmentalTransport: PuffCoupler, GaussianPGBCoupler, GaussianSDCoupler, AdvectionOperator, Sofiev2012PlumeRiseCoupler
 using EnvironmentalTransport
-using ModelingToolkit: ParentScope
+using ModelingToolkit: ParentScope, get_defaults, @unpack
 using ModelingToolkit: t
 
 function EarthSciMLBase.couple2(p::PuffCoupler, g::GEOSFPCoupler)
@@ -48,6 +48,7 @@ end
 function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, gfp::GEOSFPCoupler)
     s12, gfp = s12.sys, gfp.sys
 
+
     εZ_m  = 1e-6 * s12.h_to_lev                     # [m]  use to keep (Zp - Zm) away from zero
     εmlev = 1e-12 * s12.h_to_lev                    # [m]  use to keep dZ/dℓ away from zero
     κ    = 287.05 / 1004.67                         # [-]  Poisson exponent Rd/cp
@@ -56,6 +57,10 @@ function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, gfp::GEOSFPCoup
     LMIN, LMAX = 1.0 + Δℓ_newton, 72.0 - Δℓ_newton  # [-]  valid mid-level range
     εPfac = 1e-9                                    # [-]  tiny factor
     p0    = 1.0e5                                   # [Pa] reference sea-level pressure
+
+    df = get_defaults(s12)
+    @unpack H_abl = s12
+    df[H_abl] = ParentScope(gfp.A1₊PBLH_itp)(ParentScope.((gfp.t_ref, gfp.lon, gfp.lat))...)
 
     τ = ParentScope(gfp.t_ref)                  # [s]   reference time
     λ = ParentScope(gfp.lon)                    # [rad] longitude

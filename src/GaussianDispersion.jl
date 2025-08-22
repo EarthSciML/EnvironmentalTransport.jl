@@ -1,24 +1,28 @@
+export GaussianDispersion
 export GaussianPGB
 export GaussianSD
 
 import ModelingToolkit: Differential
-
               
 struct GaussianPGBCoupler
     sys::Any
 end
 
 struct GaussianSDCoupler
+  sys::Any
+end
+
+struct GaussianDispersionCoupler
     sys::Any
 end
 
 """
 GaussianPGB()
 
-Return a `ModelingToolkit.ODESystem` implementing a classic Gaussian plume dispersion model, parameterized 
+Return a `ModelingToolkit.ODESystem` implementing a classic Gaussian plume dispersion model, parameterized
 with Pasquill-Gifford-Briggs dispersion coefficients, following the formulations described in EPA guidance
-402-R-00-004 §12.1.6 
-(https://19january2017snapshot.epa.gov/sites/production/files/2015-05/documents/402-r-00-004.pdf) and the MMGRMA 
+402-R-00-004 §12.1.6
+(https://19january2017snapshot.epa.gov/sites/production/files/2015-05/documents/402-r-00-004.pdf) and the MMGRMA
 document, Table 6-7 (https://www.epa.gov/sites/default/files/2020-10/documents/mmgrma_0.pdf).
 Good for: quasi-steady (piecewise-steady) applications where emissions and meteorology can be treated steady over 
 each model time step; near-field ranges (typically ≤ 50 km); and cases where the effective plume height remains 
@@ -180,102 +184,118 @@ function GaussianPGB()
         C_gl_expr(t),    [unit = u"m^-3",  description = "Ground-level concentration at puff center for unit mass formula"]
     end
 
+    wind_speed = sqrt(U10M^2 + V10M^2) # Wind speed (m s⁻¹)
+    dTsurf = T10M - T2M # 10 m – 2 m temperature difference (K)
+
+    # ------------------------------------------------------------------
+    # Stability class (integer 1…6)
+    # ------------------------------------------------------------------
+    # Based on EPA MMGRMA Table 6‑7:
+    # https://www.epa.gov/sites/default/files/2020-10/documents/mmgrma_0.pdf
+    #   1 → very unstable (class A)
+    #   2 → unstable      (class B)
+    #   3 → slightly unstable (class C)
+    #   4 → neutral       (class D)
+    #   5 → slightly stable   (class E)
+    #   6 → stable            (class F)
+    stab_cls = ifelse(
+        SWGDN .< solrad_night,                                    # night‑time
+            ifelse(CLDTOT .<= cloudfrac_clear,                     # clear
+                ifelse(dTsurf .> inversion_thresh,                # inversion on?
+                    ifelse(wind_speed .< v2, 6, 5),               # F or E
+                    4                                             # neutral (D)
+                ),
+                4                                                 # cloudy night → D
+            ),
+        ifelse(SWGDN .>= solrad_strong,                           # strong sun
+            ifelse(wind_speed .< v3, 1,                           # A
+                ifelse(wind_speed .< v5, 2, 3)                    # B or C
+            ),
+        ifelse(SWGDN .>= solrad_moder,                            # moderate sun
+            ifelse(wind_speed .< v2, 1,                           # A
+                ifelse(wind_speed .< v5, 2,                       # B
+                    ifelse(wind_speed .< v6, 3, 4)                # C or D
+                )
+            ),
+        ifelse(SWGDN .>= solrad_slight,                           # slight sun
+            ifelse(wind_speed .< v2, 2,                           # B
+                ifelse(wind_speed .< v5, 3, 4)                    # C or D
+            ),
+            4                                                     # default neutral
+        ))))
+
+    # ------------------------------------------------------------------
+    # Briggs dispersion‑curve coefficients (unitless unless noted)
+    # ------------------------------------------------------------------
+    ay = ifelse(stab_cls .== 1, AY_A,   # class A
+         ifelse(stab_cls .== 2, AY_B,   # class B
+         ifelse(stab_cls .== 3, AY_C,   # class C
+         ifelse(stab_cls .== 4, AY_D,   # class D
+         ifelse(stab_cls .== 5, AY_Ep,  # class E
+                 AY_F)))))              # class F
+
+    az = ifelse(stab_cls .== 1, AZ_A,   # class A
+         ifelse(stab_cls .== 2, AZ_B,   # class B
+         ifelse(stab_cls .== 3, AZ_C,   # class C
+         ifelse(stab_cls .== 4, AZ_D,   # class D
+         ifelse(stab_cls .== 5, AZ_Ep,  # class E
+                        AZ_F)))))       # class F
+
+    bz = ifelse(stab_cls .== 1, BZ_A,   # class A
+         ifelse(stab_cls .== 2, BZ_B,   # class B
+         ifelse(stab_cls .== 3, BZ_C,   # class C
+         ifelse(stab_cls .== 4, BZ_D,   # class D
+         ifelse(stab_cls .== 5, BZ_Ep,  # class E
+                       BZ_F)))))        # class F, unit: m⁻¹
+
+    by = BY                             # m⁻¹ (class‑independent)
+
+    # ------------------------------------------------------------------
+    # Dispersion parameters σ_h, σ_z (metres)
+    # ------------------------------------------------------------------
+    # σ_h = A_y · x · (1 + B_y x)⁻⁰⋅⁵   (horizontal spread)
+    sigma_h_expr = ay * x * (1 + by * x)^(-0.5)
+
+    # σ_z = A_z · x · (1 + B_z x)⁻⁰⋅⁵   (classes A–D: unstable ↔ neutral)
+    # σ_z = A_z · x · (1 + B_z x)⁻¹     (classes E–F: stable)
+    sigma_z_expr = az * x * (1 + bz * x)^(-0.5)
+    sigma_z_expr = ifelse(stab_cls .>= 5, az * x / (1 + bz * x), sigma_z_expr)
+
+    # ------------------------------------------------------------------
+    # Down‑wind distance x (m) via haversine great‑circle formula
+    # ------------------------------------------------------------------
+    delta_lon = lon - lon0
+    delta_lat = lat - lat0
+    a = sin(delta_lat / 2)^2 + cos(lat0) * cos(lat) * sin(delta_lon / 2)^2
+    c = 2 * atan(sqrt(a) / sqrt(1 - a))          # central angle (rad)
+    x_expr = R * c                               # arc length (m)
+
+    # ------------------------------------------------------------------
+    # Hypsometric height above ground (m)
+    # z = (Rd * T̄_v / g) * ln(PS / P)
+    # with layer‑mean virtual temperature T̄_v = 0.5*(T_v(level)+T_v(surface))
+    # ------------------------------------------------------------------
+    Tv_lvl = T   * (1 + 0.61 * QV)
+    Tv_sfc = T2M * (1 + 0.61 * QV2M)
+    Tv_bar = 0.5 * (Tv_lvl + Tv_sfc)
+    z_expr = (Rd * Tv_bar / g) * log(PS / P)
+
+    # ------------------------------------------------------------------
+    # Ground‑level concentration at puff center for unit mass (Gaussian)
+    # C = 1 / ((2π)^(3/2) σ_h^2 σ_z) * exp(-z_agl^2/(2 σ_z^2))
+    # ------------------------------------------------------------------
+    C_gl_expr = 1 / ((2*pi)^(3/2) * sigma_h^2 * sigma_z) *
+                   exp(- (z_agl^2) / (2 * sigma_z^2))
+
+    # ------------------------------------------------------------------
+    # Equation set
+    # ------------------------------------------------------------------
     eqs = [
-        wind_speed ~ sqrt(U10M^2 + V10M^2),
-        dTsurf    ~ T10M - T2M,
-
-        # ------------------------------------------------------------------
-        # Stability class (integer 1…6)
-        # ------------------------------------------------------------------
-        # Based on EPA MMGRMA Table 6‑7:
-        # https://www.epa.gov/sites/default/files/2020-10/documents/mmgrma_0.pdf
-        #   1 → very unstable (class A)
-        #   2 → unstable      (class B)
-        #   3 → slightly unstable (class C)
-        #   4 → neutral       (class D)
-        #   5 → slightly stable   (class E)
-        #   6 → stable            (class F)
-        stab_cls  ~ ifelse(
-            SWGDN < solrad_night,                             # night
-                ifelse(CLDTOT <= cloudfrac_clear,             # clear
-                    ifelse(dTsurf > inversion_thresh,
-                        ifelse(wind_speed < v2, 6, 5),        # F or E
-                        4                                     # D
-                    ),
-                    4                                         # cloudy night → D
-                ),
-            ifelse(SWGDN >= solrad_strong,                    # strong sun
-                ifelse(wind_speed < v3, 1, ifelse(wind_speed < v5, 2, 3)),
-            ifelse(SWGDN >= solrad_moder,                     # moderate sun
-                ifelse(wind_speed < v2, 1,
-                    ifelse(wind_speed < v5, 2, ifelse(wind_speed < v6, 3, 4))
-                ),
-            ifelse(SWGDN >= solrad_slight,                    # slight sun
-                ifelse(wind_speed < v2, 2, ifelse(wind_speed < v5, 3, 4)),
-                4                                             # default neutral
-            )))),
-
-        # ------------------------------------------------------------------
-        # Briggs dispersion‑curve coefficients (unitless unless noted)
-        # ------------------------------------------------------------------
-        ay ~ ifelse(stab_cls == 1, AY_A, ifelse(stab_cls == 2, AY_B,
-             ifelse(stab_cls == 3, AY_C, ifelse(stab_cls == 4, AY_D,
-             ifelse(stab_cls == 5, AY_Ep, AY_F))))),
-
-        az ~ ifelse(stab_cls == 1, AZ_A, ifelse(stab_cls == 2, AZ_B,
-             ifelse(stab_cls == 3, AZ_C, ifelse(stab_cls == 4, AZ_D,
-             ifelse(stab_cls == 5, AZ_Ep, AZ_F))))),
-
-        bz ~ ifelse(stab_cls == 1, BZ_A, ifelse(stab_cls == 2, BZ_B,
-             ifelse(stab_cls == 3, BZ_C, ifelse(stab_cls == 4, BZ_D,
-             ifelse(stab_cls == 5, BZ_Ep, BZ_F))))),
-
-        by ~ BY,
-
-        # ------------------------------------------------------------------
-        # Down‑wind distance x (m) via haversine great‑circle formula
-        # ------------------------------------------------------------------
-        delta_lon ~ lon - lon0,
-        delta_lat ~ lat - lat0,
-        a_hav     ~ sin(delta_lat/2)^2 + cos(lat0)*cos(lat)*sin(delta_lon/2)^2,
-        c_hav     ~ 2 * atan(sqrt(a_hav) / sqrt(1 - a_hav)),
-        x_expr    ~ R * c_hav,
-        x         ~ x_expr,
-
-        # ------------------------------------------------------------------
-        # Dispersion parameters σ_h, σ_z (metres)
-        # ------------------------------------------------------------------
-        # σ_h = A_y · x · (1 + B_y x)⁻⁰⋅⁵   (horizontal spread)
-        sigma_h_expr ~ ay * x * (1 + by * x)^(-0.5),
-        # σ_z = A_z · x · (1 + B_z x)⁻⁰⋅⁵   (classes A–D: unstable ↔ neutral)
-        # σ_z = A_z · x · (1 + B_z x)⁻¹     (classes E–F: stable)
-        sigma_z_expr ~ ifelse(stab_cls >= 5,
-                              az * x / (1 + bz * x),          # classes E–F
-                              az * x * (1 + bz * x)^(-0.5)),  # classes A–D
-        sigma_h ~ sigma_h_expr,
-        sigma_z ~ sigma_z_expr,
-
-        # ------------------------------------------------------------------
-        # Hypsometric height above ground (m)
-        # z = (Rd * T̄_v / g) * ln(PS / P)
-        # with layer‑mean virtual temperature T̄_v = 0.5*(T_v(level)+T_v(surface))
-        # ------------------------------------------------------------------
-        Tv_lvl ~ T   * (1 + 0.61 * QV),
-        Tv_sfc ~ T2M * (1 + 0.61 * QV2M),
-        Tv_bar ~ 0.5 * (Tv_lvl + Tv_sfc),
-        z_expr ~ (Rd * Tv_bar / g) * log(PS / P),
-        z_agl  ~ z_expr,
-
-        # ------------------------------------------------------------------
-        # Ground‑level concentration at puff center for unit mass (Gaussian)
-        # C = 1 / ((2π)^(3/2) σ_h^2 σ_z) * exp(-z_agl^2/(2 σ_z^2))
-        # ------------------------------------------------------------------
-        C_gl_expr ~ 1 / ((2*π)^(3/2) * sigma_h^2 * sigma_z) *
-                       exp(- (z_agl^2) / (2 * sigma_z^2)),
+        
         C_gl ~ C_gl_expr,
     ]
 
-    ODESystem(
+    System(
         eqs,
         t,
         [
@@ -474,6 +494,8 @@ function GaussianSD()
             Δz, C_zero
         ];
         name     = :GaussianSD,
-        metadata = Dict(:coupletype => GaussianSDCoupler)
+        metadata = Dict(:coupletype => GaussianSDCoupler,
+        name = :GaussianDispersion,
+        metadata = Dict(CoupleType => GaussianDispersionCoupler
     )
 end

@@ -27,32 +27,30 @@ function Sofiev2012PlumeRise(; name = :Sofiev2012PlumeRise)
 
         # Used to calculate the initial guess of the plume top level
         h_to_lev = 100.0, [unit = u"m", description = "Height to level transform"]
-
-        k_s12 = β * (P_fr / P_f0)^γ, [unit = u"m"]
     end
 
-    # TODO(CT): Use as parameters.
+    # TODO(HE): Use as parameters.
     @variables begin
         H_abl(t),   [unit = u"m",  description = "Atmospheric boundary layer height"]
         H_p(t),   [unit = u"m", description = "Plume top height"]
         lev_p(t),   [description = "Vertical level of the plume top height"]
         N_ft(t), [unit = u"1/s", description = "Free troposphere Brunt-Vaisala frequency"]
     end
-    
-    eqs = [
-        H_p ~ α*H_abl + k_s12 * exp(-δ * (N_ft/N_0)^2)
-    ]
 
-    ODESystem(
-        eqs, t, [H_abl, H_p, lev_p, N_ft], [params1; params2]; name = name,
-        metadata = Dict(:coupletype => Sofiev2012PlumeRiseCoupler))
+    pd = [H_p ~ α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * N_ft^2 / N_0^2)]
+  
+    System(
+        Equation[], t, [], [params1; params2]; name = name, parameter_dependencies = pd,
+        metadata = Dict(CoupleType => Sofiev2012PlumeRiseCoupler))
 end
 
 function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, puff::PuffCoupler)
     s12, puff = s12.sys, puff.sys
 
     # Set level initial condition equal to the plume top height.
-    puff.lev = ParentScope(s12.lev_p)
+    @unpack lev = puff
+    dflt = get_defaults(puff)
+    dflt[lev] = ParentScope(s12.lev_p)
 
     ConnectorSystem([], s12, puff)
 end
