@@ -378,7 +378,6 @@ C_gl    = sol[sys.GaussianSD₊C_gl]
 
 ```
 """
-
 function GaussianSD()
 
     @parameters begin
