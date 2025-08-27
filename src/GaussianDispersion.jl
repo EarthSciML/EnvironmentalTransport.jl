@@ -495,6 +495,6 @@ function GaussianSD()
         name     = :GaussianSD,
         metadata = Dict(:coupletype => GaussianSDCoupler,
         name = :GaussianDispersion,
-        metadata = Dict(CoupleType => GaussianDispersionCoupler
+        metadata = Dict(CoupleType => GaussianDispersionCoupler),
     )
 end
