@@ -19,7 +19,7 @@ end
 """
 GaussianPGB()
 
-Return a `ModelingToolkit.ODESystem` implementing a classic Gaussian plume dispersion model, parameterized
+Return a `ModelingToolkit.System` implementing a classic Gaussian plume dispersion model, parameterized
 with Pasquill-Gifford-Briggs dispersion coefficients, following the formulations described in EPA guidance
 402-R-00-004 §12.1.6
 (https://19january2017snapshot.epa.gov/sites/production/files/2015-05/documents/402-r-00-004.pdf) and the MMGRMA
@@ -67,7 +67,7 @@ mdl = couple(Puff(dom),
              GEOSFP("4x5", dom; stream=false),
              GaussianPGB())
 
-sys  = convert(ODESystem, mdl)
+sys  = convert(System, mdl)
 
 u0 = [sys.Puff₊lon => deg2rad(-105),
       sys.Puff₊lat => deg2rad(  38),
@@ -327,7 +327,7 @@ end
 """
 GaussianSD()
 
-Returns a `ModelingToolkit.ODESystem` that calculates horizontal dispersion (σ_h) from 
+Returns a `ModelingToolkit.System` that calculates horizontal dispersion (σ_h) from 
 velocity deformation (Smagorinsky/Deardorff), and computes hypsometric height (z_agl) 
 and ground-level centerline concentration per unit mass. The ground-level concentration is 
 only evaluated when the puff is within the ground layer (z_agl ≤ Δz); otherwise it is set to zero.
@@ -359,7 +359,7 @@ mdl = couple(Puff(dom),
              GEOSFP("4x5", dom; stream=false),
              GaussianSD())
 
-sys  = convert(ODESystem, mdl)
+sys  = convert(System, mdl)
 
 u0 = [sys.Puff₊lon => deg2rad(-105),
       sys.Puff₊lat => deg2rad(  38),
@@ -478,7 +478,7 @@ function GaussianSD()
         C_gl   ~ ifelse(z_agl <= Δz, C_expr, C_zero),
     ]
 
-    ODESystem(
+    System(
         eqs, t,
         [
             lon, lat, lev, sigma_h, z_agl, C_gl,
