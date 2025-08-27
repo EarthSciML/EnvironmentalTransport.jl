@@ -66,7 +66,7 @@ end
     model = couple(
         Puff(domain),
         GEOSFP("4x5", domain; stream = false),
-        GaussianDispersion()
+        GaussianSD()
     )
 
     sys = convert(System, model)
@@ -77,18 +77,18 @@ end
         sys.Puff₊lon => deg2rad(lonv),
         sys.Puff₊lat => deg2rad(latv),
         sys.Puff₊lev => levv,
-        sys.GaussianDispersion₊sigma_h => 0.0
+        sys.GaussianSD₊sigma_h => 0.0
     ]
     p = [
-        sys.GaussianDispersion₊Δλ => Δλ,
-        sys.GaussianDispersion₊Δφ => Δφ,
-        sys.GaussianDispersion₊Δz => 500
+        sys.GaussianSD₊Δλ => Δλ,
+        sys.GaussianSD₊Δφ => Δφ,
+        sys.GaussianSD₊Δz => 500
     ]
 
     prob = ODEProblem(sys, u0, tspan, p)
     sol = solve(prob, Tsit5())
 
-    C_gl_val = sol[sys.GaussianDispersion₊C_gl][end]
+    C_gl_val = sol[sys.GaussianSD₊C_gl][end]
     C_gl_want = 2.47e-13
 
     @test isapprox(C_gl_val, C_gl_want; rtol = 1e-2)
