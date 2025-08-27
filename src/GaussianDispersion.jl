@@ -492,7 +492,7 @@ function GaussianSD()
             Rd, g, R_earth, c_smag, Δλ, Δφ, TLv, 
             Δz, C_zero
         ];
-        name = :GaussianDispersion,
+        name = :GaussianSD,
         metadata = Dict(CoupleType => GaussianDispersionCoupler),
     )
 end
