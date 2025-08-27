@@ -1,6 +1,3 @@
-using EnvironmentalTransport
-using Test
+using TestItemRunner
 
-@testset "EnvironmentalTransport.jl" begin
-    # Write your tests here.
-end
+@run_package_tests
