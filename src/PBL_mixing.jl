@@ -246,7 +246,7 @@ function EarthSciMLBase.get_scimlop(op::PBLMixingOperator, csys::CoupledSystem, 
     dx = domain.grid_spacing[1]  # longitude/x spacing (radians)
     dy = domain.grid_spacing[2]  # latitude/y spacing (radians)
     
-    function mixing(u_vec, p, t) # Out-of-place
+    function mixing_OOP(u_vec, p, t)
         u = reshape(u_vec, sz...)
         
         # Apply boundary conditions to the tracer array
@@ -278,39 +278,6 @@ function EarthSciMLBase.get_scimlop(op::PBLMixingOperator, csys::CoupledSystem, 
         return reshape(u, :)
     end
     
-    function mixing(du_vec, u_vec, p, t) # In-place
-        u = reshape(u_vec, sz...)
-        du = reshape(du_vec, sz...)
-        
-        # Apply boundary conditions to the tracer array
-        u_bc = op.bc_type(u)  # This wraps the array with boundary condition behavior
-        
-        # Loop over horizontal grid points
-        for i in 1:sz[2], j in 1:sz[3]
-            # Extract meteorological data for this column using wrapper functions
-            pblh_val = pblh_f(i, j, 1, p, t)  # PBL height (m) - use first level for 2D field
-            δxδlon_val = δxδlon_f(i, j, 1, p, t)  # x gradient (m/radian) - use first level for 2D field
-            δyδlat_val = δyδlat_f(i, j, 1, p, t)  # y gradient (m/radian) - use first level for 2D field
-            
-            # Calculate grid area (m²) - δxδlon and δyδlat are gradients (m/radian)
-            area = dx * dy * δxδlon_val * δyδlat_val
-            
-            # Extract column data as (nz, nspec) for mixing algorithm
-            # Use u_bc instead of u to get boundary condition behavior
-            col = permutedims(view(u_bc, :, i, j, :), (2,1))
-            
-            # Apply PBL mixing using pre-computed pressure edges
-            imix, fpbl = compute_imix_fpbl(pedge_domain, pblh_val)
-            ad = air_mass_from_pressure(pedge_domain, area)
-            pbl_full_mix!(col, ad, imix, fpbl)
-            
-            # Write back to output array
-            @inbounds @views du[:, i, j, :] .= permutedims(col, (2,1))
-        end
-        
-        nothing
-    end
-    
     # Return the function operator (PBL mixing is instantaneous, not rate-based)
-    FunctionOperator(mixing, reshape(u0, :); p = p)
+    FunctionOperator(mixing_OOP, reshape(u0, :); p = p)
 end
