@@ -85,7 +85,7 @@ function compute_imix_fpbl(pedge_domain::Vector{Float64}, pblh_m::Float64)
             return (nz, 1.0)
         else
             # PBL shallower than first layer top; everything below surface edge
-            return (1, clamp( (pedge[1] - bltop) / (pedge[1] - pedge[2]), 0.0, 1.0 ))
+            return (1, clamp( (pedge_domain[1] - bltop) / (pedge_domain[1] - pedge_domain[2]), 0.0, 1.0 ))
         end
     end
     
