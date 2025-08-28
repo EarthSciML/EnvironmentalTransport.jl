@@ -16,14 +16,14 @@ domain = DomainInfo(
     levrange = 1:72
 )
 
-@testset "GaussianPGB" begin
+#@testset "GaussianPGB" begin
     model = couple(
         Puff(domain),
         GEOSFP("4x5", domain; stream=false),
         GaussianPGB()
     )
 
-    sys = convert(ODESystem, model)
+    sys = convert(System, model)
 
     tspan = get_tspan(domain)
 

@@ -3,7 +3,7 @@ export GaussianPGB
 export GaussianSD
 
 import ModelingToolkit: Differential
-              
+
 struct GaussianPGBCoupler
     sys::Any
 end
@@ -24,8 +24,8 @@ with Pasquill-Gifford-Briggs dispersion coefficients, following the formulations
 402-R-00-004 §12.1.6
 (https://19january2017snapshot.epa.gov/sites/production/files/2015-05/documents/402-r-00-004.pdf) and the MMGRMA
 document, Table 6-7 (https://www.epa.gov/sites/default/files/2020-10/documents/mmgrma_0.pdf).
-Good for: quasi-steady (piecewise-steady) applications where emissions and meteorology can be treated steady over 
-each model time step; near-field ranges (typically ≤ 50 km); and cases where the effective plume height remains 
+Good for: quasi-steady (piecewise-steady) applications where emissions and meteorology can be treated steady over
+each model time step; near-field ranges (typically ≤ 50 km); and cases where the effective plume height remains
 within the planetary boundary layer.
 
 What this does:
@@ -108,14 +108,13 @@ function GaussianPGB()
         AZ_Ep = 0.03, [description="A_z for class E"]
         AZ_F = 0.016, [description="A_z for class F"]
 
+        by = 1.0e-4,  [unit=u"m^-1",    description = "Briggs B_y (class-independent)"]
         BZ_A = 0.0,     [unit=u"m^-1", description="B_z for class A"]
         BZ_B = 0.0,     [unit=u"m^-1", description="B_z for class B"]
         BZ_C = 0.0002,  [unit=u"m^-1", description="B_z for class C"]
         BZ_D = 0.0015,  [unit=u"m^-1", description="B_z for class D"]
         BZ_Ep = 0.0003, [unit=u"m^-1", description="B_z for class E"]
         BZ_F = 0.0003,  [unit=u"m^-1", description="B_z for class F"]
-
-        BY = 1.0e-4, [unit=u"m^-1", description="B_y (same for all classes)"]
 
         # --- Wind‑speed thresholds for Pasquill classes -------------------------
         v2 = 2.0, [unit=u"m/s", description="Wind-speed threshold 2 m.s⁻¹"]
@@ -158,7 +157,6 @@ function GaussianPGB()
         ay(t),           [description = "Briggs A_y selected by stability class"]
         az(t),           [description = "Briggs A_z selected by stability class"]
         bz(t),           [unit=u"m^-1",    description = "Briggs B_z selected by stability class"]
-        by(t),           [unit=u"m^-1",    description = "Briggs B_y (class-independent)"]
 
         delta_lon(t),    [unit = u"rad",   description = "Δλ = lon − lon0"]
         delta_lat(t),    [unit = u"rad",   description = "Δφ = lat − lat0"]
@@ -171,17 +169,13 @@ function GaussianPGB()
 
         sigma_h(t), [unit = u"m",  description = "horizontal dispersion coefficient"]
         sigma_z(t),      [unit = u"m",     description = "Vertical dispersion"]
-        sigma_h_expr(t), [unit = u"m",     description = "horizontal dispersion formula"]
-        sigma_z_expr(t), [unit = u"m",     description = "Vertical dispersion formula"]
 
         Tv_lvl(t),       [unit = u"K",     description = "Virtual temp at level"]
         Tv_sfc(t),       [unit = u"K",     description = "Virtual temp at surface"]
         Tv_bar(t),       [unit = u"K",     description = "Layer-mean virtual temp"]
         z_agl(t),        [unit = u"m",     description = "Hypsometric height above ground"]
-        z_expr(t),       [unit = u"m",     description = "Hypsometric formula"]
-        
+
         C_gl(t), [unit = u"m^-3", description = "Ground-level concentration at puff center for unit mass (Gaussian)"]
-        C_gl_expr(t),    [unit = u"m^-3",  description = "Ground-level concentration at puff center for unit mass formula"]
     end
 
     wind_speed = sqrt(U10M^2 + V10M^2) # Wind speed (m s⁻¹)
@@ -248,8 +242,6 @@ function GaussianPGB()
          ifelse(stab_cls .== 5, BZ_Ep,  # class E
                        BZ_F)))))        # class F, unit: m⁻¹
 
-    by = BY                             # m⁻¹ (class‑independent)
-
     # ------------------------------------------------------------------
     # Dispersion parameters σ_h, σ_z (metres)
     # ------------------------------------------------------------------
@@ -258,8 +250,8 @@ function GaussianPGB()
 
     # σ_z = A_z · x · (1 + B_z x)⁻⁰⋅⁵   (classes A–D: unstable ↔ neutral)
     # σ_z = A_z · x · (1 + B_z x)⁻¹     (classes E–F: stable)
-    sigma_z_expr = az * x * (1 + bz * x)^(-0.5)
-    sigma_z_expr = ifelse(stab_cls .>= 5, az * x / (1 + bz * x), sigma_z_expr)
+    sigma_z_expr = ifelse(stab_cls .>= 5, az * x / (1 + bz * x),
+        az * x * (1 + bz * x)^(-0.5))
 
     # ------------------------------------------------------------------
     # Down‑wind distance x (m) via haversine great‑circle formula
@@ -291,7 +283,9 @@ function GaussianPGB()
     # Equation set
     # ------------------------------------------------------------------
     eqs = [
-        
+        z_agl ~ z_expr,
+        sigma_h ~ sigma_h_expr,
+        sigma_z ~ sigma_z_expr,
         C_gl ~ C_gl_expr,
     ]
 
@@ -302,7 +296,7 @@ function GaussianPGB()
             lon, lat,
             U10M, V10M, SWGDN, CLDTOT, T2M, T10M, P, PS, T, QV, QV2M,
             wind_speed, dTsurf, stab_cls,
-            ay, az, bz, by,
+            ay, az, bz,
             delta_lon, delta_lat, a_hav, c_hav,
             x, x_expr,
             sigma_h, sigma_z, sigma_h_expr, sigma_z_expr,
@@ -314,22 +308,22 @@ function GaussianPGB()
             v2, v3, v5, v6,
             solrad_night, solrad_strong, solrad_moder, solrad_slight,
             cloudfrac_clear, inversion_thresh,
+            by,
             AY_A, AY_B, AY_C, AY_D, AY_Ep, AY_F,
             AZ_A, AZ_B, AZ_C, AZ_D, AZ_Ep, AZ_F,
             BZ_A, BZ_B, BZ_C, BZ_D, BZ_Ep, BZ_F,
-            BY
         ];
         name = :GaussianPGB,
-        metadata = Dict(:coupletype => GaussianPGBCoupler)
+        metadata = Dict(CoupleType => GaussianPGBCoupler)
     )
 end
 
 """
 GaussianSD()
 
-Returns a `ModelingToolkit.System` that calculates horizontal dispersion (σ_h) from 
-velocity deformation (Smagorinsky/Deardorff), and computes hypsometric height (z_agl) 
-and ground-level centerline concentration per unit mass. The ground-level concentration is 
+Returns a `ModelingToolkit.System` that calculates horizontal dispersion (σ_h) from
+velocity deformation (Smagorinsky/Deardorff), and computes hypsometric height (z_agl)
+and ground-level centerline concentration per unit mass. The ground-level concentration is
 only evaluated when the puff is within the ground layer (z_agl ≤ Δz); otherwise it is set to zero.
 
 References (NOAA ARL MetMag report):
@@ -397,7 +391,7 @@ function GaussianSD()
         lon(t),   [unit = u"rad",  description = "longitude"]
         lat(t),   [unit = u"rad",  description = "latitude"]
         lev(t),   [description = "Vertical level (1–72 for GEOS-FP)"]
-        
+
         sigma_h(t), [unit = u"m",  description = "horizontal dispersion coefficient"]
         z_agl(t), [unit = u"m",  description = "Height AGL from hypsometric equation"]
         C_gl(t), [unit = u"m^-3", description = "Ground-level concentration at puff center for unit mass (Gaussian)"]
@@ -407,7 +401,7 @@ function GaussianSD()
         UW(t),  [unit = u"m/s", description = "U wind at longitude −½ grid step (west neighbor)"]
         UN(t),  [unit = u"m/s", description = "U wind at latitude  +½ grid step (north neighbor)"]
         US(t),  [unit = u"m/s", description = "U wind at latitude  −½ grid step (south neighbor)"]
-        
+
         V(t),         [unit = u"m/s",    description = "wind V component at puff level"]
         VE(t),  [unit = u"m/s", description = "V wind at longitude +½ grid step (east neighbor)"]
         VW(t),  [unit = u"m/s", description = "V wind at longitude −½ grid step (west neighbor)"]
@@ -489,7 +483,7 @@ function GaussianSD()
             U, UE, UW, UN, US, V, VE, VW, VN, VS
         ],
         [
-            Rd, g, R_earth, c_smag, Δλ, Δφ, TLv, 
+            Rd, g, R_earth, c_smag, Δλ, Δφ, TLv,
             Δz, C_zero
         ];
         name = :GaussianSD,
