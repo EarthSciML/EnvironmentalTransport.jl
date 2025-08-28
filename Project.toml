@@ -12,6 +12,7 @@ ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 RuntimeGeneratedFunctions = "7e49a35a-f44a-4d26-94aa-eba1b4ca6b47"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [weakdeps]
 EarthSciData = "a293c155-435f-439d-9c11-a083b6b47337"
@@ -38,9 +39,10 @@ Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 DomainSets = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
 EarthSciData = "a293c155-435f-439d-9c11-a083b6b47337"
+GasChem = "58070593-4751-4c87-a5d1-63807d11d76c"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Dates", "Distributions", "DomainSets", "EarthSciData", "OrdinaryDiffEq", "SafeTestsets", "Test"]
+test = ["Dates", "Distributions", "DomainSets", "EarthSciData", "GasChem", "OrdinaryDiffEq", "SafeTestsets", "Test"]

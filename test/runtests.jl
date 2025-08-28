@@ -23,4 +23,10 @@ using Test, SafeTestsets
     @safetestset "Sofiev 2012 Plume Rise" begin
         include("plume_rise/sofiev_2012_test.jl")
     end
+    @safetestset "PBL Mixing" begin
+        include("pbl_mixing_test.jl")
+    end
+    @safetestset "PBL Mixing with GEOS-FP" begin
+        include("ppl_coupling_test.jl")
+    end
 end
