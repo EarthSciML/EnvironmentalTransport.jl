@@ -210,13 +210,17 @@ function EarthSciMLBase.init_callback(cb::PBLMixingCallback, csys::CoupledSystem
         p = integrator.p
         t = integrator.t
         
+        # Get the expected dimensions from the domain
+        nx = length(grd[1])
+        ny = length(grd[2])
+        nz = length(grd[3])
+        nspec = length(u) ÷ (nx * ny * nz)
+        
         # Reshape to (nspec, nx, ny, nz)
-        sz = size(u)
-        u_reshaped = reshape(u, sz...)
-        nspec = sz[1]
+        u_reshaped = reshape(u, nspec, nx, ny, nz)
         
         # Loop over horizontal grid points
-        for i in 1:sz[2], j in 1:sz[3]
+        for i in 1:nx, j in 1:ny
             # Get meteorological data for this column
             x1 = grd[1][i]
             x2 = grd[2][j]
