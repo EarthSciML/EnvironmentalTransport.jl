@@ -112,12 +112,24 @@ extract_domain_pressure_edges = EnvironmentalTransport.extract_domain_pressure_e
     end
 end
 
-@testset "PBL Mixing Operator" begin
-    # Test that it's an EarthSciMLBase.Operator
-    @test PBLMixingOperator() isa EarthSciMLBase.Operator
-    @test PBLMixingOperator(ZeroGradBC()) isa EarthSciMLBase.Operator
-    @test PBLMixingOperator(ConstantBC(0.0)) isa EarthSciMLBase.Operator
+@testset "PBL Mixing Callback" begin
+    # Test that PBLMixingCallback can be created
+    @test PBLMixingCallback(3600.0) isa PBLMixingCallback
+    @test PBLMixingCallback(600.0, every_step=false) isa PBLMixingCallback
+    @test PBLMixingCallback(every_step=true) isa PBLMixingCallback
+    
+    # Test default values
+    cb = PBLMixingCallback()
+    @test cb.interval == 3600.0
+    @test cb.every_step == false
+    
+    # Test custom values
+    cb_custom = PBLMixingCallback(1800.0, every_step=true)
+    @test cb_custom.interval == 1800.0
+    @test cb_custom.every_step == true
 end
+
+
 
 
 

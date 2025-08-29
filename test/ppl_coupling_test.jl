@@ -22,7 +22,7 @@ using EarthSciMLBase: SolverStrangThreads, PositiveDomain
         SuperFast(),
         NEI2016MonthlyEmis("mrggrid_withbeis_withrwc", domain),
         GEOSFP("0.5x0.625_NA", domain),
-        PBLMixingOperator(ZeroGradBC()),
+        PBLMixingCallback(600.0),
         domain,
     )
     @test model isa CoupledSystem

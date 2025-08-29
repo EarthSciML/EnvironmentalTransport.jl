@@ -3,7 +3,7 @@ using DocStringExtensions
 import EarthSciMLBase
 using EarthSciMLBase: param_to_var, ConnectorSystem, CoupledSystem, get_coupletype
 using EarthSciData: GEOSFPCoupler
-using EnvironmentalTransport: PuffCoupler, AdvectionOperator, Sofiev2012PlumeRiseCoupler, PBLMixingOperator
+using EnvironmentalTransport: PuffCoupler, AdvectionOperator, Sofiev2012PlumeRiseCoupler, PBLMixingCallback
 using EnvironmentalTransport
 using ModelingToolkit: ParentScope
 
@@ -45,7 +45,7 @@ function EarthSciMLBase.get_needed_vars(
 end
 
 function EarthSciMLBase.get_needed_vars(
-        ::PBLMixingOperator, csys, mtk_sys, domain::EarthSciMLBase.DomainInfo)
+        ::PBLMixingCallback, csys, mtk_sys, domain::EarthSciMLBase.DomainInfo)
     found = 0
     pblvars = []
     for sys in csys.systems

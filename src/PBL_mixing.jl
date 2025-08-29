@@ -1,4 +1,4 @@
-export PBLMixingOperator
+export PBLMixingCallback
 
 # Physical constants
 const SCALE_HEIGHT = 8000.0  # m, atmospheric scale height
@@ -148,20 +148,7 @@ function pbl_full_mix!(tc::Array{Float64,2}, ad::Vector{Float64}, imix::Int, fpb
     end
 end
 
-# ---- Operator Implementation ----
-
-"""
-    PBLMixingOperator <: EarthSciMLBase.Operator
-
-Operator that applies planetary boundary layer (PBL) mixing to tracer fields.
-"""
-mutable struct PBLMixingOperator <: EarthSciMLBase.Operator
-    bc_type::Any  # Boundary condition type (e.g., ZeroGradBC, ConstantBC)
-    
-    function PBLMixingOperator(bc_type = ZeroGradBC())
-        new(bc_type)
-    end
-end
+# ---- PBL Mixing Implementation ----
 
 """
     pbl_obs_function(mtk_sys, coord_args, v, T)
@@ -175,109 +162,99 @@ function pbl_obs_function(mtk_sys, coord_args, v, T)
     (p, t, x1, x2, x3) -> only(obs_f(obscache, p, t, x1, x2, x3))
 end
 
-# Placeholder: actual implementation is in EarthSciDataExt.jl
-function EarthSciMLBase.get_needed_vars(::PBLMixingOperator, csys, mtk_sys, domain)
-    error("Could not find a source of PBL data. Provide PBL height and grid area transform from GEOS-FP.")
+"""
+    PBLMixingCallback <: EarthSciMLBase.Operator
+
+A callback that applies planetary boundary layer (PBL) mixing to tracer fields at periodic intervals.
+PBL mixing is a discrete process that redistributes tracers vertically within each grid column.
+"""
+mutable struct PBLMixingCallback
+    interval::Float64  # Time interval between mixing events (seconds)
+    every_step::Bool   # If true, apply at every solver step regardless of interval
+    
+    function PBLMixingCallback(interval::Float64 = 3600.0; every_step::Bool = false)
+        new(interval, every_step)
+    end
 end
 
 """
-    get_datafs(op::PBLMixingOperator, csys, mtk_sys, coord_args, domain)
+    EarthSciMLBase.init_callback(cb::PBLMixingCallback, csys::CoupledSystem, sys_mtk, coord_args, domain::DomainInfo, alg)
 
-Get data accessor functions for PBL mixing, following advection pattern.
+Initialize the PBL mixing callback.
 """
-function get_datafs(op::PBLMixingOperator, csys, mtk_sys, coord_args, domain)
-    vars = EarthSciMLBase.get_needed_vars(op, csys, mtk_sys, domain)
+function EarthSciMLBase.init_callback(cb::PBLMixingCallback, csys::CoupledSystem, sys_mtk, coord_args, domain::DomainInfo, alg)
+    
+    # Get data accessor functions
+    vars = EarthSciMLBase.get_needed_vars(cb, csys, sys_mtk, domain)
     @assert length(vars) == 3 # PBLH, δxδlon, δyδlat
+    
     T = eltype(domain)
     grd = EarthSciMLBase.grid(domain)
     
-    # Create data accessor functions following advection pattern
-    pblh_data_f = pbl_obs_function(mtk_sys, coord_args, vars[1], T)  # PBL height (m)
-    δxδlon_data_f = pbl_obs_function(mtk_sys, coord_args, vars[2], T)  # x transform factor
-    δyδlat_data_f = pbl_obs_function(mtk_sys, coord_args, vars[3], T)  # y transform factor
-    
-    # Create simple wrapper functions that take grid indices and return concrete values
-    function pblh_f(i, j, k, p, t)
-        x1 = grd[1][i]
-        x2 = grd[2][j]
-        x3 = grd[3][1]  # Use first level for 2D PBL height field
-        pblh_data_f(p, t, x1, x2, x3)
-    end
-    
-    function δxδlon_f(i, j, k, p, t)
-        x1 = grd[1][i]
-        x2 = grd[2][j]
-        x3 = grd[3][1]  # Use first level for 2D transform field
-        δxδlon_data_f(p, t, x1, x2, x3)
-    end
-    
-    function δyδlat_f(i, j, k, p, t)
-        x1 = grd[1][i]
-        x2 = grd[2][j]
-        x3 = grd[3][1]  # Use first level for 2D transform field
-        δyδlat_data_f(p, t, x1, x2, x3)
-    end
-    
-    return pblh_f, δxδlon_f, δyδlat_f
-end
-
-"""
-    EarthSciMLBase.get_scimlop(op::PBLMixingOperator, csys::CoupledSystem, mtk_sys,
-                              coord_args, domain::DomainInfo, u0, p, alg::MapAlgorithm)
-
-Create the SciML operator for PBL mixing using domain info correctly.
-"""
-function EarthSciMLBase.get_scimlop(op::PBLMixingOperator, csys::CoupledSystem, mtk_sys,
-                                   coord_args, domain::DomainInfo, u0, p, alg::MapAlgorithm)
-    
-    # Reshape to (nspec, nx, ny, nz) to match package convention
-    u0 = reshape(u0, :, length.(EarthSciMLBase.grid(EarthSciMLBase.domain(csys)))...)
-    sz = size(u0)
-    nspec = sz[1]
-    
-    # Get data accessor functions
-    pblh_f, δxδlon_f, δyδlat_f = get_datafs(op, csys, mtk_sys, coord_args, domain)
+    # Create data accessor functions
+    pblh_data_f = pbl_obs_function(sys_mtk, coord_args, vars[1], T)
+    δxδlon_data_f = pbl_obs_function(sys_mtk, coord_args, vars[2], T)
+    δyδlat_data_f = pbl_obs_function(sys_mtk, coord_args, vars[3], T)
     
     # Get the domain level range and pre-compute pressure edges
-    domain_levels = EarthSciMLBase.grid(domain)[3]  # Level range (e.g., 1:15)
-    pedge_domain = extract_domain_pressure_edges(domain_levels)  # Pre-compute once
+    domain_levels = EarthSciMLBase.grid(domain)[3]
+    pedge_domain = extract_domain_pressure_edges(domain_levels)
     
     # Get grid spacing for area calculation
     dx = domain.grid_spacing[1]  # longitude/x spacing (radians)
     dy = domain.grid_spacing[2]  # latitude/y spacing (radians)
     
-    function mixing_OOP(u_vec, p, t)
-        u = reshape(u_vec, sz...)
+    # Create the mixing function
+    function apply_pbl_mixing!(integrator)
+        u = integrator.u
+        p = integrator.p
+        t = integrator.t
         
-        # Apply boundary conditions to the tracer array
-        u_bc = op.bc_type(u)  # This wraps the array with boundary condition behavior
+        # Reshape to (nspec, nx, ny, nz)
+        sz = size(u)
+        u_reshaped = reshape(u, sz...)
+        nspec = sz[1]
         
         # Loop over horizontal grid points
         for i in 1:sz[2], j in 1:sz[3]
-            # Extract meteorological data for this column using wrapper functions
-            pblh_val = pblh_f(i, j, 1, p, t)  # PBL height (m) - use first level for 2D field
-            δxδlon_val = δxδlon_f(i, j, 1, p, t)  # x gradient (m/radian) - use first level for 2D field
-            δyδlat_val = δyδlat_f(i, j, 1, p, t)  # y gradient (m/radian) - use first level for 2D field
+            # Get meteorological data for this column
+            x1 = grd[1][i]
+            x2 = grd[2][j]
+            x3 = grd[3][1]  # Use first level for 2D fields
             
-            # Calculate grid area (m²) - δxδlon and δyδlat are gradients (m/radian)
+            pblh_val = pblh_data_f(p, t, x1, x2, x3)
+            δxδlon_val = δxδlon_data_f(p, t, x1, x2, x3)
+            δyδlat_val = δyδlat_data_f(p, t, x1, x2, x3)
+            
+            # Calculate grid area (m²)
             area = dx * dy * δxδlon_val * δyδlat_val
             
             # Extract column data as (nz, nspec) for mixing algorithm
-            # Use u_bc instead of u to get boundary condition behavior
-            col = permutedims(view(u_bc, :, i, j, :), (2,1))
+            col = permutedims(view(u_reshaped, :, i, j, :), (2,1))
             
-            # Apply PBL mixing using pre-computed pressure edges
+            # Apply PBL mixing
             imix, fpbl = compute_imix_fpbl(pedge_domain, pblh_val)
             ad = air_mass_from_pressure(pedge_domain, area)
             pbl_full_mix!(col, ad, imix, fpbl)
             
             # Write back to main array
-            @inbounds @views u[:, i, j, :] .= permutedims(col, (2,1))
+            @inbounds @views u_reshaped[:, i, j, :] .= permutedims(col, (2,1))
         end
         
-        return reshape(u, :)
+        # Update the integrator state
+        integrator.u .= u_reshaped[:]
     end
     
-    # Return the function operator (PBL mixing is instantaneous, not rate-based)
-    FunctionOperator(mixing_OOP, reshape(u0, :); p = p)
+    # Return appropriate callback based on settings
+    if cb.every_step
+        # Use DiscreteCallback to apply at every solver step
+        DiscreteCallback((u, t, integrator) -> true, apply_pbl_mixing!)
+    else
+        # Use PeriodicCallback to apply at specified intervals
+        PeriodicCallback(apply_pbl_mixing!, cb.interval)
+    end
 end
+
+
+
+
