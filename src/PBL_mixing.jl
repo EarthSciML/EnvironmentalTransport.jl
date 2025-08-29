@@ -204,6 +204,9 @@ function EarthSciMLBase.init_callback(cb::PBLMixingCallback, csys::CoupledSystem
     dx = domain.grid_spacing[1]  # longitude/x spacing (radians)
     dy = domain.grid_spacing[2]  # latitude/y spacing (radians)
     
+    # Get number of species from the system unknowns
+    nspec = length(unknowns(sys_mtk))
+    
     # Create the mixing function
     function apply_pbl_mixing!(integrator)
         u = integrator.u
@@ -214,9 +217,8 @@ function EarthSciMLBase.init_callback(cb::PBLMixingCallback, csys::CoupledSystem
         nx = length(grd[1])
         ny = length(grd[2])
         nz = length(grd[3])
-        nspec = length(u) ÷ (nx * ny * nz)
         
-        # Reshape to (nspec, nx, ny, nz)
+        # Reshape to (nspec, nx, ny, nz) - same as NetCDF outputter
         u_reshaped = reshape(u, nspec, nx, ny, nz)
         
         # Loop over horizontal grid points
