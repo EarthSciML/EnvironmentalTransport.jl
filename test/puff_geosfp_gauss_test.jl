@@ -16,7 +16,7 @@ domain = DomainInfo(
     levrange = 1:72
 )
 
-@testitem "GaussianPGB" begin
+@testset "GaussianPGB" begin
     model = couple(
         Puff(domain),
         GEOSFP("4x5", domain; stream=false),
@@ -46,7 +46,7 @@ domain = DomainInfo(
     @test isapprox(C_gl_val, C_gl_want; rtol = 1e-2)
 end
 
-@testitem "Puff GeosFP Gaussian Dispersion" begin
+@testset "Puff GeosFP Gaussian Dispersion" begin
     using Dates
     using EarthSciMLBase, EarthSciData, EnvironmentalTransport
     using ModelingToolkit, OrdinaryDiffEq
