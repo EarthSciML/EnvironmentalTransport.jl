@@ -108,7 +108,7 @@ function GaussianPGB()
         AZ_Ep = 0.03, [description="A_z for class E"]
         AZ_F = 0.016, [description="A_z for class F"]
 
-        by = 1.0e-4,  [unit=u"m^-1",    description = "Briggs B_y (class-independent)"]
+        by = 1.0e-4,    [unit=u"m^-1",    description = "Briggs B_y (class-independent)"]
         BZ_A = 0.0,     [unit=u"m^-1", description="B_z for class A"]
         BZ_B = 0.0,     [unit=u"m^-1", description="B_z for class B"]
         BZ_C = 0.0002,  [unit=u"m^-1", description="B_z for class C"]
@@ -132,22 +132,23 @@ function GaussianPGB()
         cloudfrac_clear = 0.5, [description="Cloud-fraction threshold for clear skies"]
 
         inversion_thresh = 0.0, [unit=u"K", description="ΔT (10 m - 2 m) > 0 K indicates surface inversion"]
+
+        U10M =  3.0,    [unit = u"m/s", description = "10 m wind U component"]
+        V10M =  0.0,    [unit = u"m/s", description = "10 m wind V component"]
+        SWGDN = 700.0,  [unit = u"W/m^2", description = "surface incoming shortwave radiation flux"]
+        CLDTOT = 0.3,   [description = "total cloud fraction"]
+        T2M = 293.15,   [unit = u"K", description = "2 m air temperature"]
+        T10M = 292.65,  [unit = u"K", description = "10 m air temperature"]
+        P = 90000.0,    [unit = u"Pa", description = "Pressure at puff level"]
+        PS = 101325.0,  [unit = u"Pa", description = "Surface pressure"]
+        T = 289.15,     [unit = u"K",  description = "Air temperature at puff level"]
+        QV = 0.009,     [description = "Specific humidity at puff level (kg/kg)"]
+        QV2M = 0.0095,  [description = "Specific humidity at 2 m (kg/kg)"]
     end
 
     @variables begin
         lon(t),   [unit = u"rad",  description = "longitude"]
         lat(t),   [unit = u"rad",  description = "latitude"]
-        U10M(t),  [unit = u"m/s", description = "10 m wind U component"]
-        V10M(t),  [unit = u"m/s", description = "10 m wind V component"]
-        SWGDN(t), [unit = u"W/m^2", description = "surface incoming shortwave radiation flux"]
-        CLDTOT(t), [description = "total cloud fraction"]
-        T2M(t),   [unit = u"K", description = "2 m air temperature"]
-        T10M(t),  [unit = u"K", description = "10 m air temperature"]
-        P(t),     [unit = u"Pa", description = "Pressure at puff level"]
-        PS(t),    [unit = u"Pa", description = "Surface pressure"]
-        T(t),     [unit = u"K",  description = "Air temperature at puff level"]
-        QV(t),    [description = "Specific humidity at puff level (kg/kg)"]
-        QV2M(t),  [description = "Specific humidity at 2 m (kg/kg)"]
 
         wind_speed(t),   [unit = u"m/s",  description = "Near-surface wind speed"]
         dTsurf(t),       [unit = u"K",    description = "Surface temperature difference"]
