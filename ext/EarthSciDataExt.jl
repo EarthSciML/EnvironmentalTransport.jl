@@ -168,6 +168,8 @@ end
 
 function EarthSciMLBase.couple2(gd::GaussianSDCoupler, g::GEOSFPCoupler)
     d, m = gd.sys, g.sys
+    d = param_to_var(d, :U, :UE, :UW, :UN, :US, :V, :VE, :VW, :VN, :VS, :QV2M, :T2M, :T, :P, :PS, :QV)
+
     ConnectorSystem([
         d.lat ~ m.lat
         d.lon ~ m.lon

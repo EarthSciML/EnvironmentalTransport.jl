@@ -147,8 +147,8 @@ function GaussianPGB()
     end
 
     @variables begin
-        lon(t),     [unit = u"rad",  description = "longitude"]
-        lat(t),     [unit = u"rad",  description = "latitude"]
+        lon(t),     [unit = u"rad",  description = "longitude", input=true]
+        lat(t),     [unit = u"rad",  description = "latitude", input=true]
         x(t),       [unit=u"m"]
         sigma_h(t), [unit = u"m",  description = "horizontal dispersion coefficient"]
         sigma_z(t), [unit = u"m",     description = "Vertical dispersion"]
@@ -360,107 +360,88 @@ function GaussianSD()
         TLv = 10800.0, [unit = u"s", description = "Horizontal Lagrangian time scale"]
         Δz = 50.0, [unit = u"m", description = "Grid-cell height. (m)"]
         C_zero  = 0.0, [unit = u"m^-3", description = "Zero concentration"]
+        
+        P   = 90000.0,  [unit = u"Pa", description = "Pressure at puff level"]
+        PS  = 101325.0, [unit = u"Pa", description = "Surface pressure"]
+        T   = 289.15,   [unit = u"K",  description = "Air temperature at puff level"]
+        T2M = 293.15,   [unit = u"K",  description = "2 m air temperature"]
+        QV  = 0.009,    [description = "Specific humidity at puff level (kg/kg)"]
+        QV2M = 0.0095,  [description = "Specific humidity at 2 m (kg/kg)"]
+
+        U  = 0.0, [unit=u"m/s", description="U at puff level"]
+        UE = 0.0, [unit=u"m/s", description="U at +½ lon"]
+        UW = 0.0, [unit=u"m/s", description="U at −½ lon"]
+        UN = 0.0, [unit=u"m/s", description="U at +½ lat"]
+        US = 0.0, [unit=u"m/s", description="U at −½ lat"]
+
+        V  = 0.0, [unit=u"m/s", description="V at puff level"]
+        VE = 0.0, [unit=u"m/s", description="V at +½ lon"]
+        VW = 0.0, [unit=u"m/s", description="V at −½ lon"]
+        VN = 0.0, [unit=u"m/s", description="V at +½ lat"]
+        VS = 0.0, [unit=u"m/s", description="V at −½ lat"]
     end
 
     @variables begin
-        lon(t),   [unit = u"rad",  description = "longitude"]
-        lat(t),   [unit = u"rad",  description = "latitude"]
-        lev(t),   [description = "Vertical level (1–72 for GEOS-FP)"]
+        lon(t),   [unit = u"rad",  description = "longitude", input=true]
+        lat(t),   [unit = u"rad",  description = "latitude", input=true]
+        lev(t),   [description = "Vertical level (1–72 for GEOS-FP)", input=true]
 
         sigma_h(t), [unit = u"m",  description = "horizontal dispersion coefficient"]
+        σu(t),      [unit = u"m/s",  description = "Turbulent horizontal velocity std. dev"]
         z_agl(t), [unit = u"m",  description = "Height AGL from hypsometric equation"]
         C_gl(t), [unit = u"m^-3", description = "Ground-level concentration at puff center for unit mass (Gaussian)"]
-
-        U(t),         [unit = u"m/s",    description = "wind U component at puff level"]
-        UE(t),  [unit = u"m/s", description = "U wind at longitude +½ grid step (east neighbor)"]
-        UW(t),  [unit = u"m/s", description = "U wind at longitude −½ grid step (west neighbor)"]
-        UN(t),  [unit = u"m/s", description = "U wind at latitude  +½ grid step (north neighbor)"]
-        US(t),  [unit = u"m/s", description = "U wind at latitude  −½ grid step (south neighbor)"]
-
-        V(t),         [unit = u"m/s",    description = "wind V component at puff level"]
-        VE(t),  [unit = u"m/s", description = "V wind at longitude +½ grid step (east neighbor)"]
-        VW(t),  [unit = u"m/s", description = "V wind at longitude −½ grid step (west neighbor)"]
-        VN(t),  [unit = u"m/s", description = "V wind at latitude  +½ grid step (north neighbor)"]
-        VS(t),  [unit = u"m/s", description = "V wind at latitude  −½ grid step (south neighbor)"]
-
-        P(t),     [unit = u"Pa", description = "Pressure at puff level"]
-        PS(t),    [unit = u"Pa", description = "Surface pressure"]
-        T(t),     [unit = u"K",  description = "Air temperature at puff level"]
-        T2M(t),   [unit = u"K", description = "2 m air temperature"]
-        QV(t),    [description = "Specific humidity at puff level (kg/kg)"]
-        QV2M(t),  [description = "Specific humidity at 2 m (kg/kg)"]
-
-        Tv_lvl(t),  [unit = u"K",    description = "Virtual temperature at puff level"]
-        Tv_sfc(t),  [unit = u"K",    description = "Virtual temperature at surface"]
-        Tv_bar(t),  [unit = u"K",    description = "Layer-mean virtual temperature"]
-
-        Δx(t),      [unit = u"m",    description = "Local zonal grid length"]
-        Δy(t),      [unit = u"m",    description = "Local meridional grid length"]
-        X(t),       [unit = u"m",    description = "Smagorinsky filter length scale"]
-
-        dUdx(t), [unit = u"s^-1", description = "Centered finite-difference of zonal wind"]
-        dUdy(t), [unit = u"s^-1", description = "Centered finite-difference of zonal wind"]
-        dVdx(t), [unit = u"s^-1", description = "Centered finite-difference of meridional wind"]
-        dVdy(t), [unit = u"s^-1", description = "Centered finite-difference of meridional wind"]
-
-        Kh(t),      [unit = u"m^2/s",description = "Horizontal eddy diffusivity (Smagorinsky)"]
-        σu(t),      [unit = u"m/s",  description = "Turbulent horizontal velocity std. dev"]
-
-        C_expr(t),  [unit = u"m^-3", description = "Centerline ground concentration (within ground layer)"]
     end
 
     Dt = Differential(t)
 
+    # ------------------------------------------------------------------
+    # Hypsometric height above ground (m)
+    # z = (Rd * T̄_v / g) * ln(PS / P)
+    # with layer‑mean virtual temperature T̄_v = 0.5*(T_v(level)+T_v(surface))
+    # ------------------------------------------------------------------
+    Tv_lvl = T   * (1 + 0.61 * QV)
+    Tv_sfc = T2M * (1 + 0.61 * QV2M)
+    Tv_bar = 0.5 * (Tv_lvl + Tv_sfc)
+
+    # --- Grid metrics & Smagorinsky filter length ---
+    Δx = R_earth * cos(lat) * Δλ
+    Δy = R_earth * Δφ
+    X  = sqrt(Δx * Δy)
+
+    # --- Horizontal velocity gradients (centered finite differences) ---
+    dUdx = (UE - UW) / Δx
+    dUdy = (UN - US) / Δy
+    dVdx = (VE - VW) / Δx
+    dVdy = (VN - VS) / Δy
+
+    # --- Eddy diffusivity (Smagorinsky) — NOAA ARL MetMag Eq. 12 ---
+    Kh = (c_smag * X)^2 / sqrt(2) * sqrt((dVdx + dUdy)^2 + (dUdx - dVdy)^2)
+
+    # --- Turbulent velocity std. dev. — comparable to MetMag Eq. 15 ---
+    σu_expr = sqrt(Kh / TLv)
+    
+    # --- σ_h tendency — MetMag Eq. 16 ---
+    Dt_sigma_h_expr = sqrt(2) * σu
+
+    # --- Hypsometric height
+    z_agl_expr  = (Rd * Tv_bar / g) * log(PS / P)
+
+    # Ground-centerline concentration — MetMag Eq. 18 ---
+    C_expr = 1 / (2*π * sigma_h^2 * Δz)
+
     eqs = [
-        # ------------------------------------------------------------------
-        # Hypsometric height above ground (m)
-        # z = (Rd * T̄_v / g) * ln(PS / P)
-        # with layer‑mean virtual temperature T̄_v = 0.5*(T_v(level)+T_v(surface))
-        # ------------------------------------------------------------------
-        Tv_lvl ~ T   * (1 + 0.61 * QV),
-        Tv_sfc ~ T2M * (1 + 0.61 * QV2M),
-        Tv_bar ~ 0.5 * (Tv_lvl + Tv_sfc),
-
-        # --- Grid metrics & Smagorinsky filter length ---
-        Δx ~ R_earth * cos(lat) * Δλ,
-        Δy ~ R_earth * Δφ,
-        X  ~ sqrt(Δx * Δy),
-
-        # --- Horizontal velocity gradients (centered finite differences) ---
-        dUdx ~ (UE - UW) / Δx,
-        dUdy ~ (UN - US) / Δy,
-        dVdx ~ (VE - VW) / Δx,
-        dVdy ~ (VN - VS) / Δy,
-
-        # --- Eddy diffusivity (Smagorinsky) — NOAA ARL MetMag Eq. 12 ---
-        Kh ~ (c_smag * X)^2 / sqrt(2) * sqrt((dVdx + dUdy)^2 + (dUdx - dVdy)^2),
-
-        # --- Turbulent velocity std. dev. — comparable to MetMag Eq. 15 ---
-        σu ~ sqrt(Kh / TLv),
-
-        # --- σ_h tendency — MetMag Eq. 16 ---
-        Dt(sigma_h) ~ sqrt(2) * σu,
-
-        # --- Hypsometric height & ground-centerline concentration — MetMag Eq. 18 ---
-        z_agl  ~ (Rd * Tv_bar / g) * log(PS / P),
-        C_expr ~ 1 / (2*π * sigma_h^2 * Δz),
+        σu ~ σu_expr,
+        Dt(sigma_h) ~ Dt_sigma_h_expr,
+        z_agl  ~ z_agl_expr,
         C_gl   ~ ifelse(z_agl <= Δz, C_expr, C_zero),
     ]
 
     System(
         eqs, t,
-        [
-            lon, lat, lev, sigma_h, z_agl, C_gl,
-            Tv_lvl, Tv_sfc, Tv_bar, Δx, Δy, X,
-            dUdx, dUdy, dVdx, dVdy, Kh, σu, C_expr,
-
-            P, PS, T, T2M, QV, QV2M,
-            U, UE, UW, UN, US, V, VE, VW, VN, VS
-        ],
-        [
-            Rd, g, R_earth, c_smag, Δλ, Δφ, TLv,
-            Δz, C_zero
-        ];
+        [lon, lat, lev, sigma_h, σu, z_agl, C_gl],
+        [Rd, g, R_earth, c_smag, Δλ, Δφ, TLv, Δz, C_zero,
+         P, PS, T, T2M, QV, QV2M,
+         U, UE, UW, UN, US, V, VE, VW, VN, VS];
         name = :GaussianSD,
         metadata = Dict(CoupleType => GaussianDispersionCoupler),
     )
