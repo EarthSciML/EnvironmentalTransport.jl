@@ -12,10 +12,6 @@ struct GaussianSDCoupler
   sys::Any
 end
 
-struct GaussianDispersionCoupler
-    sys::Any
-end
-
 """
 GaussianPGB()
 
@@ -443,6 +439,6 @@ function GaussianSD()
          P, PS, T, T2M, QV, QV2M,
          U, UE, UW, UN, US, V, VE, VW, VN, VS];
         name = :GaussianSD,
-        metadata = Dict(CoupleType => GaussianDispersionCoupler),
+        metadata = Dict(CoupleType => GaussianSDCoupler),
     )
 end
