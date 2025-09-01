@@ -199,7 +199,6 @@ function EarthSciMLBase.couple2(
 
     ConnectorSystem(
         [
-            g.lon ~ p.lon,
             g.lat ~ p.lat,
         ],
         g, p
