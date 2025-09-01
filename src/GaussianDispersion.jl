@@ -216,6 +216,15 @@ function GaussianPGB()
          ifelse(stab_cls .== 5, BZ_Ep,  # class E
                        BZ_F)))))        # class F, unit: m⁻¹
 
+        # ------------------------------------------------------------------
+    # Down‑wind distance x (m) via haversine great‑circle formula
+    # ------------------------------------------------------------------
+    delta_lon = lon - lon0
+    delta_lat = lat - lat0
+    a = sin(delta_lat / 2)^2 + cos(lat0) * cos(lat) * sin(delta_lon / 2)^2
+    c = 2 * atan(sqrt(a) / sqrt(1 - a))          # central angle (rad)
+    x = R * c                               # arc length (m)
+
     # ------------------------------------------------------------------
     # Dispersion parameters σ_h, σ_z (metres)
     # ------------------------------------------------------------------
@@ -226,15 +235,6 @@ function GaussianPGB()
     # σ_z = A_z · x · (1 + B_z x)⁻¹     (classes E–F: stable)
     sigma_z_expr = ifelse(stab_cls .>= 5, az * x / (1 + bz * x),
         az * x * (1 + bz * x)^(-0.5))
-
-    # ------------------------------------------------------------------
-    # Down‑wind distance x (m) via haversine great‑circle formula
-    # ------------------------------------------------------------------
-    delta_lon = lon - lon0
-    delta_lat = lat - lat0
-    a = sin(delta_lat / 2)^2 + cos(lat0) * cos(lat) * sin(delta_lon / 2)^2
-    c = 2 * atan(sqrt(a) / sqrt(1 - a))          # central angle (rad)
-    x_expr = R * c                               # arc length (m)
 
     # ------------------------------------------------------------------
     # Hypsometric height above ground (m)
@@ -257,7 +257,6 @@ function GaussianPGB()
     # Equation set
     # ------------------------------------------------------------------
     eqs = [
-        x       ~ x_expr,
         z_agl ~ z_expr,
         sigma_h ~ sigma_h_expr,
         sigma_z ~ sigma_z_expr,
@@ -268,7 +267,7 @@ function GaussianPGB()
         eqs,
         t,
         [
-            x, lon, lat,
+            lon, lat,
             sigma_h, sigma_z,
             z_agl,
             C_gl
@@ -378,10 +377,7 @@ function GaussianSD()
     end
 
     @variables begin
-        lon(t),   [unit = u"rad",  description = "longitude", input=true]
         lat(t),   [unit = u"rad",  description = "latitude", input=true]
-        lev(t),   [description = "Vertical level (1–72 for GEOS-FP)", input=true]
-
         sigma_h(t), [unit = u"m",  description = "horizontal dispersion coefficient"]
         σu(t),      [unit = u"m/s",  description = "Turbulent horizontal velocity std. dev"]
         z_agl(t), [unit = u"m",  description = "Height AGL from hypsometric equation"]
@@ -434,7 +430,7 @@ function GaussianSD()
 
     System(
         eqs, t,
-        [lon, lat, lev, sigma_h, σu, z_agl, C_gl],
+        [lat, sigma_h, σu, z_agl, C_gl],
         [Rd, g, R_earth, c_smag, Δλ, Δφ, TLv, Δz, C_zero,
          P, PS, T, T2M, QV, QV2M,
          U, UE, UW, UN, US, V, VE, VW, VN, VS];
