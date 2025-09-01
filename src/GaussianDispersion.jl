@@ -295,7 +295,6 @@ function GaussianPGB()
         t,
         [
             lon, lat,
-            U10M, V10M, SWGDN, CLDTOT, T2M, T10M, P, PS, T, QV, QV2M,
             wind_speed, dTsurf, stab_cls,
             ay, az, bz,
             delta_lon, delta_lat, a_hav, c_hav,
