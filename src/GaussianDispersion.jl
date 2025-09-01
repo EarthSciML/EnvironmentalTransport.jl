@@ -147,36 +147,13 @@ function GaussianPGB()
     end
 
     @variables begin
-        lon(t),   [unit = u"rad",  description = "longitude"]
-        lat(t),   [unit = u"rad",  description = "latitude"]
-
-        wind_speed(t),   [unit = u"m/s",  description = "Near-surface wind speed"]
-        dTsurf(t),       [unit = u"K",    description = "Surface temperature difference"]
-
-        stab_cls(t),     [description = "Pasquill stability class (1=A, …, 6=F) from MMGRMA Table 6-7"]
-
-        ay(t),           [description = "Briggs A_y selected by stability class"]
-        az(t),           [description = "Briggs A_z selected by stability class"]
-        bz(t),           [unit=u"m^-1",    description = "Briggs B_z selected by stability class"]
-
-        delta_lon(t),    [unit = u"rad",   description = "Δλ = lon − lon0"]
-        delta_lat(t),    [unit = u"rad",   description = "Δφ = lat − lat0"]
-        a_hav(t),        [description = "Haversine a-term"]
-        c_hav(t),        [unit = u"rad",   description = "Central angle"]
-
-
-        x(t),     [unit = u"m",    description = "down-wind distance"]
-        x_expr(t),       [unit = u"m",     description = "Arc length"]
-
+        lon(t),     [unit = u"rad",  description = "longitude"]
+        lat(t),     [unit = u"rad",  description = "latitude"]
+        x(t),       [unit=u"m"]
         sigma_h(t), [unit = u"m",  description = "horizontal dispersion coefficient"]
-        sigma_z(t),      [unit = u"m",     description = "Vertical dispersion"]
-
-        Tv_lvl(t),       [unit = u"K",     description = "Virtual temp at level"]
-        Tv_sfc(t),       [unit = u"K",     description = "Virtual temp at surface"]
-        Tv_bar(t),       [unit = u"K",     description = "Layer-mean virtual temp"]
-        z_agl(t),        [unit = u"m",     description = "Hypsometric height above ground"]
-
-        C_gl(t), [unit = u"m^-3", description = "Ground-level concentration at puff center for unit mass (Gaussian)"]
+        sigma_z(t), [unit = u"m",     description = "Vertical dispersion"]
+        z_agl(t),   [unit = u"m",     description = "Hypsometric height above ground"]
+        C_gl(t),    [unit = u"m^-3", description = "Ground-level concentration at puff center for unit mass (Gaussian)"]
     end
 
     wind_speed = sqrt(U10M^2 + V10M^2) # Wind speed (m s⁻¹)
@@ -284,6 +261,7 @@ function GaussianPGB()
     # Equation set
     # ------------------------------------------------------------------
     eqs = [
+        x       ~ x_expr,
         z_agl ~ z_expr,
         sigma_h ~ sigma_h_expr,
         sigma_z ~ sigma_z_expr,
@@ -295,12 +273,8 @@ function GaussianPGB()
         t,
         [
             lon, lat,
-            wind_speed, dTsurf, stab_cls,
-            ay, az, bz,
-            delta_lon, delta_lat, a_hav, c_hav,
-            x, x_expr,
             sigma_h, sigma_z, sigma_h_expr, sigma_z_expr,
-            Tv_lvl, Tv_sfc, Tv_bar, z_agl, z_expr,
+            z_agl,
             C_gl, C_gl_expr
         ],
         [
