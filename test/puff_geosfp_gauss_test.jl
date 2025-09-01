@@ -16,7 +16,7 @@ domain = DomainInfo(
     levrange = 1:72
 )
 
-#@testset "GaussianPGB" begin
+@testitem "GaussianPGB" begin
     model = couple(
         Puff(domain),
         GEOSFP("4x5", domain; stream=false),
