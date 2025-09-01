@@ -272,10 +272,10 @@ function GaussianPGB()
         eqs,
         t,
         [
-            lon, lat,
-            sigma_h, sigma_z, sigma_h_expr, sigma_z_expr,
+            x, lon, lat,
+            sigma_h, sigma_z,
             z_agl,
-            C_gl, C_gl_expr
+            C_gl
         ],
         [
             lon0, lat0, R, Rd, g,
@@ -286,6 +286,7 @@ function GaussianPGB()
             AY_A, AY_B, AY_C, AY_D, AY_Ep, AY_F,
             AZ_A, AZ_B, AZ_C, AZ_D, AZ_Ep, AZ_F,
             BZ_A, BZ_B, BZ_C, BZ_D, BZ_Ep, BZ_F,
+            U10M, V10M, SWGDN, CLDTOT, T2M, T10M, P, PS, T, QV, QV2M
         ];
         name = :GaussianPGB,
         metadata = Dict(CoupleType => GaussianPGBCoupler)
