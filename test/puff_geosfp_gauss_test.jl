@@ -50,7 +50,7 @@ end
     using Dates
     using EarthSciMLBase, EarthSciData, EnvironmentalTransport
     using ModelingToolkit, OrdinaryDiffEq
-    using EnvironmentalTransport: PuffCoupler, GaussianDispersionCoupler
+    using EnvironmentalTransport: PuffCoupler, GaussianPGBCoupler, GaussianSDCoupler
 
     starttime = DateTime(2022, 5, 1)
     endtime = DateTime(2022, 5, 2)
