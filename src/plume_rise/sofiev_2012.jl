@@ -27,6 +27,7 @@ function Sofiev2012PlumeRise(; name = :Sofiev2012PlumeRise)
 
         # Used to calculate the initial guess of the plume top level
         h_to_lev = 100.0, [unit = u"m", description = "Height to level transform"]
+        k_s12 = β * (P_fr / P_f0)^γ, [unit = u"m"]
     end
 
     # TODO(HE): Use as parameters.
@@ -37,16 +38,19 @@ function Sofiev2012PlumeRise(; name = :Sofiev2012PlumeRise)
         N_ft(t), [unit = u"1/s", description = "Free troposphere Brunt-Vaisala frequency"]
     end
 
-    pd = [H_p ~ α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * N_ft^2 / N_0^2)]
+    #pd = [H_p ~ α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * N_ft^2 / N_0^2)]
+    eqs = [
+        H_p ~ α*H_abl + k_s12 * exp(-δ * (N_ft/N_0)^2)
+    ]
     #observed = [
     #H_p ~ α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * (N_ft^2) / (N_0^2))
     #]
-    System(
-        Equation[], t, [H_abl, H_p, lev_p, N_ft], [params1; params2]; name = name, parameter_dependencies = pd,
-        metadata = Dict(CoupleType => Sofiev2012PlumeRiseCoupler))
     #System(
-    #    Equation[], t, [H_abl, lev_p, N_ft], [params1; params2]; name = name, observed = observed,
+    #    Equation[], t, [H_abl, H_p, lev_p, N_ft], [params1; params2]; name = name, parameter_dependencies = pd,
     #    metadata = Dict(CoupleType => Sofiev2012PlumeRiseCoupler))
+    System(
+        eqs, t, [H_abl, H_p, lev_p, N_ft], [params1; params2]; name = name,
+        metadata = Dict(:coupletype => Sofiev2012PlumeRiseCoupler))
 end
 
 function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, puff::PuffCoupler)
