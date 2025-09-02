@@ -3,7 +3,8 @@ name: CI
 on:
   workflow_dispatch:
   push:
-    branches: [ Gaussian_he1 ]
+    branches:
+      - Gaussian_he1
 
 jobs:
   quick:
@@ -11,29 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Checkout EarthSciData-private
-        uses: actions/checkout@v4
-        with:
-          repository: hemamipour/EarthSciData-private.jl
-          ref: main
-          path: vendor/EarthSciData
-          token: ${{ secrets.CI_GH_PAT }}
-
       - uses: julia-actions/setup-julia@v2
         with:
           version: '1'
       - uses: julia-actions/cache@v2
-
-      - name: Use private EarthSciData + run smoke test
-        run: >
-          julia --project -e '
-          using Pkg;
-          Pkg.develop(path="vendor/EarthSciData");
-          Pkg.add(["EarthSciMLBase","OrdinaryDiffEq"]);
-          Pkg.instantiate();
-          Pkg.status(["EarthSciData"]);
-          include("test/plume_rise/puff_geosfp_gauss_test.jl")'
+      - run: julia --project -e 'using Pkg; Pkg.add("EarthSciData"); Pkg.add("EarthSciMLBase"); Pkg.add("OrdinaryDiffEq"); Pkg.instantiate(); include("test/plume_rise/sofiev_2012_test.jl")'
 
   full:
     name: Full test suite
@@ -41,26 +24,9 @@ jobs:
     needs: quick
     steps:
       - uses: actions/checkout@v4
-
-      - name: Checkout EarthSciData-private
-        uses: actions/checkout@v4
-        with:
-          repository: hemamipour/EarthSciData-private.jl
-          ref: main
-          path: vendor/EarthSciData
-          token: ${{ secrets.CI_GH_PAT }}
-
       - uses: julia-actions/setup-julia@v2
         with:
           version: '1'
       - uses: julia-actions/cache@v2
-
-      - name: Pin private EarthSciData
-        run: >
-          julia --project -e '
-          using Pkg;
-          Pkg.develop(path="vendor/EarthSciData");
-          Pkg.instantiate()'
-
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
