@@ -1,4 +1,5 @@
-@testitem "Sofiev2012PlumeRise" begin
+using Test
+@testset "Sofiev2012PlumeRise" begin
     using EarthSciMLBase, EarthSciData
     using ModelingToolkit
     using Dates
