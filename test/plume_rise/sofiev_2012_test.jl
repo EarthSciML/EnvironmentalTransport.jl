@@ -1,6 +1,6 @@
 using Test
 @testset "Sofiev2012PlumeRise" begin
-    using EarthSciMLBase, EarthSciData
+    using EarthSciMLBase, EarthSciData, EnvironmentalTransport
     using ModelingToolkit
     using Dates
     using OrdinaryDiffEq
