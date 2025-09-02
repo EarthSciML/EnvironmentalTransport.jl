@@ -37,16 +37,16 @@ function Sofiev2012PlumeRise(; name = :Sofiev2012PlumeRise)
         N_ft(t), [unit = u"1/s", description = "Free troposphere Brunt-Vaisala frequency"]
     end
 
-    #pd = [H_p ~ α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * N_ft^2 / N_0^2)]
-    observed = [
-    H_p ~ α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * (N_ft^2) / (N_0^2))
-    ]
-    #System(
-    #    Equation[], t, [H_abl, H_p, lev_p, N_ft], [params1; params2]; name = name, parameter_dependencies = pd,
-    #    metadata = Dict(CoupleType => Sofiev2012PlumeRiseCoupler))
+    pd = [H_p ~ α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * N_ft^2 / N_0^2)]
+    #observed = [
+    #H_p ~ α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * (N_ft^2) / (N_0^2))
+    #]
     System(
-        Equation[], t, [H_abl, lev_p, N_ft], [params1; params2]; name = name, observed = observed,
+        Equation[], t, [H_abl, H_p, lev_p, N_ft], [params1; params2]; name = name, parameter_dependencies = pd,
         metadata = Dict(CoupleType => Sofiev2012PlumeRiseCoupler))
+    #System(
+    #    Equation[], t, [H_abl, lev_p, N_ft], [params1; params2]; name = name, observed = observed,
+    #    metadata = Dict(CoupleType => Sofiev2012PlumeRiseCoupler))
 end
 
 function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, puff::PuffCoupler)
