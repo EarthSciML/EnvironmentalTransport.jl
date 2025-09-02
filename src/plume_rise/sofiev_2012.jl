@@ -40,7 +40,7 @@ function Sofiev2012PlumeRise(; name = :Sofiev2012PlumeRise)
     pd = [H_p ~ α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * N_ft^2 / N_0^2)]
   
     System(
-        Equation[], t, [], [params1; params2]; name = name, parameter_dependencies = pd,
+        Equation[], t, [H_abl, H_p, lev_p, N_ft], [params1; params2]; name = name, parameter_dependencies = pd,
         metadata = Dict(CoupleType => Sofiev2012PlumeRiseCoupler))
 end
 
