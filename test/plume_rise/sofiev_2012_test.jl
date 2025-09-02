@@ -3,6 +3,7 @@ using EarthSciMLBase, EarthSciData, EnvironmentalTransport
 using ModelingToolkit
 using Dates
 using OrdinaryDiffEq
+using Test
 
 starttime = DateTime(2022, 5, 1)
 endtime = DateTime(2022, 5, 1, 0, 1)
