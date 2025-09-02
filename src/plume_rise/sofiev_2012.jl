@@ -45,7 +45,7 @@ function Sofiev2012PlumeRise(; name = :Sofiev2012PlumeRise)
     #    Equation[], t, [H_abl, H_p, lev_p, N_ft], [params1; params2]; name = name, parameter_dependencies = pd,
     #    metadata = Dict(CoupleType => Sofiev2012PlumeRiseCoupler))
     System(
-        Equation[], t, [H_abl, H_p, lev_p, N_ft], [params1; params2]; name = name, observed = observed,
+        Equation[], t, [H_abl, lev_p, N_ft], [params1; params2]; name = name, observed = observed,
         metadata = Dict(CoupleType => Sofiev2012PlumeRiseCoupler))
 end
 
