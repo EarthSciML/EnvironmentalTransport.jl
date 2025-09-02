@@ -7,7 +7,6 @@ using EnvironmentalTransport: PuffCoupler, GaussianPGBCoupler, GaussianSDCoupler
 using EnvironmentalTransport
 using ModelingToolkit: ParentScope, get_defaults, @unpack
 using ModelingToolkit: t
-using DynamicQuantities: u
 
 function EarthSciMLBase.couple2(p::PuffCoupler, g::GEOSFPCoupler)
     p, g = p.sys, g.sys
@@ -73,13 +72,9 @@ function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, gfp::GEOSFPCoup
     T2M_itp  = ParentScope(gfp.A1₊T2M_itp)      # [K]     2-m temperature
     QV2M_itp = ParentScope(gfp.A1₊QV2M_itp)     # [kg/kg] 2-m water vapor mixing ratio
 
-    #Rd     = ParentScope(gfp.Rd_v)            # [J/(kg*K)] dry-air gas constant
-    #g      = ParentScope(gfp.g_v)             # [m/s^2]    gravity
-    #P_unit = ParentScope(gfp.P_unit_v)        # [Pa]       pressure unit (1 Pa)
-
-    const Rd    = 287.05u"J/kg/K"   # dry-air gas constant
-    const g     = 9.80665u"m/s^2"   # gravity
-    const P_unit = 1.0u"Pa"
+    Rd     = ParentScope(gfp.Rd_v)            # [J/(kg*K)] dry-air gas constant
+    g      = ParentScope(gfp.g_v)             # [m/s^2]    gravity
+    P_unit = ParentScope(gfp.P_unit_v)        # [Pa]       pressure unit (1 Pa)
 
     softclamp = (x, lo, hi) -> ifelse(x < lo, lo, ifelse(x > hi, hi, x))
 
