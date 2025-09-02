@@ -172,12 +172,10 @@ function EarthSciMLBase.couple2(gd::GaussianSDCoupler, g::GEOSFPCoupler)
 
     ConnectorSystem([
         d.lat ~ m.lat
-        d.U ~ m.A3dyn₊U
         d.UE  ~ ParentScope(m.A3dyn₊U_itp)(ParentScope(m.t_ref) + t, ParentScope(m.lon) + d.Δλ/2, ParentScope(m.lat), ParentScope(m.lev))
         d.UW  ~ ParentScope(m.A3dyn₊U_itp)(ParentScope(m.t_ref) + t, ParentScope(m.lon) - d.Δλ/2, ParentScope(m.lat), ParentScope(m.lev))
         d.UN  ~ ParentScope(m.A3dyn₊U_itp)(ParentScope(m.t_ref) + t, ParentScope(m.lon), ParentScope(m.lat) + d.Δφ/2, ParentScope(m.lev))
         d.US  ~ ParentScope(m.A3dyn₊U_itp)(ParentScope(m.t_ref) + t, ParentScope(m.lon), ParentScope(m.lat) - d.Δφ/2, ParentScope(m.lev))
-        d.V ~ m.A3dyn₊V
         d.VE  ~ ParentScope(m.A3dyn₊V_itp)(ParentScope(m.t_ref) + t, ParentScope(m.lon) + d.Δλ/2, ParentScope(m.lat), ParentScope(m.lev))
         d.VW  ~ ParentScope(m.A3dyn₊V_itp)(ParentScope(m.t_ref) + t, ParentScope(m.lon) - d.Δλ/2, ParentScope(m.lat), ParentScope(m.lev))
         d.VN  ~ ParentScope(m.A3dyn₊V_itp)(ParentScope(m.t_ref) + t, ParentScope(m.lon), ParentScope(m.lat) + d.Δφ/2, ParentScope(m.lev))

@@ -363,13 +363,11 @@ function GaussianSD()
         QV  = 0.009,    [description = "Specific humidity at puff level (kg/kg)"]
         QV2M = 0.0095,  [description = "Specific humidity at 2 m (kg/kg)"]
 
-        U  = 0.0, [unit=u"m/s", description="U at puff level"]
         UE = 0.0, [unit=u"m/s", description="U at +½ lon"]
         UW = 0.0, [unit=u"m/s", description="U at −½ lon"]
         UN = 0.0, [unit=u"m/s", description="U at +½ lat"]
         US = 0.0, [unit=u"m/s", description="U at −½ lat"]
 
-        V  = 0.0, [unit=u"m/s", description="V at puff level"]
         VE = 0.0, [unit=u"m/s", description="V at +½ lon"]
         VW = 0.0, [unit=u"m/s", description="V at −½ lon"]
         VN = 0.0, [unit=u"m/s", description="V at +½ lat"]
@@ -433,7 +431,7 @@ function GaussianSD()
         [lat, sigma_h, σu, z_agl, C_gl],
         [Rd, g, R_earth, c_smag, Δλ, Δφ, TLv, Δz, C_zero,
          P, PS, T, T2M, QV, QV2M,
-         U, UE, UW, UN, US, V, VE, VW, VN, VS];
+         UE, UW, UN, US, VE, VW, VN, VS];
         name = :GaussianSD,
         metadata = Dict(CoupleType => GaussianSDCoupler),
     )
