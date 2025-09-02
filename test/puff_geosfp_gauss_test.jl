@@ -16,7 +16,7 @@ domain = DomainInfo(
     levrange = 1:72
 )
 
-@testset "GaussianPGB" begin
+@testset "Puff GeosFP GaussianPGB" begin
     model = couple(
         Puff(domain),
         GEOSFP("4x5", domain; stream=false),
@@ -46,18 +46,7 @@ domain = DomainInfo(
     @test isapprox(C_gl_val, C_gl_want; rtol = 1e-2)
 end
 
-@testset "Puff GeosFP Gaussian Dispersion" begin
-    starttime = DateTime(2022, 5, 1)
-    endtime = DateTime(2022, 5, 2)
-    lonv, latv, levv = (-108, 38, 2)
-
-    domain = DomainInfo(
-        starttime, endtime;
-        lonrange = deg2rad(-125):deg2rad(1.25):deg2rad(-68.75),
-        latrange = deg2rad(25.0):deg2rad(1.00):deg2rad(53.7),
-        levrange = 1:72
-    )
-
+@testset "Puff GeosFP GaussianSD" begin
     model = couple(
         Puff(domain),
         GEOSFP("4x5", domain; stream = false),
