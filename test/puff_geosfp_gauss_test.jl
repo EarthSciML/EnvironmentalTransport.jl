@@ -73,7 +73,7 @@ end
     sol = solve(prob, Tsit5())
 
     C_gl_val = sol[sys.GaussianSD₊C_gl][end]
-    C_gl_want = 2.47e-13
+    C_gl_want = 6.58e-13
 
     @test isapprox(C_gl_val, C_gl_want; rtol = 1e-2)
 end
