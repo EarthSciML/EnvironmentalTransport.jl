@@ -16,7 +16,7 @@ jobs:
         with:
           version: '1'
       - uses: julia-actions/cache@v2
-      - run: julia --project -e 'using Pkg; Pkg.add("EarthSciData"); Pkg.add("EarthSciMLBase"); Pkg.add("OrdinaryDiffEq"); Pkg.instantiate(); include("test/sofiev_2012_test.jl")'
+      - run: julia --project -e 'using Pkg; Pkg.add("EarthSciData"); Pkg.add("EarthSciMLBase"); Pkg.add("OrdinaryDiffEq"); Pkg.instantiate(); include("test/plume_rise/sofiev_2012_test.jl")'
 
   full:
     name: Full test suite
