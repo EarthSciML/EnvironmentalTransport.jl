@@ -145,7 +145,6 @@ function GaussianPGB()
     @variables begin
         lon(t),     [unit = u"rad",  description = "longitude", input=true]
         lat(t),     [unit = u"rad",  description = "latitude", input=true]
-        x(t),       [unit=u"m"]
         sigma_h(t), [unit = u"m",  description = "horizontal dispersion coefficient"]
         sigma_z(t), [unit = u"m",     description = "Vertical dispersion"]
         z_agl(t),   [unit = u"m",     description = "Hypsometric height above ground"]

@@ -47,11 +47,6 @@ domain = DomainInfo(
 end
 
 @testset "Puff GeosFP Gaussian Dispersion" begin
-    #using Dates
-    #using EarthSciMLBase, EarthSciData, EnvironmentalTransport
-    #using ModelingToolkit, OrdinaryDiffEq
-    #using EnvironmentalTransport: PuffCoupler, GaussianPGBCoupler, GaussianSDCoupler
-
     starttime = DateTime(2022, 5, 1)
     endtime = DateTime(2022, 5, 2)
     lonv, latv, levv = (-108, 38, 2)
