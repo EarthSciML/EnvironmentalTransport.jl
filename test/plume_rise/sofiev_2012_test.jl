@@ -1,8 +1,7 @@
-using EnvironmentalTransport
-using EarthSciMLBase, EarthSciData
+
+using EarthSciMLBase, EarthSciData, EnvironmentalTransport
 using ModelingToolkit
 using Dates
-using Test
 using OrdinaryDiffEq
 
 starttime = DateTime(2022, 5, 1)
@@ -17,7 +16,7 @@ di = DomainInfo(
 
 puff = Puff(di)
 
-prob = ODEProblem(structural_simplify(puff))
+prob = ODEProblem(mtkcompile(puff), [], get_tspan(di))
 @test prob.ps[Initial(puff.lev)] == 8.0
 
 gfp = GEOSFP("4x5", di)
@@ -28,11 +27,13 @@ model = couple(
     s12,
     gfp
 )
-sys = convert(ODESystem, model)
+sys = convert(System, model)
 
-prob = ODEProblem(sys, [], get_tspan(di), [])
+prob = ODEProblem(sys, [], get_tspan(di))
 
-@test prob.ps[Initial(sys.Puff₊lev)] ≈ 4.39566616801431
+lev_0 = prob.u0[ModelingToolkit.variable_index(sys, sys.Puff₊lev)]
+@test lev_0 ≈ 4.39566616801431
 
 sol = solve(prob, Tsit5())
 @test sol.retcode == SciMLBase.ReturnCode.Success
+
