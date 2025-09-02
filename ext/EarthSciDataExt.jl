@@ -151,21 +151,6 @@ function EarthSciMLBase.couple2(gd::GaussianPGBCoupler, g::GEOSFPCoupler)
     ], d, m)
 end
 
-function EarthSciMLBase.couple2(
-        gd::GaussianPGBCoupler,
-        puff::PuffCoupler,
-)
-    g, p = gd.sys, puff.sys
-
-    ConnectorSystem(
-        [
-            g.lon ~ p.lon,
-            g.lat ~ p.lat,
-        ],
-        g, p
-    )
-end
-
 function EarthSciMLBase.couple2(gd::GaussianSDCoupler, g::GEOSFPCoupler)
     d, m = gd.sys, g.sys
     d = param_to_var(d, :UE, :UW, :UN, :US, :VE, :VW, :VN, :VS, :QV2M, :T2M, :T, :P, :PS, :QV)
@@ -187,20 +172,6 @@ function EarthSciMLBase.couple2(gd::GaussianSDCoupler, g::GEOSFPCoupler)
         d.PS  ~ m.I3₊PS
         d.QV  ~ m.I3₊QV
     ], d, m)
-end
-
-function EarthSciMLBase.couple2(
-        gd::GaussianSDCoupler,
-        puff::PuffCoupler,
-)
-    g, p = gd.sys, puff.sys
-
-    ConnectorSystem(
-        [
-            g.lat ~ p.lat,
-        ],
-        g, p
-    )
 end
 
 end
