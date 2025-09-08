@@ -20,24 +20,30 @@ function Sofiev2012PlumeRise(; name = :Sofiev2012PlumeRise)
         β = 170.0, [unit = u"m", description = "Empirical constant"]
         γ = 0.35, [description = "Empirical constant"]
         δ = 0.6, [description = "Empirical constant"]
+        Rd     = 287.05,  [unit = u"J/(kg*K)", description = "Dry-air gas constant"]
+        g      = 9.80665, [unit = u"m/s^2", description = "Gravitational acceleration"]
+        Punit = 1.0,     [unit = u"Pa", description = "Unit pressure"]
     end
 
     params2 = @parameters begin
-        H_abl = 1000.0, [unit = u"m", description = "Atmospheric boundary layer height"]
-        N_ft = 0.02, # TODO(CT): Calculate this from data.
-        [unit = u"1/s", description = "Free troposphere Brunt-Vaisala frequency"]
         P_fr = 5e6, [unit = u"W", description = "Fire radiative power"]
 
-        # TODO(CT): Make this automatically calculated.
+        # Used to calculate the initial guess of the plume top level
         h_to_lev = 100.0, [unit = u"m", description = "Height to level transform"]
-
-        H_p, [unit = u"m", description = "Final plume top height"]
-        lev_p, [description = "Vertical level of the plume top height"]
     end
-    pd = [H_p ~ α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * N_ft^2 / N_0^2),
-        lev_p ~ H_p / h_to_lev]
+
+    # TODO(HE): Use as parameters?
+    @variables begin
+        H_abl(t),   [unit = u"m",  description = "Atmospheric boundary layer height"]
+        H_p(t),   [unit = u"m", description = "Plume top height"]
+        lev_p(t),   [description = "Vertical level of the plume top height"]
+        N_ft(t), [unit = u"1/s", description = "Free troposphere Brunt-Vaisala frequency"]
+    end
+
+    pd = [H_p ~ α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * N_ft^2 / N_0^2)]
+  
     System(
-        Equation[], t, [], [params1; params2]; name = name, parameter_dependencies = pd,
+        Equation[], t, [H_abl, H_p, lev_p, N_ft], [params1; params2]; name = name, parameter_dependencies = pd,
         metadata = Dict(CoupleType => Sofiev2012PlumeRiseCoupler))
 end
 
@@ -51,3 +57,5 @@ function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, puff::PuffCoupl
 
     ConnectorSystem([], s12, puff)
 end
+
+
