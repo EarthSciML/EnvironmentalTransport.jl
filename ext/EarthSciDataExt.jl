@@ -48,85 +48,78 @@ end
 function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, gfp::GEOSFPCoupler)
     s12, gfp = s12.sys, gfp.sys
 
+    κ     = 287.05 / 1004.67                    # [-]    Poisson exponent Rd/cp (dry air)
+    Δℓ_newton = 0.5                             # [level] Newton step for H↔ℓ mapping (centered)
+    Δℓ_grad   = 1.0                             # [level] offset for centered dθv/dz
 
-    εZ_m  = 1e-6 * s12.h_to_lev                     # [m]  use to keep (Zp - Zm) away from zero
-    εmlev = 1e-12 * s12.h_to_lev                    # [m]  use to keep dZ/dℓ away from zero
-    κ    = 287.05 / 1004.67                         # [-]  Poisson exponent Rd/cp
-    Δℓ_newton = 0.5                                 # half-step for mapping H↔ℓ
-    Δℓ_grad   = 1.0                                 # one full level for dθᵥ/dz at mid-level
-    LMIN, LMAX = 1.0 + Δℓ_newton, 72.0 - Δℓ_newton  # [-]  valid mid-level range
-    εPfac = 1e-9                                    # [-]  tiny factor
-    p0    = 1.0e5                                   # [Pa] reference sea-level pressure
+    LMIN, LMAX = 1.0 + Δℓ_newton, 72.0 - Δℓ_newton  # [-]
+    
+    p0    = 1.0e5                             # [Pa]   reference sea-level pressure
 
-    df = get_defaults(s12)
-    @unpack H_abl = s12
-    df[H_abl] = ParentScope(gfp.A1₊PBLH_itp)(ParentScope.((gfp.t_ref, gfp.lon, gfp.lat))...)
+    τ = ParentScope(gfp.t_ref)                # [s]    reference time
+    λ = ParentScope(gfp.lon)                  # [rad]  long
+    φ = ParentScope(gfp.lat)                  # [rad]  lat
 
-    τ = ParentScope(gfp.t_ref)                  # [s]   reference time
-    λ = ParentScope(gfp.lon)                    # [rad] longitude
-    φ = ParentScope(gfp.lat)                    # [rad] latitude
+    T_itp    = ParentScope(gfp.I3₊T_itp)      # [K]       temperature
+    QV_itp   = ParentScope(gfp.I3₊QV_itp)     # [kg/kg]   water vapor mixing ratio
+    PS_itp   = ParentScope(gfp.I3₊PS_itp)     # [Pa]      surface pressure
+    T2M_itp  = ParentScope(gfp.A1₊T2M_itp)    # [K]       2-m temperature
+    QV2M_itp = ParentScope(gfp.A1₊QV2M_itp)   # [kg/kg]   2-m water vapor mixing ratio
 
-    T_itp    = ParentScope(gfp.I3₊T_itp)        # [K]     temperature
-    QV_itp   = ParentScope(gfp.I3₊QV_itp)       # [kg/kg] water vapor mixing ratio
-    PS_itp   = ParentScope(gfp.I3₊PS_itp)       # [Pa]    surface pressure
-    T2M_itp  = ParentScope(gfp.A1₊T2M_itp)      # [K]     2-m temperature
-    QV2M_itp = ParentScope(gfp.A1₊QV2M_itp)     # [kg/kg] 2-m water vapor mixing ratio
-
-    Rd     = ParentScope(gfp.Rd_v)            # [J/(kg*K)] dry-air gas constant
-    g      = ParentScope(gfp.g_v)             # [m/s^2]    gravity
-    P_unit = ParentScope(gfp.P_unit_v)        # [Pa]       pressure unit (1 Pa)
+    Rd    = s12.Rd                            # [J/(kg*K)] dry-air gas constant
+    g     = s12.g                             # [m s^-2]   gravitational acceleration
+    Punit = s12.Punit                         # [Pa]       pressure unit (=1 Pa)
 
     softclamp = (x, lo, hi) -> ifelse(x < lo, lo, ifelse(x > hi, hi, x))
 
-    # Virtual potential temperature at hybrid mid-level ℓ
+    # Virtual potential temperature θv(ℓ) at hybrid mid-level ℓ
     θv_at = ℓ -> begin
-        T  = T_itp(τ, λ, φ, ℓ)                      # [K]
-        qv = QV_itp(τ, λ, φ, ℓ)                     # [kg/kg]
-        PS = PS_itp(τ, λ, φ)                        # [Pa]
-        P = P_unit*Ap(ℓ + 0.5) + Bp(ℓ + 0.5)*PS     # [Pa] mid-level pressure
-        Tv = T * (1 + 0.61*qv)                      # [K]  virtual temperature
-        Tv * ((p0*P_unit) / (P + εPfac*PS))^κ       # [K]  virtual potential temperature
+        T  = T_itp(τ + t, λ, φ, ℓ)                           # [K]     temperature at mid-level ℓ
+        qv = QV_itp(τ + t, λ, φ, ℓ)                          # [kg/kg] water-vapor mixing ratio at ℓ
+        PS = PS_itp(τ + t, λ, φ)                             # [Pa]    surface pressure
+        P  = Punit * Ap(ℓ + 0.5) + Bp(ℓ + 0.5) * PS          # [Pa]    hybrid mid-level pressure
+        Tv = T * (1 + 0.61*qv)                               # [K]     virtual temperature
+        Tv * ((p0 * Punit) / P)^κ                            # [K]     virtual potential temperature θv
     end
 
-    # Geopotential height AGL at level edge ℓ±1/2 via hypsometric
+    # Geopotential height above ground Z(ℓ) via hypsometric
     Z_at = ℓ -> begin
-        Tv  = T_itp(τ, λ, φ, ℓ) * (1 + 0.61*QV_itp(τ, λ, φ, ℓ))     # [K]
-        Tv2 = T2M_itp(τ, λ, φ) * (1 + 0.61*QV2M_itp(τ, λ, φ))       # [K]
-        Tv̄ = 0.5*(Tv + Tv2)                                         # [K] layer-mean virtual T
-        PS   = PS_itp(τ, λ, φ)                                      # [Pa]
-        Pmid = P_unit*Ap(ℓ + 0.5) + Bp(ℓ + 0.5)*PS                  # [Pa] mid-level pressure
-        (Rd * Tv̄ / g) * log(PS / (Pmid + εPfac*PS))                 # [m]  height AGL
+        Tv  = T_itp(τ + t, λ, φ, ℓ) * (1 + 0.61 * QV_itp(τ + t, λ, φ, ℓ))   # [K]  virtual temp at mid-level ℓ
+        Tv2 = T2M_itp(τ + t, λ, φ)   * (1 + 0.61 * QV2M_itp(τ + t, λ, φ))   # [K]  virtual temp at 2 m
+        Tv̄ = 0.5 * (Tv + Tv2)                                               # [K]  layer-mean virtual temperature
+        PS   = PS_itp(τ + t, λ, φ)                                          # [Pa] surface pressure
+        Pmid = Punit * Ap(ℓ + 0.5) + Bp(ℓ + 0.5) * PS                       # [Pa] hybrid mid-level pressure
+        (Rd * Tv̄ / g) * log(PS / Pmid)                                      # [m]  hypsometric height AGL
     end
 
-    # Local meters-per-level using a centered difference
-    m_per_level_at = ℓ -> (Z_at(ℓ + Δℓ_newton) - Z_at(ℓ - Δℓ_newton)) / (2Δℓ_newton)  # [m/level]
+    # Local meters-per-level: dZ/dℓ with a centered difference
+    m_per_level_at = ℓ -> (Z_at(ℓ + Δℓ_newton) - Z_at(ℓ - Δℓ_newton)) / (2Δℓ_newton)  # [m level^-1]
 
-
-    # One Newton step from height to level, clamped to the valid range.
-    # Add more iterations for higher accuracy.
-    lev_from_height = H -> begin                            # H: [m]
-        ℓ0 = softclamp(H / s12.h_to_lev, LMIN, LMAX)        # [-]
-        Z0 = Z_at(ℓ0)                                       # [m]
-        dZdℓ = m_per_level_at(ℓ0) + εmlev                   # [m/level]
-        softclamp(ℓ0 + (H - Z0)/dZdℓ, LMIN, LMAX)           # [-]
+    # Map height H [m] → mid-level ℓ [-] with one Newton step
+    lev_from_height = H -> begin
+        ℓ0 = softclamp(H / s12.h_to_lev, LMIN, LMAX)     # initial guess from linear H→ℓ
+        Z0 = Z_at(ℓ0)
+        dZdℓ = m_per_level_at(ℓ0)
+        softclamp(ℓ0 + (H - Z0) / dZdℓ, LMIN, LMAX)
     end
-
-    # Evaluate near the free troposphere (~2 × PBL height)
-    lev_ft = lev_from_height(2 * s12.H_abl)                 # [-]
-
-    # Centered vertical gradient of θv at lev_ft
-    θp = θv_at(lev_ft + Δℓ_grad); θm = θv_at(lev_ft - Δℓ_grad)      # [K]
-    Zp = Z_at(lev_ft + Δℓ_grad);  Zm = Z_at(lev_ft - Δℓ_grad)       # [m]
-    dθv_dz = (θp - θm) / ((Zp - Zm) + εZ_m)                         # [K/m]
-
-    θc = θv_at(lev_ft)                                      # [K]
-    N2 = (g / θc) * dθv_dz                                  # [1/s^2]
-    N  = sqrt(0.5 * (N2 + abs(N2)))                         # [1/s]
 
     ConnectorSystem([
-        s12.H_abl ~ ParentScope(gfp.A1₊PBLH_itp)(τ, λ, φ),  # [m]
-        s12.lev_p    ~ lev_from_height(s12.H_p),
-        s12.N_ft  ~ N,                                      # [1/s]
+        s12.H_abl ~ ParentScope(gfp.A1₊PBLH_itp)(τ + t, λ, φ),  # [m] atmospheric boundary layer height
+
+        s12.lev_p ~ lev_from_height(s12.H_p),                   # [-]  plume-top level
+
+        # Free-troposphere buoyancy frequency N(t): probe near 2 × PBL height
+        s12.N_ft  ~ begin
+            lev_ft = lev_from_height(2 * s12.H_abl)             # [-] mid-level near FT
+            θp = θv_at(lev_ft + Δℓ_grad)                        # [K]
+            θm = θv_at(lev_ft - Δℓ_grad)                        # [K]
+            Zp = Z_at(lev_ft + Δℓ_grad)                         # [m]
+            Zm = Z_at(lev_ft - Δℓ_grad)                         # [m]
+            dθv_dz = (θp - θm) / (Zp - Zm)                      # [K m^-1]
+            θc     = θv_at(lev_ft)                              # [K]
+            N2     = (g / θc) * dθv_dz                          # [s^-2]
+            sqrt(0.5 * (N2 + abs(N2)))                          # [s^-1] ensure N ≥ 0
+        end
     ], s12, gfp)
 end
 
