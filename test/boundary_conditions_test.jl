@@ -85,7 +85,7 @@ end
         species_vars = unknowns(sys)
         
         # Set up species-specific boundary conditions using names
-        species_values = Dict("O3" => 40.0, "NO2" => 10.0)
+        species_values = Dict("SuperFast₊O3(t)" => 40.0, "SuperFast₊NO2(t)" => 10.0)
         default_value = 0.0
         bc = SpeciesConstantBC(species_values, default_value)
         
@@ -100,8 +100,11 @@ end
         @test x[1:n_species, 1:3, 1:3, 1:2] == test_array
 
         # Find indices for O3 and NO2 if they exist
-        o3_idx = findfirst(var -> contains(string(var), "O3"), species_vars)
-        no2_idx = findfirst(var -> contains(string(var), "NO2"), species_vars)
+        o3_idx = findfirst(var -> contains(string(var), "SuperFast₊O3(t)"), species_vars)
+        no2_idx = findfirst(var -> contains(string(var), "SuperFast₊NO2(t)"), species_vars)
+
+        @test string(species_vars[o3_idx]) == "SuperFast₊O3(t)"
+        @test string(species_vars[no2_idx]) == "SuperFast₊NO2(t)"
 
         if o3_idx !== nothing
             # Test out-of-bounds access for O3
