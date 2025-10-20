@@ -216,7 +216,17 @@ function EarthSciMLBase.get_scimlop(op::AdvectionOperator, csys::CoupledSystem, 
         coord_args, domain::DomainInfo, u0, p, alg::MapAlgorithm)
     u0 = reshape(u0, :, length.(EarthSciMLBase.grid(EarthSciMLBase.domain(csys)))...)
     v_fs, Δ_fs = get_datafs(op, csys, mtk_sys, coord_args, domain)
-    scimlop = advection_op(u0, op.stencil, v_fs, Δ_fs, op.Δt, op.bc_type, alg, p = p)
+    
+    # Handle SpeciesConstantBC specially to resolve species names
+    bc_type = op.bc_type
+    if isa(bc_type, SpeciesConstantBC)
+        # Get species variables from the system
+        species_vars = unknowns(mtk_sys)
+        # Create a closure that applies the species-specific boundary condition
+        bc_type = (x) -> resolve_species_bc(op.bc_type, x, species_vars)
+    end
+    
+    scimlop = advection_op(u0, op.stencil, v_fs, Δ_fs, op.Δt, bc_type, alg, p = p)
     cache_operator(scimlop, u0[:])
 end
 
