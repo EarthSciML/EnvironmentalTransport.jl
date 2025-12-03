@@ -64,14 +64,14 @@ function advection_op(u_prototype, stencil, v_fs, Δ_fs, Δt, bc_type, alg::MapA
     function advection(u, p, t) # Out-of-place
         u = bc_type(reshape(u, sz...))
         kernelII(II) = adv_kernel(u, II, Δt, t, p)
-        du = map_closure_to_range(kernelII, II, alg)
+        du = EarthSciMLBase.map_closure_to_range(kernelII, II, alg)
         reshape(du, :)
     end
     function advection(du, u, p, t) # In-place
         u = bc_type(reshape(u, sz...))
         du = reshape(du, sz...)
         kernelII(II) = du[II] = adv_kernel(u, II, Δt, t, p)
-        map_closure_to_range(kernelII, II, alg)
+        EarthSciMLBase.map_closure_to_range(kernelII, II, alg)
         nothing
     end
 end

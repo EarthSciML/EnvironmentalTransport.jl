@@ -72,4 +72,4 @@ struct ConstantBC
     value::AbstractFloat
     ConstantBC(value::AbstractFloat) = new(value)
 end
-(bc::ConstantBC)(x) = ConstantBCArray(x, bc.value)
+(bc::ConstantBC)(x) = ConstantBCArray(x, bc.value + zero(eltype(x)))
