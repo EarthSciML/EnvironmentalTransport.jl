@@ -353,6 +353,8 @@ function GaussianSD()
         Δφ      = deg2rad(4.0), [unit = u"rad", description = "Latitude grid size (4° for GEOS-FP 4x5)"]
         TLv = 10800.0, [unit = u"s", description = "Horizontal Lagrangian time scale"]
         Δz = 50.0, [unit = u"m", description = "Grid-cell height. (m)"]
+        z_mode = 0, [description = "Height selector: 0=hypsometric; 1=geopotential"]
+        z_agl_geo = 0.0, [unit = u"m", description = "Geopotential height above ground"]
         C_zero  = 0.0, [unit = u"m^-3", description = "Zero concentration"]
         
         P   = 90000.0,  [unit = u"Pa", description = "Pressure at puff level"]
@@ -377,20 +379,11 @@ function GaussianSD()
         lat(t),   [unit = u"rad",  description = "latitude", input=true]
         sigma_h(t), [unit = u"m",  description = "horizontal dispersion coefficient"]
         σu(t),      [unit = u"m/s",  description = "Turbulent horizontal velocity std. dev"]
-        z_agl(t), [unit = u"m",  description = "Height AGL from hypsometric equation"]
+        z_agl(t), [unit = u"m",  description = "Height AGL"]
         C_gl(t), [unit = u"m^-3", description = "Ground-level concentration at puff center for unit mass (Gaussian)"]
     end
 
     Dt = Differential(t)
-
-    # ------------------------------------------------------------------
-    # Hypsometric height above ground (m)
-    # z = (Rd * T̄_v / g) * ln(PS / P)
-    # with layer‑mean virtual temperature T̄_v = 0.5*(T_v(level)+T_v(surface))
-    # ------------------------------------------------------------------
-    Tv_lvl = T   * (1 + 0.61 * QV)
-    Tv_sfc = T2M * (1 + 0.61 * QV2M)
-    Tv_bar = 0.5 * (Tv_lvl + Tv_sfc)
 
     # --- Grid metrics & Smagorinsky filter length ---
     Δx = R_earth * cos(lat) * Δλ
@@ -412,8 +405,18 @@ function GaussianSD()
     # --- σ_h tendency — MetMag Eq. 16 ---
     Dt_sigma_h_expr = sqrt(2) * σu
 
-    # --- Hypsometric height
-    z_agl_expr  = (Rd * Tv_bar / g) * log(PS / P)
+    # --- Height above ground (m) ---
+    # Hypsometric height above ground:
+    # z = (Rd * T̄_v / g) * ln(PS / P)
+    # with layer‑mean virtual temperature T̄_v = 0.5*(T_v(level)+T_v(surface))
+    # Geopotential AGL height:
+    # z_agl_geo = (PH + PHB)/g − HGT
+    z_agl_expr = ifelse(
+        z_mode > 0,
+        z_agl_geo,
+        (Rd * (0.5 * ( T   * (1 + 0.61 * QV) +
+                       T2M * (1 + 0.61 * QV2M) )) / g) * log(PS / P)
+    )
 
     # Ground-centerline concentration — MetMag Eq. 18 ---
     C_expr = 1 / (2*π * sigma_h^2 * Δz)
@@ -429,6 +432,7 @@ function GaussianSD()
         eqs, t,
         [lat, sigma_h, σu, z_agl, C_gl],
         [Rd, g, R_earth, c_smag, Δλ, Δφ, TLv, Δz, C_zero,
+         z_mode, z_agl_geo, 
          P, PS, T, T2M, QV, QV2M,
          UE, UW, UN, US, VE, VW, VN, VS];
         name = :GaussianSD,
