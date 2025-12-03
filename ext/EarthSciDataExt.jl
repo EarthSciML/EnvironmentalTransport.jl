@@ -2,15 +2,18 @@ module EarthSciDataExt
 using DocStringExtensions
 import EarthSciMLBase
 using EarthSciMLBase: param_to_var, ConnectorSystem, CoupledSystem, get_coupletype
-using EarthSciData: GEOSFPCoupler, Ap, Bp
+using EarthSciData: GEOSFPCoupler, WRFCoupler, Ap, Bp
 using EnvironmentalTransport: PuffCoupler, GaussianPGBCoupler, GaussianSDCoupler, AdvectionOperator, Sofiev2012PlumeRiseCoupler
 using EnvironmentalTransport
 using ModelingToolkit: ParentScope, get_defaults, @unpack
 using ModelingToolkit: t
+using ModelingToolkit: @parameters, @variables, @constants
+using DynamicQuantities: @u_str
 
 function EarthSciMLBase.couple2(p::PuffCoupler, g::GEOSFPCoupler)
     p, g = p.sys, g.sys
-    p = param_to_var(p, :v_lon, :v_lat, :v_lev, :x_trans, :y_trans, :lev_trans)
+    p = param_to_var(p, :v_lon, :v_lat, :v_lev, :x_trans, :y_trans, :lev_trans, 
+                        :PBLH, :USTAR, :z2lev, :HFLUX, :EFLUX, :PS, :T2M, :QV2M)
     g = param_to_var(g, :lon, :lat, :lev)
     ConnectorSystem(
         [g.lon ~ p.lon
@@ -21,9 +24,39 @@ function EarthSciMLBase.couple2(p::PuffCoupler, g::GEOSFPCoupler)
          p.v_lev ~ g.A3dyn₊OMEGA
          p.x_trans ~ 1 / g.δxδlon
          p.y_trans ~ 1 / g.δyδlat
-         p.lev_trans ~ 1 / g.δPδlev],
+         p.lev_trans ~ 1 / g.δPδlev
+         p.PBLH   ~ g.A1₊PBLH
+         p.USTAR    ~ g.A1₊USTAR
+         p.HFLUX    ~ g.A1₊HFLUX
+         p.EFLUX    ~ g.A1₊EFLUX
+         p.PS    ~ g.I3₊PS
+         p.T2M    ~ g.A1₊T2M
+         p.QV2M    ~ g.A1₊QV2M
+         p.z_agl ~ g.Z_agl
+         p.z2lev ~ 1 / g.δZδlev],
         p,
         g)
+end
+
+function EarthSciMLBase.couple2(p::PuffCoupler, w::WRFCoupler)
+    p, w = p.sys, w.sys
+    p = param_to_var(p, :v_lon, :v_lat, :v_lev, :x_trans, :y_trans, :lev_trans)
+    w = param_to_var(w, :lon, :lat, :lev)
+
+    @constants c1 = 1.0 [unit = u"kg/m^2/s^2"]
+    @constants c2 = 1.0 [unit = u"m^2/kg*s^2"]
+
+    ConnectorSystem([
+        w.lon ~ p.lon,
+        w.lat ~ p.lat,
+        w.lev ~ clamp(p.lev, 1, 42),
+        p.v_lon ~ w.U,
+        p.v_lat ~ w.V,
+        p.v_lev ~ w.W * c1,
+        p.x_trans ~ 1 / w.δxδlon,
+        p.y_trans ~ 1 / w.δyδlat,
+        p.lev_trans ~ (1 / w.δzδlev) * c2
+    ], p, w)
 end
 
 function EarthSciMLBase.get_needed_vars(
@@ -165,6 +198,42 @@ function EarthSciMLBase.couple2(gd::GaussianSDCoupler, g::GEOSFPCoupler)
         d.PS  ~ m.I3₊PS
         d.QV  ~ m.I3₊QV
     ], d, m)
+end
+
+function EarthSciMLBase.couple2(d::GaussianSDCoupler, w::WRFCoupler)
+    d, w = d.sys, w.sys
+    d = param_to_var(d, :UE,:UW,:UN,:US,:VE,:VW,:VN,:VS, :QV2M,:T2M,:T,:P,:PS,:QV,:z_agl_geo,:z_mode)
+    w = param_to_var(w, :lon,:lat,:lev)
+
+    @constants T0 = 300 [unit = u"K"]
+    @constants p0 = 1.0e5        [unit = u"Pa"]
+    @constants Rd = 287.05       [unit = u"J/kg/K"]
+    @constants cp = 1004.67      [unit = u"J/kg/K"]
+    @constants g  = 9.80665      [unit = u"m/s^2"]
+    γ = Rd/cp
+
+    ConnectorSystem([
+        d.lat ~ w.lat,
+        d.UE ~ ParentScope(w.U_itp)(ParentScope(w.t_ref)+t, ParentScope(w.lon)+d.Δλ/2, ParentScope(w.lat), ParentScope(w.lev)),
+        d.UW ~ ParentScope(w.U_itp)(ParentScope(w.t_ref)+t, ParentScope(w.lon)-d.Δλ/2, ParentScope(w.lat), ParentScope(w.lev)),
+        d.UN ~ ParentScope(w.U_itp)(ParentScope(w.t_ref)+t, ParentScope(w.lon), ParentScope(w.lat)+d.Δφ/2, ParentScope(w.lev)),
+        d.US ~ ParentScope(w.U_itp)(ParentScope(w.t_ref)+t, ParentScope(w.lon), ParentScope(w.lat)-d.Δφ/2, ParentScope(w.lev)),
+        d.VE ~ ParentScope(w.V_itp)(ParentScope(w.t_ref)+t, ParentScope(w.lon)+d.Δλ/2, ParentScope(w.lat), ParentScope(w.lev)),
+        d.VW ~ ParentScope(w.V_itp)(ParentScope(w.t_ref)+t, ParentScope(w.lon)-d.Δλ/2, ParentScope(w.lat), ParentScope(w.lev)),
+        d.VN ~ ParentScope(w.V_itp)(ParentScope(w.t_ref)+t, ParentScope(w.lon), ParentScope(w.lat)+d.Δφ/2, ParentScope(w.lev)),
+        d.VS ~ ParentScope(w.V_itp)(ParentScope(w.t_ref)+t, ParentScope(w.lon), ParentScope(w.lat)-d.Δφ/2, ParentScope(w.lev)),
+        d.z_agl_geo ~ (
+            ParentScope(w.PH_itp)(ParentScope(w.t_ref)+t, ParentScope(w.lon), ParentScope(w.lat), ParentScope(w.lev)+0.5) +
+            ParentScope(w.PHB_itp)(ParentScope(w.t_ref)+t, ParentScope(w.lon), ParentScope(w.lat), ParentScope(w.lev)+0.5)
+        ) / g - w.HGT,
+        d.T2M  ~ w.T2,
+        d.QV2M ~ w.Q2,
+        d.P    ~ w.P_total,
+        d.PS   ~ w.PSFC,
+        d.T    ~ (w.T +  T0) * (w.P_total / p0)^γ,
+        d.QV   ~ w.QVAPOR,
+        d.z_mode ~ 1, # (0 = hypsometric, 1 = geopotential)
+    ], d, w)
 end
 
 end
