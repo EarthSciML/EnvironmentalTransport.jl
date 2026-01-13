@@ -3,7 +3,7 @@ module EnvironmentalTransport
 using DocStringExtensions
 using LinearAlgebra
 using SciMLBase: NullParameters
-using ModelingToolkit: t, D, get_unit, getdefault, System, @variables, @parameters,
+using ModelingToolkit: t, D, get_unit, getdefault, System, @brownians, @variables, @parameters,
                        @constants, Equation, unknowns, ParentScope, get_defaults, @unpack
 using SciMLBase: terminate!
 using DynamicQuantities: @u_str
@@ -18,5 +18,6 @@ include("advection.jl")
 include("puff.jl")
 include("plume_rise/sofiev_2012.jl")
 include("GaussianDispersion.jl")
+include("BoundaryLayerMixingKC.jl")
 
 end

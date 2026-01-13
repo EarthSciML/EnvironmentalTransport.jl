@@ -1,7 +1,7 @@
 @testitem "Gaussian Dispersion" begin
     using Dates
     using EarthSciMLBase, EarthSciData, EnvironmentalTransport
-    using ModelingToolkit, OrdinaryDiffEq
+    using ModelingToolkit, DiffEqBase, StochasticDiffEq
 
     starttime = DateTime(2022, 5, 1, 0)
     endtime = DateTime(2022, 5, 1, 5)
@@ -46,11 +46,12 @@
         @test isapprox(C_gl_val, C_gl_want; rtol = 1e-2)
     end
 
-    @testset "Puff GeosFP GaussianSD" begin
+    @testset "Puff GeosFP GaussianKC" begin
         model = couple(
             Puff(domain),
             GEOSFP("4x5", domain; stream = false),
-            GaussianSD()
+            BoundaryLayerMixingKC(),
+            GaussianKC()
         )
 
         sys = convert(System, model)
@@ -61,19 +62,21 @@
             sys.Puff₊lon => deg2rad(lonv),
             sys.Puff₊lat => deg2rad(latv),
             sys.Puff₊lev => levv,
-            sys.GaussianSD₊sigma_h => 0.0
+            sys.GaussianKC₊sigma_x => 0.00001,
+            sys.GaussianKC₊sigma_y => 0.00001,
+            sys.BoundaryLayerMixingKC₊uprime_x => 0.0,
+            sys.BoundaryLayerMixingKC₊uprime_y => 0.0,
+            sys.BoundaryLayerMixingKC₊wprime => 0.0
         ]
         p = [
-            sys.GaussianSD₊Δλ => Δλ,
-            sys.GaussianSD₊Δφ => Δφ,
-            sys.GaussianSD₊Δz => 500
+            sys.GaussianKC₊Δz => 500.0,
         ]
 
-        prob = ODEProblem(sys, u0, tspan, p)
-        sol = solve(prob, Tsit5())
+        prob = SDEProblem(sys, u0, tspan, p)
+        sol = solve(prob, SRIW1(); dt = 60.0)
 
-        C_gl_val = sol[sys.GaussianSD₊C_gl][end]
-        C_gl_want = 6.58e-13
+        C_gl_val = sol[sys.GaussianKC₊C_gl][end]
+        C_gl_want = 0.0
 
         @test isapprox(C_gl_val, C_gl_want; rtol = 1e-2)
     end
