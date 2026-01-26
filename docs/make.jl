@@ -20,6 +20,7 @@ makedocs(;
         "Home" => "index.md",
         "Advection" => "advection.md",
         "Puff Model" => "puff.md",
+        "Atmospheric Fundamentals" => "seinfeld_pandis_ch1.md",
         "API" => "api.md",
         "🔗 Benchmarks" => "benchmarks.md"
     ]
