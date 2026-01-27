@@ -27,7 +27,8 @@ using DynamicQuantities
 @testsnippet SPCh1Setup begin
     using EnvironmentalTransport
     using ModelingToolkit
-    using ModelingToolkit: t, D, unknowns, parameters, equations, System, toggle_namespacing, mtkcompile
+    using ModelingToolkit: t, D, unknowns, parameters, equations, System,
+                           toggle_namespacing, mtkcompile
     using ModelingToolkit: @named
     using DynamicQuantities
     using Test
@@ -456,63 +457,63 @@ end
 @testitem "5.1 IdealGasLaw Compilation" setup=[SPCh1Setup] begin
     @named igl = IdealGasLaw()
     igl_nns = toggle_namespacing(igl, false)
-    compiled = mtkcompile(igl; inputs=[igl_nns.T, igl_nns.p])
+    compiled = mtkcompile(igl; inputs = [igl_nns.T, igl_nns.p])
     @test compiled isa System
 end
 
 @testitem "5.2 ScaleHeight Compilation" setup=[SPCh1Setup] begin
     @named sh = ScaleHeight()
     sh_nns = toggle_namespacing(sh, false)
-    compiled = mtkcompile(sh; inputs=[sh_nns.T])
+    compiled = mtkcompile(sh; inputs = [sh_nns.T])
     @test compiled isa System
 end
 
 @testitem "5.3 AtmosphericPressureProfile Compilation" setup=[SPCh1Setup] begin
     @named app = AtmosphericPressureProfile()
     app_nns = toggle_namespacing(app, false)
-    compiled = mtkcompile(app; inputs=[app_nns.T])
+    compiled = mtkcompile(app; inputs = [app_nns.T])
     @test compiled isa System
 end
 
 @testitem "5.4 TotalMolarConcentration Compilation" setup=[SPCh1Setup] begin
     @named tmc = TotalMolarConcentration()
     tmc_nns = toggle_namespacing(tmc, false)
-    compiled = mtkcompile(tmc; inputs=[tmc_nns.T, tmc_nns.p])
+    compiled = mtkcompile(tmc; inputs = [tmc_nns.T, tmc_nns.p])
     @test compiled isa System
 end
 
 @testitem "5.5 MixingRatio Compilation" setup=[SPCh1Setup] begin
     @named mr = MixingRatio()
     mr_nns = toggle_namespacing(mr, false)
-    compiled = mtkcompile(mr; inputs=[mr_nns.c_i, mr_nns.c_total])
+    compiled = mtkcompile(mr; inputs = [mr_nns.c_i, mr_nns.c_total])
     @test compiled isa System
 end
 
 @testitem "5.6 SaturationVaporPressure Compilation" setup=[SPCh1Setup] begin
     @named svp = SaturationVaporPressure()
     svp_nns = toggle_namespacing(svp, false)
-    compiled = mtkcompile(svp; inputs=[svp_nns.T])
+    compiled = mtkcompile(svp; inputs = [svp_nns.T])
     @test compiled isa System
 end
 
 @testitem "5.7 RelativeHumidity Compilation" setup=[SPCh1Setup] begin
     @named rh = RelativeHumidity()
     rh_nns = toggle_namespacing(rh, false)
-    compiled = mtkcompile(rh; inputs=[rh_nns.p_H2O, rh_nns.p_sat])
+    compiled = mtkcompile(rh; inputs = [rh_nns.p_H2O, rh_nns.p_sat])
     @test compiled isa System
 end
 
 @testitem "5.8 WaterVaporThermodynamics Compilation" setup=[SPCh1Setup] begin
     @named wvt = WaterVaporThermodynamics()
     wvt_nns = toggle_namespacing(wvt, false)
-    compiled = mtkcompile(wvt; inputs=[wvt_nns.T, wvt_nns.p_H2O])
+    compiled = mtkcompile(wvt; inputs = [wvt_nns.T, wvt_nns.p_H2O])
     @test compiled isa System
 end
 
 @testitem "5.9 AtmosphericThermodynamics Compilation" setup=[SPCh1Setup] begin
     @named at = AtmosphericThermodynamics()
     at_nns = toggle_namespacing(at, false)
-    compiled = mtkcompile(at; inputs=[at_nns.T])
+    compiled = mtkcompile(at; inputs = [at_nns.T])
     @test compiled isa System
 end
 
