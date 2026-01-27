@@ -23,6 +23,7 @@ export BarometricFormula, TotalMolarConcentration
 export MixingRatio, PartialPressureMixingRatio
 export RelativeHumidity, SaturationVaporPressure
 export AtmosphericThermodynamics, WaterVaporThermodynamics
+export R_GAS, M_AIR, G_ACCEL, P_0, T_0, T_BOIL, P_STD_MBAR
 
 #=============================================================================
 # Physical Constants (from Appendix A)
