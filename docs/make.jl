@@ -20,6 +20,7 @@ makedocs(;
         "Home" => "index.md",
         "Advection" => "advection.md",
         "Puff Model" => "puff.md",
+        "Local Scale Meteorology" => "local_scale_meteorology.md",
         "API" => "api.md",
         "🔗 Benchmarks" => "benchmarks.md"
     ]
