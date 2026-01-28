@@ -9,7 +9,7 @@ struct GaussianPGBCoupler
 end
 
 struct GaussianSDCoupler
-  sys::Any
+    sys::Any
 end
 
 """
@@ -26,23 +26,20 @@ within the planetary boundary layer.
 
 What this does:
 
-- Stability classification: Uses near-surface meteorology (10 m wind speed,
-  downward short-wave radiation, total cloud fraction, and the surface
-  temperature lapse) to determine the Pasquill stability class.
+  - Stability classification: Uses near-surface meteorology (10 m wind speed,
+    downward short-wave radiation, total cloud fraction, and the surface
+    temperature lapse) to determine the Pasquill stability class.
 
-- Dispersion coefficients: Maps the stability class to Briggs coefficients
-  (A_y, A_z, B_y, B_z) and evaluates the analytic expressions for the
-  horizontal (sigma_h ≡ sigma_y) and vertical (sigma_z) dispersion parameters as functions
-  of the down-wind distance 'x'.
-
-- Hypsometric height: Computes puff height above ground (z_agl) from pressure,
-  temperature, and humidity using the hypsometric equation with a virtual temperature
-  layer mean.
-
-- Ground-level concentration: Computes the Gaussian ground-level concentration
-  at the puff center for one unit of puff mass:
-      C_gl = 1 / ((2π)^{3/2} · σ_h² · σ_z) * exp(-z_agl² / (2 σ_z²)).
-
+  - Dispersion coefficients: Maps the stability class to Briggs coefficients
+    (A_y, A_z, B_y, B_z) and evaluates the analytic expressions for the
+    horizontal (sigma_h ≡ sigma_y) and vertical (sigma_z) dispersion parameters as functions
+    of the down-wind distance 'x'.
+  - Hypsometric height: Computes puff height above ground (z_agl) from pressure,
+    temperature, and humidity using the hypsometric equation with a virtual temperature
+    layer mean.
+  - Ground-level concentration: Computes the Gaussian ground-level concentration
+    at the puff center for one unit of puff mass:
+    C_gl = 1 / ((2π)^{3/2} · σ_h² · σ_z) * exp(-z_agl² / (2 σ_z²)).
 
 Example:
 
@@ -83,34 +80,34 @@ C_gl    = sol[sys.GaussianPGB₊C_gl]
 """
 function GaussianPGB()
     @parameters begin
-        lon0 = 0.0, [unit = u"rad",  description = "Source longitude (radians)"]
-        lat0 = 0.0, [unit = u"rad",  description = "Source latitude  (radians)"]
-        R    = 6.371e6, [unit = u"m", description = "Earth mean radius"]
+        lon0 = 0.0, [unit = u"rad", description = "Source longitude (radians)"]
+        lat0 = 0.0, [unit = u"rad", description = "Source latitude  (radians)"]
+        R = 6.371e6, [unit = u"m", description = "Earth mean radius"]
         Rd = 287.05, [unit = u"J/(kg*K)", description = "Dry-air gas constant"]
-        g  = 9.80665, [unit = u"m/s^2",   description = "Gravitational acceleration"]
+        g = 9.80665, [unit = u"m/s^2", description = "Gravitational acceleration"]
 
         # --- Briggs coefficients ------------------------------------------------
-        AY_A = 0.22,  [description="A_y for stability class A"]
-        AY_B = 0.16,  [description="A_y for stability class B"]
-        AY_C = 0.11,  [description="A_y for stability class C"]
-        AY_D = 0.08,  [description="A_y for stability class D"]
+        AY_A = 0.22, [description="A_y for stability class A"]
+        AY_B = 0.16, [description="A_y for stability class B"]
+        AY_C = 0.11, [description="A_y for stability class C"]
+        AY_D = 0.08, [description="A_y for stability class D"]
         AY_Ep = 0.06, [description="A_y for stability class E"]
-        AY_F = 0.04,  [description="A_y for stability class F"]
+        AY_F = 0.04, [description="A_y for stability class F"]
 
-        AZ_A = 0.20,  [description="A_z for class A"]
-        AZ_B = 0.12,  [description="A_z for class B"]
-        AZ_C = 0.08,  [description="A_z for class C"]
-        AZ_D = 0.06,  [description="A_z for class D"]
+        AZ_A = 0.20, [description="A_z for class A"]
+        AZ_B = 0.12, [description="A_z for class B"]
+        AZ_C = 0.08, [description="A_z for class C"]
+        AZ_D = 0.06, [description="A_z for class D"]
         AZ_Ep = 0.03, [description="A_z for class E"]
         AZ_F = 0.016, [description="A_z for class F"]
 
-        by = 1.0e-4,    [unit=u"m^-1",    description = "Briggs B_y (class-independent)"]
-        BZ_A = 0.0,     [unit=u"m^-1", description="B_z for class A"]
-        BZ_B = 0.0,     [unit=u"m^-1", description="B_z for class B"]
-        BZ_C = 0.0002,  [unit=u"m^-1", description="B_z for class C"]
-        BZ_D = 0.0015,  [unit=u"m^-1", description="B_z for class D"]
+        by = 1.0e-4, [unit=u"m^-1", description = "Briggs B_y (class-independent)"]
+        BZ_A = 0.0, [unit=u"m^-1", description="B_z for class A"]
+        BZ_B = 0.0, [unit=u"m^-1", description="B_z for class B"]
+        BZ_C = 0.0002, [unit=u"m^-1", description="B_z for class C"]
+        BZ_D = 0.0015, [unit=u"m^-1", description="B_z for class D"]
         BZ_Ep = 0.0003, [unit=u"m^-1", description="B_z for class E"]
-        BZ_F = 0.0003,  [unit=u"m^-1", description="B_z for class F"]
+        BZ_F = 0.0003, [unit=u"m^-1", description="B_z for class F"]
 
         # --- Wind‑speed thresholds for Pasquill classes -------------------------
         v2 = 2.0, [unit=u"m/s", description="Wind-speed threshold 2 m.s⁻¹"]
@@ -119,36 +116,41 @@ function GaussianPGB()
         v6 = 6.0, [unit=u"m/s", description="Wind-speed threshold 6 m.s⁻¹"]
 
         # --- Solar‑radiation thresholds ---------------------------------------
-        solrad_strong = 925.0, [unit=u"W/m^2", description="≥ 925 W.m⁻²: very strong insolation"]
-        solrad_moder  = 675.0, [unit=u"W/m^2", description="675-925 W.m⁻²: moderate"]
+        solrad_strong = 925.0,
+        [unit=u"W/m^2", description="≥ 925 W.m⁻²: very strong insolation"]
+        solrad_moder = 675.0, [unit=u"W/m^2", description="675-925 W.m⁻²: moderate"]
         solrad_slight = 175.0, [unit=u"W/m^2", description="175-675 W.m⁻²: slight"]
         # 10–175 W/m² is weak/low insolation that defaults to neutral stability class D.
-        solrad_night  = 10.0,  [unit=u"W/m^2", description="< 10 W.m⁻²: night"]
+        solrad_night = 10.0, [unit=u"W/m^2", description="< 10 W.m⁻²: night"]
 
         cloudfrac_clear = 0.5, [description="Cloud-fraction threshold for clear skies"]
 
-        inversion_thresh = 0.0, [unit=u"K", description="ΔT (10 m - 2 m) > 0 K indicates surface inversion"]
+        inversion_thresh = 0.0,
+        [unit=u"K", description="ΔT (10 m - 2 m) > 0 K indicates surface inversion"]
 
-        U10M =  3.0,    [unit = u"m/s", description = "10 m wind U component"]
-        V10M =  0.0,    [unit = u"m/s", description = "10 m wind V component"]
-        SWGDN = 700.0,  [unit = u"W/m^2", description = "surface incoming shortwave radiation flux"]
-        CLDTOT = 0.3,   [description = "total cloud fraction"]
-        T2M = 293.15,   [unit = u"K", description = "2 m air temperature"]
-        T10M = 292.65,  [unit = u"K", description = "10 m air temperature"]
-        P = 90000.0,    [unit = u"Pa", description = "Pressure at puff level"]
-        PS = 101325.0,  [unit = u"Pa", description = "Surface pressure"]
-        T = 289.15,     [unit = u"K",  description = "Air temperature at puff level"]
-        QV = 0.009,     [description = "Specific humidity at puff level (kg/kg)"]
-        QV2M = 0.0095,  [description = "Specific humidity at 2 m (kg/kg)"]
+        U10M = 3.0, [unit = u"m/s", description = "10 m wind U component"]
+        V10M = 0.0, [unit = u"m/s", description = "10 m wind V component"]
+        SWGDN = 700.0,
+        [unit = u"W/m^2", description = "surface incoming shortwave radiation flux"]
+        CLDTOT = 0.3, [description = "total cloud fraction"]
+        T2M = 293.15, [unit = u"K", description = "2 m air temperature"]
+        T10M = 292.65, [unit = u"K", description = "10 m air temperature"]
+        P = 90000.0, [unit = u"Pa", description = "Pressure at puff level"]
+        PS = 101325.0, [unit = u"Pa", description = "Surface pressure"]
+        T = 289.15, [unit = u"K", description = "Air temperature at puff level"]
+        QV = 0.009, [description = "Specific humidity at puff level (kg/kg)"]
+        QV2M = 0.0095, [description = "Specific humidity at 2 m (kg/kg)"]
     end
 
     @variables begin
-        lon(t),     [unit = u"rad",  description = "longitude", input=true]
-        lat(t),     [unit = u"rad",  description = "latitude", input=true]
-        sigma_h(t), [unit = u"m",  description = "horizontal dispersion coefficient"]
-        sigma_z(t), [unit = u"m",     description = "Vertical dispersion"]
-        z_agl(t),   [unit = u"m",     description = "Hypsometric height above ground"]
-        C_gl(t),    [unit = u"m^-3", description = "Ground-level concentration at puff center for unit mass (Gaussian)"]
+        lon(t), [unit = u"rad", description = "longitude", input=true]
+        lat(t), [unit = u"rad", description = "latitude", input=true]
+        sigma_h(t), [unit = u"m", description = "horizontal dispersion coefficient"]
+        sigma_z(t), [unit = u"m", description = "Vertical dispersion"]
+        z_agl(t), [unit = u"m", description = "Hypsometric height above ground"]
+        C_gl(t),
+        [unit = u"m^-3",
+            description = "Ground-level concentration at puff center for unit mass (Gaussian)"]
     end
 
     wind_speed = sqrt(U10M^2 + V10M^2) # Wind speed (m s⁻¹)
@@ -167,55 +169,55 @@ function GaussianPGB()
     #   6 → stable            (class F)
     stab_cls = ifelse(
         SWGDN .< solrad_night,                                    # night‑time
-            ifelse(CLDTOT .<= cloudfrac_clear,                     # clear
-                ifelse(dTsurf .> inversion_thresh,                # inversion on?
-                    ifelse(wind_speed .< v2, 6, 5),               # F or E
-                    4                                             # neutral (D)
-                ),
-                4                                                 # cloudy night → D
+        ifelse(CLDTOT .<= cloudfrac_clear,                     # clear
+            ifelse(dTsurf .> inversion_thresh,                # inversion on?
+                ifelse(wind_speed .< v2, 6, 5),               # F or E
+                4                                             # neutral (D)
             ),
+            4                                                 # cloudy night → D
+        ),
         ifelse(SWGDN .>= solrad_strong,                           # strong sun
             ifelse(wind_speed .< v3, 1,                           # A
                 ifelse(wind_speed .< v5, 2, 3)                    # B or C
             ),
-        ifelse(SWGDN .>= solrad_moder,                            # moderate sun
-            ifelse(wind_speed .< v2, 1,                           # A
-                ifelse(wind_speed .< v5, 2,                       # B
-                    ifelse(wind_speed .< v6, 3, 4)                # C or D
-                )
-            ),
-        ifelse(SWGDN .>= solrad_slight,                           # slight sun
-            ifelse(wind_speed .< v2, 2,                           # B
-                ifelse(wind_speed .< v5, 3, 4)                    # C or D
-            ),
-            4                                                     # default neutral
-        ))))
+            ifelse(SWGDN .>= solrad_moder,                            # moderate sun
+                ifelse(wind_speed .< v2, 1,                           # A
+                    ifelse(wind_speed .< v5, 2,                       # B
+                        ifelse(wind_speed .< v6, 3, 4)                # C or D
+                    )
+                ),
+                ifelse(SWGDN .>= solrad_slight,                           # slight sun
+                    ifelse(wind_speed .< v2, 2,                           # B
+                        ifelse(wind_speed .< v5, 3, 4)                    # C or D
+                    ),
+                    4                                                     # default neutral
+                ))))
 
     # ------------------------------------------------------------------
     # Briggs dispersion‑curve coefficients (unitless unless noted)
     # ------------------------------------------------------------------
     ay = ifelse(stab_cls .== 1, AY_A,   # class A
-         ifelse(stab_cls .== 2, AY_B,   # class B
-         ifelse(stab_cls .== 3, AY_C,   # class C
-         ifelse(stab_cls .== 4, AY_D,   # class D
-         ifelse(stab_cls .== 5, AY_Ep,  # class E
-                 AY_F)))))              # class F
+        ifelse(stab_cls .== 2, AY_B,   # class B
+            ifelse(stab_cls .== 3, AY_C,   # class C
+                ifelse(stab_cls .== 4, AY_D,   # class D
+                    ifelse(stab_cls .== 5, AY_Ep,  # class E
+                        AY_F)))))              # class F
 
     az = ifelse(stab_cls .== 1, AZ_A,   # class A
-         ifelse(stab_cls .== 2, AZ_B,   # class B
-         ifelse(stab_cls .== 3, AZ_C,   # class C
-         ifelse(stab_cls .== 4, AZ_D,   # class D
-         ifelse(stab_cls .== 5, AZ_Ep,  # class E
+        ifelse(stab_cls .== 2, AZ_B,   # class B
+            ifelse(stab_cls .== 3, AZ_C,   # class C
+                ifelse(stab_cls .== 4, AZ_D,   # class D
+                    ifelse(stab_cls .== 5, AZ_Ep,  # class E
                         AZ_F)))))       # class F
 
     bz = ifelse(stab_cls .== 1, BZ_A,   # class A
-         ifelse(stab_cls .== 2, BZ_B,   # class B
-         ifelse(stab_cls .== 3, BZ_C,   # class C
-         ifelse(stab_cls .== 4, BZ_D,   # class D
-         ifelse(stab_cls .== 5, BZ_Ep,  # class E
-                       BZ_F)))))        # class F, unit: m⁻¹
+        ifelse(stab_cls .== 2, BZ_B,   # class B
+            ifelse(stab_cls .== 3, BZ_C,   # class C
+                ifelse(stab_cls .== 4, BZ_D,   # class D
+                    ifelse(stab_cls .== 5, BZ_Ep,  # class E
+                        BZ_F)))))        # class F, unit: m⁻¹
 
-        # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # Down‑wind distance x (m) via haversine great‑circle formula
     # ------------------------------------------------------------------
     delta_lon = lon - lon0
@@ -240,7 +242,7 @@ function GaussianPGB()
     # z = (Rd * T̄_v / g) * ln(PS / P)
     # with layer‑mean virtual temperature T̄_v = 0.5*(T_v(level)+T_v(surface))
     # ------------------------------------------------------------------
-    Tv_lvl = T   * (1 + 0.61 * QV)
+    Tv_lvl = T * (1 + 0.61 * QV)
     Tv_sfc = T2M * (1 + 0.61 * QV2M)
     Tv_bar = 0.5 * (Tv_lvl + Tv_sfc)
     z_expr = (Rd * Tv_bar / g) * log(PS / P)
@@ -250,7 +252,7 @@ function GaussianPGB()
     # C = 1 / ((2π)^(3/2) σ_h^2 σ_z) * exp(-z_agl^2/(2 σ_z^2))
     # ------------------------------------------------------------------
     C_gl_expr = 1 / ((2*pi)^(3/2) * sigma_h^2 * sigma_z) *
-                   exp(- (z_agl^2) / (2 * sigma_z^2))
+                exp(- (z_agl^2) / (2 * sigma_z^2))
 
     # ------------------------------------------------------------------
     # Equation set
@@ -259,7 +261,7 @@ function GaussianPGB()
         z_agl ~ z_expr,
         sigma_h ~ sigma_h_expr,
         sigma_z ~ sigma_z_expr,
-        C_gl ~ C_gl_expr,
+        C_gl ~ C_gl_expr
     ]
 
     System(
@@ -298,10 +300,10 @@ only evaluated when the puff is within the ground layer (z_agl ≤ Δz); otherwi
 References (NOAA ARL MetMag report):
 https://www.arl.noaa.gov/documents/reports/MetMag.pdf
 
-- Horizontal mixing coefficient: Eq. 12
-- Standard deviation of the turbulent velocity: Eq. 15
-- σ_h tendency: Eq. 16
-- Centerline ground-level concentration: Eq. 18
+  - Horizontal mixing coefficient: Eq. 12
+  - Standard deviation of the turbulent velocity: Eq. 15
+  - σ_h tendency: Eq. 16
+  - Centerline ground-level concentration: Eq. 18
 
 Example:
 
@@ -342,25 +344,26 @@ C_gl    = sol[sys.GaussianSD₊C_gl]
 ```
 """
 function GaussianSD()
-
     @parameters begin
         Rd = 287.05, [unit = u"J/(kg*K)", description = "Dry-air gas constant"]
-        g  = 9.80665, [unit = u"m/s^2",   description = "Gravitational acceleration"]
+        g = 9.80665, [unit = u"m/s^2", description = "Gravitational acceleration"]
 
-        R_earth = 6.371e6, [unit = u"m",  description = "Earth mean radius"]
-        c_smag  = 0.14,    [description = "Smagorinsky constant c"]
-        Δλ      = deg2rad(5.0), [unit = u"rad", description = "Longitude grid size (5° for GEOS-FP 4x5)"]
-        Δφ      = deg2rad(4.0), [unit = u"rad", description = "Latitude grid size (4° for GEOS-FP 4x5)"]
+        R_earth = 6.371e6, [unit = u"m", description = "Earth mean radius"]
+        c_smag = 0.14, [description = "Smagorinsky constant c"]
+        Δλ = deg2rad(5.0),
+        [unit = u"rad", description = "Longitude grid size (5° for GEOS-FP 4x5)"]
+        Δφ = deg2rad(4.0),
+        [unit = u"rad", description = "Latitude grid size (4° for GEOS-FP 4x5)"]
         TLv = 10800.0, [unit = u"s", description = "Horizontal Lagrangian time scale"]
         Δz = 50.0, [unit = u"m", description = "Grid-cell height. (m)"]
-        C_zero  = 0.0, [unit = u"m^-3", description = "Zero concentration"]
-        
-        P   = 90000.0,  [unit = u"Pa", description = "Pressure at puff level"]
-        PS  = 101325.0, [unit = u"Pa", description = "Surface pressure"]
-        T   = 289.15,   [unit = u"K",  description = "Air temperature at puff level"]
-        T2M = 293.15,   [unit = u"K",  description = "2 m air temperature"]
-        QV  = 0.009,    [description = "Specific humidity at puff level (kg/kg)"]
-        QV2M = 0.0095,  [description = "Specific humidity at 2 m (kg/kg)"]
+        C_zero = 0.0, [unit = u"m^-3", description = "Zero concentration"]
+
+        P = 90000.0, [unit = u"Pa", description = "Pressure at puff level"]
+        PS = 101325.0, [unit = u"Pa", description = "Surface pressure"]
+        T = 289.15, [unit = u"K", description = "Air temperature at puff level"]
+        T2M = 293.15, [unit = u"K", description = "2 m air temperature"]
+        QV = 0.009, [description = "Specific humidity at puff level (kg/kg)"]
+        QV2M = 0.0095, [description = "Specific humidity at 2 m (kg/kg)"]
 
         UE = 0.0, [unit=u"m/s", description="U at +½ lon"]
         UW = 0.0, [unit=u"m/s", description="U at −½ lon"]
@@ -374,11 +377,13 @@ function GaussianSD()
     end
 
     @variables begin
-        lat(t),   [unit = u"rad",  description = "latitude", input=true]
-        sigma_h(t), [unit = u"m",  description = "horizontal dispersion coefficient"]
-        σu(t),      [unit = u"m/s",  description = "Turbulent horizontal velocity std. dev"]
-        z_agl(t), [unit = u"m",  description = "Height AGL from hypsometric equation"]
-        C_gl(t), [unit = u"m^-3", description = "Ground-level concentration at puff center for unit mass (Gaussian)"]
+        lat(t), [unit = u"rad", description = "latitude", input=true]
+        sigma_h(t), [unit = u"m", description = "horizontal dispersion coefficient"]
+        σu(t), [unit = u"m/s", description = "Turbulent horizontal velocity std. dev"]
+        z_agl(t), [unit = u"m", description = "Height AGL from hypsometric equation"]
+        C_gl(t),
+        [unit = u"m^-3",
+            description = "Ground-level concentration at puff center for unit mass (Gaussian)"]
     end
 
     Dt = Differential(t)
@@ -388,14 +393,14 @@ function GaussianSD()
     # z = (Rd * T̄_v / g) * ln(PS / P)
     # with layer‑mean virtual temperature T̄_v = 0.5*(T_v(level)+T_v(surface))
     # ------------------------------------------------------------------
-    Tv_lvl = T   * (1 + 0.61 * QV)
+    Tv_lvl = T * (1 + 0.61 * QV)
     Tv_sfc = T2M * (1 + 0.61 * QV2M)
     Tv_bar = 0.5 * (Tv_lvl + Tv_sfc)
 
     # --- Grid metrics & Smagorinsky filter length ---
     Δx = R_earth * cos(lat) * Δλ
     Δy = R_earth * Δφ
-    X  = sqrt(Δx * Δy)
+    X = sqrt(Δx * Δy)
 
     # --- Horizontal velocity gradients (centered finite differences) ---
     dUdx = (UE - UW) / Δx
@@ -408,30 +413,30 @@ function GaussianSD()
 
     # --- Turbulent velocity std. dev. — comparable to MetMag Eq. 15 ---
     σu_expr = sqrt(Kh / TLv)
-    
+
     # --- σ_h tendency — MetMag Eq. 16 ---
     Dt_sigma_h_expr = sqrt(2) * σu
 
     # --- Hypsometric height
-    z_agl_expr  = (Rd * Tv_bar / g) * log(PS / P)
+    z_agl_expr = (Rd * Tv_bar / g) * log(PS / P)
 
     # Ground-centerline concentration — MetMag Eq. 18 ---
-    C_expr = 1 / (2*π * sigma_h^2 * Δz)
+    C_expr = 1 / (2 * π * sigma_h^2 * Δz)
 
     eqs = [
         σu ~ σu_expr,
         Dt(sigma_h) ~ Dt_sigma_h_expr,
-        z_agl  ~ z_agl_expr,
-        C_gl   ~ ifelse(z_agl <= Δz, C_expr, C_zero),
+        z_agl ~ z_agl_expr,
+        C_gl ~ ifelse(z_agl <= Δz, C_expr, C_zero)
     ]
 
     System(
         eqs, t,
         [lat, sigma_h, σu, z_agl, C_gl],
         [Rd, g, R_earth, c_smag, Δλ, Δφ, TLv, Δz, C_zero,
-         P, PS, T, T2M, QV, QV2M,
-         UE, UW, UN, US, VE, VW, VN, VS];
+            P, PS, T, T2M, QV, QV2M,
+            UE, UW, UN, US, VE, VW, VN, VS];
         name = :GaussianSD,
-        metadata = Dict(CoupleType => GaussianSDCoupler),
+        metadata = Dict(CoupleType => GaussianSDCoupler)
     )
 end
