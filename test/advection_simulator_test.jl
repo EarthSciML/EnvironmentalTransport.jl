@@ -26,8 +26,8 @@
     end
 
     function Emissions(μ_lon, μ_lat, σ)
-        @parameters(lon=0.0, [unit = u"rad"],
-            lat=0.0, [unit = u"rad"],
+        @parameters(lon=0.0, [unit=u"rad"],
+            lat=0.0, [unit=u"rad"],
             lev=1.0)
         @variables c(t)=0.0 [unit = u"kg"]
         @constants v_emis=50.0 [unit = u"kg/s"]
