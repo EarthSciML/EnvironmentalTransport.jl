@@ -20,6 +20,7 @@ makedocs(;
         "Home" => "index.md",
         "Advection" => "advection.md",
         "Puff Model" => "puff.md",
+        "Global Cycles" => "global_cycles.md",
         "API" => "api.md",
         "🔗 Benchmarks" => "benchmarks.md"
     ]
