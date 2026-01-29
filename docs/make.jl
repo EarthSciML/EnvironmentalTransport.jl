@@ -6,7 +6,7 @@ DocMeta.setdocmeta!(EnvironmentalTransport, :DocTestSetup,
 
 makedocs(;
     modules = [EnvironmentalTransport],
-    authors = "EarthSthSciML authors and contributors",
+    authors = "EarthSciML authors and contributors",
     repo = "https://github.com/EarthSciML/EnvironmentalTransport.jl/blob/{commit}{path}#{line}",
     sitename = "EnvironmentalTransport.jl",
     format = Documenter.HTML(;
@@ -20,6 +20,7 @@ makedocs(;
         "Home" => "index.md",
         "Advection" => "advection.md",
         "Puff Model" => "puff.md",
+        "Atmospheric Diffusion" => "atmospheric_diffusion.md",
         "API" => "api.md",
         "🔗 Benchmarks" => "benchmarks.md"
     ]

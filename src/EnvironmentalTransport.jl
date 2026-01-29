@@ -18,5 +18,6 @@ include("advection.jl")
 include("puff.jl")
 include("plume_rise/sofiev_2012.jl")
 include("GaussianDispersion.jl")
+include("atmospheric_diffusion.jl")
 
 end
