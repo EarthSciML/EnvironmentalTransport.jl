@@ -2,7 +2,7 @@
     using EarthSciMLBase, EarthSciData, EnvironmentalTransport
     using ModelingToolkit
     using Dates
-    using OrdinaryDiffEq
+    using OrdinaryDiffEqDefault
 
     starttime = DateTime(2022, 5, 1)
     endtime = DateTime(2022, 5, 1, 0, 1)
@@ -34,6 +34,6 @@
     lev_0 = prob.u0[ModelingToolkit.variable_index(sys, sys.Puff₊lev)]
     @test lev_0 ≈ 4.700049441016632
 
-    sol = solve(prob, Tsit5())
+    sol = solve(prob)
     @test sol.retcode == SciMLBase.ReturnCode.Success
 end

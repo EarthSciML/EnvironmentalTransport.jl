@@ -6,7 +6,7 @@ using StaticArrays
 using SciMLBase: NullParameters
 using DiffEqCallbacks: PeriodicCallback, DiscreteCallback
 using ModelingToolkit: t, D, get_unit, getdefault, System, @variables, @parameters, @named,
-                       @constants, get_variables, substitute, Equation, subs_constants,
+                       @constants, get_variables, substitute, Equation,
                        build_explicit_observed_function, setp, unknowns, ParentScope,
                        get_defaults, @unpack, @component
 using SciMLBase: terminate!

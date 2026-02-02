@@ -2,7 +2,7 @@
     using EarthSciMLBase
     using ModelingToolkit
     using ModelingToolkit: t
-    using OrdinaryDiffEq
+    using OrdinaryDiffEqDefault
     using DynamicQuantities
     using Dates
 

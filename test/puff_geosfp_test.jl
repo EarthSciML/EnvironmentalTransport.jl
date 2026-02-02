@@ -4,7 +4,7 @@
     using ModelingToolkit
     using ModelingToolkit: t
     using DynamicQuantities
-    using OrdinaryDiffEq
+    using OrdinaryDiffEqDefault
     import SciMLBase
     using Dates
 
@@ -35,6 +35,6 @@
     u0 = ModelingToolkit.get_defaults(sys)
     tspan = EarthSciMLBase.get_tspan(di)
     prob = ODEProblem(sys, u0, tspan)
-    sol = solve(prob, Tsit5())
+    sol = solve(prob)
     @test sol.retcode == SciMLBase.ReturnCode.Terminated
 end

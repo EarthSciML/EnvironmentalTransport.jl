@@ -1,7 +1,7 @@
 @testitem "Gaussian Dispersion" begin
     using Dates
     using EarthSciMLBase, EarthSciData, EnvironmentalTransport
-    using ModelingToolkit, OrdinaryDiffEq
+    using ModelingToolkit, OrdinaryDiffEqDefault
 
     starttime = DateTime(2022, 5, 1, 0)
     endtime = DateTime(2022, 5, 1, 5)
@@ -38,7 +38,7 @@
         ]
 
         prob = ODEProblem(sys, u0, tspan, p)
-        sol = solve(prob, Tsit5())
+        sol = solve(prob)
 
         C_gl_val = sol[sys.GaussianPGB₊C_gl][end]
         C_gl_want = 8.23e-11
@@ -70,7 +70,7 @@
         ]
 
         prob = ODEProblem(sys, u0, tspan, p)
-        sol = solve(prob, Tsit5())
+        sol = solve(prob)
 
         C_gl_val = sol[sys.GaussianSD₊C_gl][end]
         C_gl_want = 6.58e-13
