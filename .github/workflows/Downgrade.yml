@@ -35,8 +35,7 @@ jobs:
           version: ${{ matrix.version }}
       - uses: julia-actions/julia-downgrade-compat@v2
         with:
-          skip: Pkg,TOML,Statistics,Random,Distributions
-          ignore: MbedTLS
+          skip: Pkg,TOML,Statistics,Random,Distributions,MbedTLS
       - uses: julia-actions/cache@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
