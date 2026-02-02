@@ -1,7 +1,7 @@
 name = "EnvironmentalTransport"
 uuid = "9e73f4c4-d7e8-4c78-8a11-cd2430746631"
+version = "0.6.2"
 authors = ["EarthSciML authors and contributors"]
-version = "0.5.7"
 
 [deps]
 DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
@@ -26,13 +26,13 @@ Distributions = "0.25.113"
 DocStringExtensions = "0.9.3"
 DomainSets = "0.7.15"
 DynamicQuantities = "1"
-EarthSciData = "0.13"
-EarthSciMLBase = "0.23"
-ModelingToolkit = "9.79.1"
-OrdinaryDiffEq = "6.98"
+EarthSciData = "0.14"
+EarthSciMLBase = "0.24"
+ModelingToolkit = "10"
+OrdinaryDiffEqDefault = "1"
 RuntimeGeneratedFunctions = "0.5.13"
 SciMLBase = "2.90"
-SciMLOperators = "0.4"
+TestItemRunner = "1.1.0"
 julia = "1.10"
 
 [extras]
@@ -41,9 +41,9 @@ Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 DomainSets = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
 EarthSciData = "a293c155-435f-439d-9c11-a083b6b47337"
 GasChem = "58070593-4751-4c87-a5d1-63807d11d76c"
-OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
-SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+OrdinaryDiffEqDefault = "50262376-6c5a-4cf5-baba-aaf4f84d72d7"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [targets]
-test = ["Dates", "Distributions", "DomainSets", "EarthSciData", "GasChem", "OrdinaryDiffEq", "SafeTestsets", "Test"]
+test = ["Dates", "Distributions", "DomainSets", "EarthSciData", "GasChem", "OrdinaryDiffEqDefault", "Test", "TestItemRunner"]

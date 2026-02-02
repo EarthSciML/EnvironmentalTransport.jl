@@ -1,39 +1,40 @@
-using Test
-using EnvironmentalTransport
-using EarthSciMLBase
-using ModelingToolkit
-using ModelingToolkit: t
-using OrdinaryDiffEq
-using DynamicQuantities
-using DomainSets
+@testsnippet PuffSetup begin
+    using EarthSciMLBase
+    using ModelingToolkit
+    using ModelingToolkit: t
+    using OrdinaryDiffEq
+    using DynamicQuantities
+    using Dates
 
-@parameters x=0 [unit = u"m"]
-@parameters y=0 [unit = u"m"]
-@parameters z=0 [unit = u"m"]
-starttime = 0.0
-endtime = 1.0
+    @parameters x=0 [unit = u"m"]
+    @parameters y=0 [unit = u"m"]
+    @parameters z=0 [unit = u"m"]
+    starttime = DateTime(0, 1, 1, 0.0)
+    endtime = DateTime(0, 1, 1, 0.0, 0.0, 1.0)
 
-di = DomainInfo(
-    constIC(16.0, t ∈ Interval(starttime, endtime)),
-    constBC(16.0,
-        x ∈ Interval(-1.1, 1.1),
-        y ∈ Interval(-1.1, 1.1),
-        z ∈ Interval(-1, 1)
-    ),
-    grid_spacing = [0.1, 0.1, 0.1]
-)
+    di = DomainInfo(
+        starttime, endtime,
+        xrange = -1.1:0.1:1.1,
+        yrange = -1.1:0.1:1.1,
+        levrange = -1:0.1:1
+    )
 
-puff = Puff(di)
-puff = structural_simplify(puff)
+    puff = Puff(di)
+    puff = mtkcompile(puff)
 
-@test length(equations(puff)) == 3
-@test issetequal([Symbol("z(t)"), Symbol("x(t)"), Symbol("y(t)")], Symbol.(unknowns(puff)))
-@test issetequal(
-    [:v_x, :v_y, :v_z, :x_trans, :y_trans, :lev_trans], Symbol.(parameters(puff)))
+    prob = ODEProblem(puff, [], get_tspan(di))
+end
 
-prob = ODEProblem(puff, [], (starttime, endtime), [])
+@testitem "Equations" setup=[PuffSetup] begin
+    @test length(equations(puff)) == 3
+    want_unknowns = [Symbol("lev(t)"), Symbol("x(t)"), Symbol("y(t)")]
+    @test issetequal(want_unknowns, Symbol.(unknowns(puff)))
+    want_params = [:lev_trans, :x_trans, :v_x, :y_trans, :v_lev, :v_y, :offset, :glo,
+        :ghi, :v_zero]
+    @test issetequal(want_params, Symbol.(parameters(puff)))
+end
 
-@testset "x terminate +" begin
+@testitem "x terminate +" setup=[PuffSetup] begin
     p = MTKParameters(puff, [puff.v_x => 2.0])
     prob2 = remake(prob, p = p)
     sol = solve(prob2)
@@ -42,7 +43,7 @@ prob = ODEProblem(puff, [], (starttime, endtime), [])
     @test sol.retcode == SciMLBase.ReturnCode.Terminated
 end
 
-@testset "x terminate -" begin
+@testitem "x terminate -" setup=[PuffSetup] begin
     p = MTKParameters(puff, [puff.v_x => -2.0])
     prob2 = remake(prob, p = p)
     sol = solve(prob2)
@@ -51,7 +52,7 @@ end
     @test sol.retcode == SciMLBase.ReturnCode.Terminated
 end
 
-@testset "y terminate +" begin
+@testitem "y terminate +" setup=[PuffSetup] begin
     p = MTKParameters(puff, [puff.v_y => 2.0])
     prob2 = remake(prob, p = p)
     sol = solve(prob2)
@@ -60,7 +61,7 @@ end
     @test sol.retcode == SciMLBase.ReturnCode.Terminated
 end
 
-@testset "y terminate -" begin
+@testitem "y terminate -" setup=[PuffSetup] begin
     p = MTKParameters(puff, [puff.v_y => -2.0])
     prob2 = remake(prob, p = p)
     sol = solve(prob2)
@@ -69,25 +70,25 @@ end
     @test sol.retcode == SciMLBase.ReturnCode.Terminated
 end
 
-@testset "z bounded +" begin
-    p = MTKParameters(puff, [puff.v_z => 10.0])
+@testitem "z bounded +" setup=[PuffSetup] begin
+    p = MTKParameters(puff, [puff.v_lev => 10.0])
     prob2 = remake(prob, p = p)
     sol = solve(prob2)
     @test sol.t[end] ≈ 1
-    @test maximum(sol[puff.z]) ≈ 1.0
+    @test maximum(sol[puff.lev]) ≈ 1.0
     @test sol.retcode == SciMLBase.ReturnCode.Success
 end
 
-@testset "z bounded -" begin
-    p = MTKParameters(puff, [puff.v_z => -10.0])
+@testitem "z bounded -" setup=[PuffSetup] begin
+    p = MTKParameters(puff, [puff.v_lev => -10.0])
     prob2 = remake(prob, p = p)
     sol = solve(prob2)
     @test sol.t[end] ≈ 1
-    @test minimum(sol[puff.z]) ≈ -1.0
+    @test minimum(sol[puff.lev]) ≈ -1.0
     @test sol.retcode == SciMLBase.ReturnCode.Success
 end
 
-@testset "puff coupling" begin
+@testitem "puff coupling" setup=[PuffSetup] begin
     struct VelCoupler
         sys
     end
@@ -95,8 +96,8 @@ end
     function Vel(; name = :Vel)
         @parameters vp=2 [unit = u"m/s"]
         @variables v(t) [unit = u"m/s"]
-        ODESystem(
-            Equation[v ~ vp], t; name = name, metadata = Dict(:coupletype => VelCoupler))
+        System(
+            Equation[v ~ vp], t; name = name, metadata = Dict(CoupleType => VelCoupler))
     end
 
     function EarthSciMLBase.couple2(p::EnvironmentalTransport.PuffCoupler, v::VelCoupler)
@@ -110,8 +111,8 @@ end
     puff = Puff(di)
     v = Vel()
     model = couple(puff, v)
-    sys = convert(ODESystem, model, simplify = true)
-    prob = ODEProblem(sys, [], (starttime, endtime))
+    sys = convert(System, model)
+    prob = ODEProblem(sys, [], get_tspan(di))
     sol = solve(prob)
     @test sol.retcode == SciMLBase.ReturnCode.Terminated
 end

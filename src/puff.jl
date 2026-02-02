@@ -75,13 +75,16 @@ function Puff(di::DomainInfo; buffer_cells = 1, name = :Puff)
     upper_bound = coords[lev_idx] ~ endpts[lev_idx][end]
     vertical_boundary = [lower_bound, upper_bound]
     # Stop simulation if we reach the lateral boundaries.
-    affect!(integrator, u, p, ctx) = terminate!(integrator)
+    function stop!(modified, observed, ctx, integrator)
+        terminate!(integrator)
+        NamedTuple()
+    end
     wb = coords[lon_idx] ~ endpts[lon_idx][begin] + di.grid_spacing[lon_idx] * buffer_cells
     eb = coords[lon_idx] ~ endpts[lon_idx][end] - di.grid_spacing[lon_idx] * buffer_cells
     sb = coords[lat_idx] ~ endpts[lat_idx][begin] + di.grid_spacing[lat_idx] * buffer_cells
     nb = coords[lat_idx] ~ endpts[lat_idx][end] - di.grid_spacing[lat_idx] * buffer_cells
-    lateral_boundary = [wb, eb, sb, nb] => (affect!, [], [], [], nothing)
-    ODESystem(eqs, EarthSciMLBase.ivar(di); name = name,
-        metadata = Dict(:coupletype => PuffCoupler),
+    lateral_boundary = [wb, eb, sb, nb] => (f = stop!,)
+    System(eqs, EarthSciMLBase.ivar(di); name = name,
+        metadata = Dict(CoupleType => PuffCoupler),
         continuous_events = [vertical_boundary, lateral_boundary])
 end

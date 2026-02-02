@@ -1,11 +1,9 @@
-using EnvironmentalTransport
-
-using Test
-
-c = [0.0, 1, 2, 3, 4, 5]
-v = [10.0, 8, 6, 4, 2, 0, 1]
-Δt = 0.05
-Δz = 0.5
+@testsnippet StencilSetup begin
+    c = [0.0, 1, 2, 3, 4, 5]
+    v = [10.0, 8, 6, 4, 2, 0, 1]
+    Δt = 0.05
+    Δz = 0.5
+end
 
 # @testset "l94 1" begin
 #     c2 = [c[1], c[1], c..., c[end], c[end]]
@@ -19,7 +17,7 @@ v = [10.0, 8, 6, 4, 2, 0, 1]
 #     @test c .+ result .* Δt ≈ [0.0, 0.3999999999999999, 1.8, 3.2, 4.6, 4.5]
 # end
 
-@testset "upwind1 1" begin
+@testitem "upwind1 1" setup=[StencilSetup] begin
     c2 = [c[1], c..., c[end]]
     result = [upwind1_stencil(c2[(i - 1):(i + 1)], v[(i - 1):i], Δt, Δz) for i in 2:7]
     @test c .+ result .* Δt ≈ [0.0, 0.3999999999999999, 1.8, 3.2, 4.6, 4.5]
@@ -31,8 +29,12 @@ end
 #     @test max.((0,), c .+ result .* Δt) ≈ [0.0, 0.0, 1.4, 2.6, 3.8, 5.0]
 # end
 
-c = [6.0, 6, 5, 5, 6, 6]
-v = [2.0, 2, 2, 2, 2, 2, 2]
+@testsnippet StencilSetup2 begin
+    c = [6.0, 6, 5, 5, 6, 6]
+    v = [2.0, 2, 2, 2, 2, 2, 2]
+    Δt = 0.05
+    Δz = 0.5
+end
 
 # @testset "l94 2" begin
 #     c2 = [c[1], c[1], c..., c[end], c[end]]
@@ -46,7 +48,7 @@ v = [2.0, 2, 2, 2, 2, 2, 2]
 #     @test c .+ result .* Δt ≈ [6.0, 6.0, 5.2, 5.0, 5.8, 6.0]
 # end
 
-@testset "upwind1 2" begin
+@testitem "upwind1 2" setup=[StencilSetup2] begin
     c2 = [c[1], c..., c[end]]
     result = [upwind1_stencil(c2[(i - 1):(i + 1)], v[(i - 1):i], Δt, Δz) for i in 2:7]
     @test c .+ result .* Δt ≈ [6.0, 6.0, 5.2, 5.0, 5.8, 6.0]
@@ -58,7 +60,7 @@ end
 #     @test max.((0,), c .+ result .* Δt) ≈ [6.0, 6.0, 5.3, 4.9, 5.7, 6.1]
 # end
 
-@testset "Constant Field Preservation" begin
+@testitem "Constant Field Preservation" setup=[StencilSetup2] begin
     u0 = ones(10)
     v = 1.0
     Δt = 0.1
@@ -76,7 +78,7 @@ end
     end
 end
 
-@testset "Known solution" begin
+@testitem "Known solution" begin
     for (dir, u0) in [("up", collect(1.0:10.0)), ("down", collect(10.0:-1:1))]
         @testset "$dir" begin
             v = 1.0
@@ -104,7 +106,7 @@ end
     end
 end
 
-@testset "Mass Conservation" begin
+@testitem "Mass Conservation" begin
     u0_opts = [("up", 1.0:10.0), ("down", 10.0:-1:1), ("rand", rand(10))]
     for stencil in [upwind1_stencil]#, upwind2_stencil, l94_stencil, ppm_stencil]
         @testset "$(nameof(stencil))" begin
