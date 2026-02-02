@@ -29,7 +29,7 @@ stab = AtmosphericStability()
 sys = mtkcompile(stab)
 ```
 """
-function AtmosphericStability(; name=:AtmosphericStability)
+@component function AtmosphericStability(; name=:AtmosphericStability)
     @constants begin
         # Physical constants from Seinfeld & Pandis Ch. 16
         g = 9.807, [description = "Gravitational acceleration", unit = u"m/s^2"]
@@ -104,7 +104,7 @@ surf = SurfaceLayerProfile()
 sys = mtkcompile(surf)
 ```
 """
-function SurfaceLayerProfile(; name=:SurfaceLayerProfile)
+@component function SurfaceLayerProfile(; name=:SurfaceLayerProfile)
     @constants begin
         # Physical constants
         g = 9.807, [description = "Gravitational acceleration", unit = u"m/s^2"]
@@ -223,7 +223,7 @@ met = LocalScaleMeteorology()
 sys = mtkcompile(met)
 ```
 """
-function LocalScaleMeteorology(; name=:LocalScaleMeteorology)
+@component function LocalScaleMeteorology(; name=:LocalScaleMeteorology)
     @constants begin
         # Physical constants
         g = 9.807, [description = "Gravitational acceleration", unit = u"m/s^2"]
