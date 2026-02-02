@@ -75,7 +75,7 @@ end
 @testitem "CarbonCycle - Preindustrial Steady State" begin
     using EnvironmentalTransport
     using ModelingToolkit
-    using OrdinaryDiffEq
+    using OrdinaryDiffEqDefault
 
     sys = CarbonCycle()
     sys_c = mtkcompile(sys)
@@ -84,7 +84,7 @@ end
     # Run a short simulation from preindustrial ICs with Ff=Fd=Fr=0 (defaults)
     tspan = (0.0, 10.0)  # 10 years
     prob = ODEProblem(sys_c, [], tspan)
-    sol = solve(prob, Tsit5(), abstol=1e-10, reltol=1e-10)
+    sol = solve(prob, abstol=1e-10, reltol=1e-10)
     @test sol.retcode == SciMLBase.ReturnCode.Success
 
     # Final state should be very close to initial (steady state)
@@ -109,7 +109,7 @@ end
 @testitem "CarbonCycle - Response to Fossil Fuel Emissions" begin
     using EnvironmentalTransport
     using ModelingToolkit
-    using OrdinaryDiffEq
+    using OrdinaryDiffEqDefault
 
     sys = CarbonCycle()
     sys_c = mtkcompile(sys)
@@ -118,7 +118,7 @@ end
     # Use the newer merge syntax for parameter setting
     tspan = (0.0, 100.0)  # 100 years
     prob = ODEProblem(sys_c, merge(Dict(), Dict(sys_c.Ff => 5.0)), tspan)
-    sol = solve(prob, Tsit5())
+    sol = solve(prob)
     @test sol.retcode == SciMLBase.ReturnCode.Success
 
     # Atmospheric carbon should increase
@@ -144,7 +144,7 @@ end
 @testitem "CarbonCycle - Qualitative Response" begin
     using EnvironmentalTransport
     using ModelingToolkit
-    using OrdinaryDiffEq
+    using OrdinaryDiffEqDefault
 
     sys = CarbonCycle()
     sys_c = mtkcompile(sys)
@@ -152,7 +152,7 @@ end
     # Test that atmospheric CO2 increases with emissions
     tspan = (0.0, 50.0)
     prob = ODEProblem(sys_c, merge(Dict(), Dict(sys_c.Ff => 3.0)), tspan)
-    sol = solve(prob, Tsit5())
+    sol = solve(prob)
     @test sol.retcode == SciMLBase.ReturnCode.Success
 
     # M1 should generally increase with constant emissions (not strictly monotonic due to transients)
