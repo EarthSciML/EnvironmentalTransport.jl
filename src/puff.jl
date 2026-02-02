@@ -83,7 +83,7 @@ function Puff(di::DomainInfo; buffer_cells = 1, name = :Puff)
     eb = coords[lon_idx] ~ endpts[lon_idx][end] - di.grid_spacing[lon_idx] * buffer_cells
     sb = coords[lat_idx] ~ endpts[lat_idx][begin] + di.grid_spacing[lat_idx] * buffer_cells
     nb = coords[lat_idx] ~ endpts[lat_idx][end] - di.grid_spacing[lat_idx] * buffer_cells
-    lateral_boundary = [wb, eb, sb, nb] => (f=stop!,)
+    lateral_boundary = [wb, eb, sb, nb] => (f = stop!,)
     System(eqs, EarthSciMLBase.ivar(di); name = name,
         metadata = Dict(CoupleType => PuffCoupler),
         continuous_events = [vertical_boundary, lateral_boundary])
