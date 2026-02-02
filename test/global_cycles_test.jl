@@ -66,7 +66,7 @@ end
 
     # 8 state variables (M1-M7 + G) + 3 auxiliary flux variables
     @test length(unknowns(sys)) == 11
-    # Constants + parameters: Note parameters includes time-dependent Ff, Fd, Fr
+    # Parameters include Ff, Fd, Fr
     @test length(parameters(sys)) >= 3
     # 11 equations (8 ODEs + 3 flux definitions)
     @test length(equations(sys)) == 11
@@ -82,12 +82,15 @@ end
 
     # At preindustrial steady state with zero forcing, derivatives should be ~0
     # Run a short simulation from preindustrial ICs with Ff=Fd=Fr=0 (defaults)
-    tspan = (0.0, 10.0)  # 10 years
+    # Time span: 10 years in seconds
+    yr_to_s = 31557600.0
+    tspan = (0.0, 10.0 * yr_to_s)
     prob = ODEProblem(sys_c, [], tspan)
     sol = solve(prob, abstol=1e-10, reltol=1e-10)
     @test sol.retcode == SciMLBase.ReturnCode.Success
 
     # Final state should be very close to initial (steady state)
+    # Values are in kg (1 Pg = 1e12 kg)
     M1_final = sol[sys_c.M1][end]
     M2_final = sol[sys_c.M2][end]
     M3_final = sol[sys_c.M3][end]
@@ -97,12 +100,12 @@ end
     G_final = sol[sys_c.G][end]
 
     # Check that state hasn't drifted significantly (< 1% change over 10 years)
-    @test M1_final ≈ 612.0 rtol = 0.01
-    @test M2_final ≈ 730.0 rtol = 0.01
-    @test M3_final ≈ 140.0 rtol = 0.01
-    @test M4_final ≈ 37000.0 rtol = 0.01
-    @test M5_final ≈ 580.0 rtol = 0.01
-    @test M6_final ≈ 1500.0 rtol = 0.01
+    @test M1_final ≈ 612.0e12 rtol = 0.01
+    @test M2_final ≈ 730.0e12 rtol = 0.01
+    @test M3_final ≈ 140.0e12 rtol = 0.01
+    @test M4_final ≈ 37000.0e12 rtol = 0.01
+    @test M5_final ≈ 580.0e12 rtol = 0.01
+    @test M6_final ≈ 1500.0e12 rtol = 0.01
     @test G_final ≈ 1.0 rtol = 0.01
 end
 
@@ -114,10 +117,14 @@ end
     sys = CarbonCycle()
     sys_c = mtkcompile(sys)
 
-    # Apply constant fossil fuel emissions of 5 Pg C/yr
-    # Use the newer merge syntax for parameter setting
-    tspan = (0.0, 100.0)  # 100 years
-    prob = ODEProblem(sys_c, merge(Dict(), Dict(sys_c.Ff => 5.0)), tspan)
+    # Apply constant fossil fuel emissions of 5 Pg C/yr = 5e12 kg/yr
+    # Convert to kg/s: 5e12 / 31557600
+    yr_to_s = 31557600.0
+    Ff_value = 5.0e12 / yr_to_s  # kg/s
+
+    # Time span: 100 years in seconds
+    tspan = (0.0, 100.0 * yr_to_s)
+    prob = ODEProblem(sys_c, merge(Dict(), Dict(sys_c.Ff => Ff_value)), tspan)
     sol = solve(prob)
     @test sol.retcode == SciMLBase.ReturnCode.Success
 
@@ -130,7 +137,8 @@ end
     M7_initial = sol[sys_c.M7][1]
     M7_final = sol[sys_c.M7][end]
     @test M7_final < M7_initial
-    @test M7_initial - M7_final ≈ 500.0 rtol = 0.01  # 5 Pg C/yr * 100 yr
+    # Total emitted: 5 Pg C/yr * 100 yr = 500 Pg C = 500e12 kg
+    @test M7_initial - M7_final ≈ 500.0e12 rtol = 0.01
 
     # Total carbon (including M7 source) should be conserved
     total_initial = M1_initial + sol[sys_c.M2][1] + sol[sys_c.M3][1] + sol[sys_c.M4][1] +
@@ -149,9 +157,14 @@ end
     sys = CarbonCycle()
     sys_c = mtkcompile(sys)
 
+    # Convert emission rate: 3 Pg C/yr to kg/s
+    yr_to_s = 31557600.0
+    Ff_value = 3.0e12 / yr_to_s  # kg/s
+
     # Test that atmospheric CO2 increases with emissions
-    tspan = (0.0, 50.0)
-    prob = ODEProblem(sys_c, merge(Dict(), Dict(sys_c.Ff => 3.0)), tspan)
+    # Time span: 50 years in seconds
+    tspan = (0.0, 50.0 * yr_to_s)
+    prob = ODEProblem(sys_c, merge(Dict(), Dict(sys_c.Ff => Ff_value)), tspan)
     sol = solve(prob)
     @test sol.retcode == SciMLBase.ReturnCode.Success
 
@@ -163,8 +176,8 @@ end
     # Ocean compartments should also increase (taking up some CO2)
     M2_final = sol[sys_c.M2][end]
     M3_final = sol[sys_c.M3][end]
-    @test M2_final > 730.0  # Warm ocean should absorb some CO2
-    @test M3_final > 140.0  # Cool ocean should absorb some CO2
+    @test M2_final > 730.0e12  # Warm ocean should absorb some CO2
+    @test M3_final > 140.0e12  # Cool ocean should absorb some CO2
 end
 
 @testitem "FourCompartmentAtmosphere - Structural" begin
@@ -223,4 +236,89 @@ end
     @test "k_S_NH_SH" in param_names
     @test "P_NH" in param_names
     @test "P_SH" in param_names
+end
+
+@testitem "FourCompartmentAtmosphere - CH3CCl3 Validation" tags=[:global_cycles] begin
+    using EnvironmentalTransport
+    using ModelingToolkit
+    using NonlinearSolve
+
+    # CH3CCl3 example from Section 22.3, pp. 1021-1022
+    # Reference: Prinn et al. (1992)
+    #
+    # Parameters from the text:
+    # - NH emissions: P_NH = 5.647 × 10^11 g/yr (1978-1990 average)
+    # - SH emissions: P_SH = 2.23 × 10^10 g/yr
+    # - Tropospheric OH reaction rate: based on k = 1.6e-12 exp(-1520/T) and [OH] = 8.7e5 molecules/cm^3
+    # - Surface deposition: 0.012 yr^-1
+    #
+    # Expected results:
+    # - Tropospheric mixing ratio: ~129 ppt (calculated), ~160 ppt (observed)
+    # - Stratospheric mixing ratio: ~75 ppt
+    # - Atmospheric lifetime: ~5.0 years (IPCC 2001: 4.8 years)
+
+    sys = FourCompartmentAtmosphere()
+    sys_c = mtkcompile(sys)
+
+    # Unit conversions
+    yr_to_s = 31557600.0
+    g_to_kg = 1e-3
+
+    # Emission rates from Prinn et al. (1992)
+    P_NH_val = 5.647e11 * g_to_kg / yr_to_s  # kg/s
+    P_SH_val = 2.23e10 * g_to_kg / yr_to_s   # kg/s
+
+    # Calculate OH reaction rate constant at tropospheric average temperature (277 K)
+    # k = 1.6e-12 exp(-1520/T) cm^3 molecule^-1 s^-1
+    T_trop = 277.0  # K
+    k_OH_trop = 1.6e-12 * exp(-1520.0 / T_trop)  # cm^3 molecule^-1 s^-1
+
+    # Global average tropospheric [OH] = 8.7e5 molecules/cm^3
+    OH_conc_trop = 8.7e5  # molecules/cm^3
+
+    # First-order removal rate in troposphere from OH reaction (s^-1)
+    k_OH = k_OH_trop * OH_conc_trop  # s^-1
+
+    # Surface deposition rate: 0.012 yr^-1
+    k_dep = 0.012 / yr_to_s  # s^-1
+
+    # Total tropospheric removal rate
+    k_T_removal = k_OH + k_dep  # s^-1
+
+    # Stratospheric OH concentration at 12 km: ~1 ppt = 6.48e6 molecules/cm^3
+    # Temperature at 12 km (US Standard Atmosphere): 216.7 K
+    T_strat = 216.7
+    k_OH_strat = 1.6e-12 * exp(-1520.0 / T_strat)
+    OH_conc_strat = 6.48e6  # molecules/cm^3
+    k_S_removal = k_OH_strat * OH_conc_strat  # s^-1
+
+    # Set up the problem with CH3CCl3-specific parameters
+    u0 = Dict(
+        sys_c.Q_T_NH => 1e8,   # Initial guess (kg)
+        sys_c.Q_T_SH => 1e8,
+        sys_c.Q_S_NH => 1e6,
+        sys_c.Q_S_SH => 1e6,
+        sys_c.Q_total => 2e8,
+        sys_c.τ_atm => 5.0 * yr_to_s,  # ~5 years
+    )
+
+    p = Dict(
+        sys_c.P_NH => P_NH_val,
+        sys_c.P_SH => P_SH_val,
+        sys_c.k_T_NH => k_T_removal,
+        sys_c.k_T_SH => k_T_removal,
+        sys_c.k_S_NH => k_S_removal,
+        sys_c.k_S_SH => k_S_removal,
+    )
+
+    prob = NonlinearProblem(sys_c, u0, p)
+    sol = solve(prob)
+    @test sol.retcode == SciMLBase.ReturnCode.Success
+
+    # Extract atmospheric lifetime (convert from seconds to years)
+    τ_atm_years = sol[sys_c.τ_atm] / yr_to_s
+
+    # The IPCC (2001) estimate for CH3CCl3 lifetime is 4.8 years
+    # Our calculation gives ~5.0 years which is consistent
+    @test τ_atm_years ≈ 5.0 rtol = 0.1  # 10% tolerance
 end

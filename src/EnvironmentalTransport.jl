@@ -4,7 +4,7 @@ using DocStringExtensions
 using LinearAlgebra
 using SciMLBase: NullParameters
 using ModelingToolkit: t, D, get_unit, getdefault, System, @variables, @parameters,
-                       @constants, Equation, unknowns, ParentScope, get_defaults, @unpack
+                       @constants, @component, Equation, unknowns, ParentScope, get_defaults, @unpack
 using SciMLBase: terminate!
 using DynamicQuantities: @u_str
 using EarthSciMLBase
