@@ -1,8 +1,8 @@
 @testsnippet LocalScaleSetup begin
     using EnvironmentalTransport
     using ModelingToolkit
-    using ModelingToolkit: t
-    using OrdinaryDiffEq
+    using ModelingToolkit: t, mtkcompile
+    using OrdinaryDiffEqDefault
     using DynamicQuantities
     using Test
 end

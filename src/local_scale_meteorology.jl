@@ -116,7 +116,7 @@ function SurfaceLayerProfile(; name=:SurfaceLayerProfile)
 
     @parameters begin
         z = 10.0, [description = "Height above ground", unit = u"m"]
-        z₀ = 0.1, [description = "Roughness length (Table 16.2)", unit = u"m"]
+        z₀ = 0.1, [description = "Roughness length (Table 16.1)", unit = u"m"]
         T₀ = 288.15, [description = "Reference temperature (surface)", unit = u"K"]
         ρ = 1.225, [description = "Air density", unit = u"kg/m^3"]
         u_star = 0.3, [description = "Friction velocity", unit = u"m/s"]
@@ -262,7 +262,7 @@ function LocalScaleMeteorology(; name=:LocalScaleMeteorology)
 
         # Surface layer parameters
         z = 10.0, [description = "Height above ground", unit = u"m"]
-        z₀ = 0.1, [description = "Roughness length (Table 16.2)", unit = u"m"]
+        z₀ = 0.1, [description = "Roughness length (Table 16.1)", unit = u"m"]
         Δz = 100.0, [description = "Vertical spacing for gradient calculation", unit = u"m"]
 
         # Turbulence parameters
