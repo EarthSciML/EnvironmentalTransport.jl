@@ -58,7 +58,6 @@ u_g = sol[sys_simplified.u_g][1]  # Eastward geostrophic wind
         Omega = 7.2921e-5, [description = "Earth's angular velocity", unit = u"rad/s"]
         R_earth = 6.371e6, [description = "Earth's mean radius", unit = u"m"]
         g = 9.807, [description = "Gravitational acceleration", unit = u"m/s^2"]
-        R_air = 287.0, [description = "Specific gas constant for dry air", unit = u"J/(kg*K)"]
     end
 
     @parameters begin
