@@ -1,6 +1,6 @@
 export GaussianDispersion
 export GaussianPGB
-export GaussianKC
+public GaussianKC
 
 import ModelingToolkit: Differential
 
