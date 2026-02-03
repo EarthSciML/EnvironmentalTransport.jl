@@ -20,6 +20,7 @@ makedocs(;
         "Home" => "index.md",
         "Advection" => "advection.md",
         "Puff Model" => "puff.md",
+        "Boundary Layer Diffusion" => "holtslag_boville_1993.md",
         "API" => "api.md",
         "🔗 Benchmarks" => "benchmarks.md"
     ]
