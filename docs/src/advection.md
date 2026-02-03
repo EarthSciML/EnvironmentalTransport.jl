@@ -42,7 +42,7 @@ function emissions(μ_lon, μ_lat, σ)
     dist = MvNormal([datetime2unix(starttime), μ_lon, μ_lat, 1],
         Diagonal(map(abs2, [3600.0*24*3, σ, σ, 1])))
     ODESystem([D(c) ~ pdf(dist, [t/t_unit, lon, lat, lev]) * v_emis],
-        t, name = :emissions, metadata = Dict(:coupletype => EmissionsCoupler))
+        t, name = :emissions, metadata = Dict(CoupleType => EmissionsCoupler))
 end
 function EarthSciMLBase.couple2(e::EmissionsCoupler, g::EarthSciData.GEOSFPCoupler)
     e, g = e.sys, g.sys
