@@ -3,7 +3,7 @@ module EnvironmentalTransport
 using DocStringExtensions
 using LinearAlgebra
 using SciMLBase: NullParameters
-using ModelingToolkit: t, D, get_unit, getdefault, System, @variables, @parameters,
+using ModelingToolkit: t, D, get_unit, getdefault, System, @variables, @parameters, @named,
                        @constants, Equation, unknowns, ParentScope, get_defaults, @unpack,
                        @component
 using SciMLBase: terminate!
@@ -20,5 +20,7 @@ include("puff.jl")
 include("plume_rise/sofiev_2012.jl")
 include("GaussianDispersion.jl")
 include("holtslag_boville_1993.jl")
+include("seinfeld_pandis_ch1.jl")
+include("local_scale_meteorology.jl")
 
 end

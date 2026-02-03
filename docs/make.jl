@@ -21,6 +21,8 @@ makedocs(;
         "Advection" => "advection.md",
         "Puff Model" => "puff.md",
         "Boundary Layer Diffusion" => "holtslag_boville_1993.md",
+        "Atmospheric Fundamentals" => "seinfeld_pandis_ch1.md",
+        "Local Scale Meteorology" => "local_scale_meteorology.md",
         "API" => "api.md",
         "🔗 Benchmarks" => "benchmarks.md"
     ]
