@@ -29,6 +29,7 @@ ModelingToolkit = "10"
 OrdinaryDiffEq = "6.98"
 RuntimeGeneratedFunctions = "0.5.13"
 SciMLBase = "2.90"
+StochasticDiffEq = "6.74"
 TestItemRunner = "1.1.0"
 julia = "1.10"
 
@@ -38,8 +39,10 @@ Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 DomainSets = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
 EarthSciData = "a293c155-435f-439d-9c11-a083b6b47337"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+StochasticDiffEq = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [targets]
-test = ["Dates", "Distributions", "DomainSets", "EarthSciData", "OrdinaryDiffEq", "Test", "TestItemRunner"]
+test = ["Dates", "Distributions", "DomainSets", "EarthSciData", "OrdinaryDiffEq", "Random", "StochasticDiffEq", "Test", "TestItemRunner"]
