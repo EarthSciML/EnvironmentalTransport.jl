@@ -1,7 +1,8 @@
 @testitem "Gaussian Dispersion" begin
     using Dates
     using EarthSciMLBase, EarthSciData, EnvironmentalTransport
-    using ModelingToolkit, OrdinaryDiffEq
+    using ModelingToolkit, OrdinaryDiffEqDefault
+    using OrdinaryDiffEqTsit5: Tsit5
 
     starttime = DateTime(2022, 5, 1, 0)
     endtime = DateTime(2022, 5, 1, 5)
