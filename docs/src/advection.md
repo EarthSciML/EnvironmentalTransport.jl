@@ -7,7 +7,7 @@ used in large-scale simulations.)
 
 To demonstrate how it works, let's first set up our environment:
 
-```@example adv
+```julia
 using EnvironmentalTransport
 using EarthSciMLBase, EarthSciData
 using ModelingToolkit, DifferentialEquations
@@ -17,7 +17,6 @@ using DynamicQuantities
 using Distributions, LinearAlgebra
 using Dates
 using NCDatasets, Plots
-nothing #hide
 ```
 
 ## Emissions
@@ -25,7 +24,7 @@ nothing #hide
 Next, let's set up an emissions scenario to advect.
 We'll make the emissions start at the beginning of the simulation and then taper off:
 
-```@example adv
+```julia
 using EarthSciMLBase: CoupleType
 
 starttime = DateTime(2022, 5, 1)
@@ -65,15 +64,14 @@ it doesn't matter what the defaults are.
 We also set up an [outputter](https://data.earthsci.dev/stable/api/#EarthSciData.NetCDFOutputter) to save the results of our simulation, and couple the components we've created so far into a
 single system.
 
-```@example adv
-
+```julia
 domain = DomainInfo(
     starttime, endtime;
     lonrange = deg2rad(-115):deg2rad(1):deg2rad(-68.75),
     latrange = deg2rad(25):deg2rad(1):deg2rad(53.7),
     levrange = 1:1:15)
 
-geosfp = GEOSFP("0.5x0.625_NA", domain)
+geosfp = GEOSFP("0.5x0.625", domain)
 geosfp = EarthSciMLBase.copy_with_change(geosfp, discrete_events = []) # Workaround for bug.
 
 outfile = ("RUNNER_TEMP" ∈ keys(ENV) ? ENV["RUNNER_TEMP"] : tempname()) * "out.nc" # This is just a location to save the output.
@@ -90,7 +88,7 @@ We also specify zero gradient boundary conditions.
 
 Then, we couple the advection operator to the rest of the system.
 
-```@example adv
+```julia
 adv = AdvectionOperator(300.0, upwind1_stencil, ZeroGradBC())
 
 csys = couple(csys, adv)
@@ -102,7 +100,7 @@ Refer [here](https://docs.sciml.ai/DiffEqDocs/stable/solvers/ode_solve/) for the
 We also choose a operator splitting interval of 300 seconds.
 Then, we run the simulation.
 
-```@example adv
+```julia
 st = SolverStrangSerial(Tsit5(), 300.0)
 prob = ODEProblem(csys, st)
 
@@ -115,7 +113,7 @@ prob = ODEProblem(csys, st)
 
 Finally, we can visualize the results of our simulation:
 
-```@example adv
+```julia
 ds = NCDataset(outfile, "r")
 
 imax = argmax(reshape(maximum(ds["emissions₊c"][:, :, :, :], dims = (1, 3, 4)), :))
@@ -131,8 +129,11 @@ anim = @animate for i in 1:size(ds["emissions₊c"])[4]
     )
 end
 gif(anim, fps = 15)
-```
 
-```@setup adv
 rm(outfile, force=true)
 ```
+
+!!! note
+    This example requires access to GEOS-FP meteorological data from the EarthSciData.jl package.
+    The code blocks above are shown for illustration but are not executed during documentation
+    building due to external data dependencies.

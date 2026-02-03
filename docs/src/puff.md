@@ -1,6 +1,6 @@
 # Air Pollution "Puff" Model Example
 
-```@example puff
+```julia
 using EarthSciMLBase, EarthSciData, EnvironmentalTransport
 using ModelingToolkit
 using ModelingToolkit: t
@@ -34,10 +34,10 @@ geosfp = GEOSFP("4x5", domain; stream = false)
 puff = Puff(domain)
 
 model = couple(puff, geosfp)
-const sys = convert(ODESystem, model)
+sys = mtkcompile(model)
 u0 = ModelingToolkit.get_defaults(sys)
 tspan = EarthSciMLBase.get_tspan(domain)
-prob=ODEProblem(sys, u0, tspan)
+prob = ODEProblem(sys, u0, tspan)
 sol = solve(prob, Tsit5()) # Solve once to make sure data is loaded.
 
 function prob_func(prob, i, repeat)
@@ -88,3 +88,8 @@ anim = @animate for dt in datetime2unix(firestart):samplerate:datetime2unix(sim_
 end
 gif(anim, fps = 15)
 ```
+
+!!! note
+    This example requires access to GEOS-FP meteorological data from the EarthSciData.jl package.
+    The code block above is shown for illustration but is not executed during documentation
+    building due to external data dependencies.
