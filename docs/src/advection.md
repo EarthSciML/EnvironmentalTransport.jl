@@ -70,7 +70,7 @@ domain = DomainInfo(
     latrange = deg2rad(25):deg2rad(1):deg2rad(53.7),
     levrange = 1:1:15)
 
-geosfp = GEOSFP("0.5x0.625_NA", domain)
+geosfp = GEOSFP("4x5", domain)
 geosfp = EarthSciMLBase.copy_with_change(geosfp, discrete_events = []) # Workaround for bug.
 
 outfile = ("RUNNER_TEMP" ∈ keys(ENV) ? ENV["RUNNER_TEMP"] : tempname()) * "out.nc" # This is just a location to save the output.
