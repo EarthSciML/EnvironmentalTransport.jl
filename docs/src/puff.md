@@ -1,6 +1,6 @@
 # Air Pollution "Puff" Model Example
 
-```julia
+```@example puff
 using EarthSciMLBase, EarthSciData, EnvironmentalTransport
 using ModelingToolkit
 using ModelingToolkit: t
@@ -88,8 +88,3 @@ anim = @animate for dt in datetime2unix(firestart):samplerate:datetime2unix(sim_
 end
 gif(anim, fps = 15)
 ```
-
-!!! note
-    This example requires access to GEOS-FP meteorological data from the EarthSciData.jl package.
-    The code block above is shown for illustration but is not executed during documentation
-    building due to external data dependencies.
