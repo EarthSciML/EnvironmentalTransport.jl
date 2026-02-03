@@ -26,6 +26,8 @@ Next, let's set up an emissions scenario to advect.
 We'll make the emissions start at the beginning of the simulation and then taper off:
 
 ```@example adv
+using EarthSciMLBase: CoupleType
+
 starttime = DateTime(2022, 5, 1)
 endtime = DateTime(2022, 5, 10)
 
@@ -39,10 +41,11 @@ function emissions(μ_lon, μ_lat, σ)
     @variables c(t) = 0.0 [unit=u"kg"]
     @constants v_emis = 50.0 [unit=u"kg/s"]
     @constants t_unit = 1.0 [unit=u"s"] # Needed so that arguments to `pdf` are unitless.
+    @constants t_ref = datetime2unix(starttime) [unit=u"s"]
     dist = MvNormal([datetime2unix(starttime), μ_lon, μ_lat, 1],
         Diagonal(map(abs2, [3600.0*24*3, σ, σ, 1])))
-    ODESystem([D(c) ~ pdf(dist, [t/t_unit, lon, lat, lev]) * v_emis],
-        t, name = :emissions, metadata = Dict(:coupletype => EmissionsCoupler))
+    ODESystem([D(c) ~ pdf(dist, [(t + t_ref)/t_unit, lon, lat, lev]) * v_emis],
+        t, name = :emissions, metadata = Dict(CoupleType => EmissionsCoupler))
 end
 function EarthSciMLBase.couple2(e::EmissionsCoupler, g::EarthSciData.GEOSFPCoupler)
     e, g = e.sys, g.sys

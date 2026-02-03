@@ -108,3 +108,45 @@ end
     @test x[1, 2, 2, 1] == test_array[1, 2, 2, 1]
     @test x[2, 1, 1, 1] == test_array[2, 1, 1, 1]
 end
+
+@testitem "SpeciesConstantBC range access" begin
+    using EnvironmentalTransport: SpeciesConstantBC
+
+    # Test with 4D array where first dimension is species
+    a = rand(3, 4, 5, 6)  # 3 species, spatial dimensions 4x5x6
+
+    # Set up species-specific boundary conditions
+    species_values = Dict(1 => 40.0)
+    default_value = 5.0
+    x = SpeciesConstantBC(species_values, default_value)(a)
+
+    # Test out-of-bounds access with a range as the first index
+    # This should return the default value
+    @test x[1:2, -1, 1, 1] == 5.0  # Range access returns default
+end
+
+@testitem "SpeciesConstantBC missing species warning" begin
+    using EnvironmentalTransport: SpeciesConstantBC, resolve_species_bc
+    using ModelingToolkit: @variables
+    using ModelingToolkit: t
+
+    # Create mock species variables
+    @variables O3(t) NO2(t)
+    species_vars = [O3, NO2]
+
+    # Set up boundary conditions with a species that doesn't exist
+    species_values = Dict("O3" => 40.0, "NONEXISTENT" => 100.0)
+    default_value = 0.0
+    bc = SpeciesConstantBC(species_values, default_value)
+
+    # Create a test array
+    test_array = rand(2, 3, 3, 2)
+
+    # Apply with species information - should trigger warning for NONEXISTENT
+    x = @test_logs (:warn, r"Species 'NONEXISTENT' not found") resolve_species_bc(bc, test_array, species_vars)
+
+    # O3 should still work
+    @test x[1, -1, 1, 1] == 40.0
+    # Other species get default
+    @test x[2, -1, 1, 1] == 0.0
+end
