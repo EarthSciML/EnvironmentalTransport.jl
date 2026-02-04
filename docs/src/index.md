@@ -22,6 +22,7 @@ This package contains types and functions designed to simplify the process of co
 ## Feature List
 
   - Numerical Advection
+  - General Circulation (Coriolis parameter, geostrophic wind, thermal wind)
 
 ## Contributing
 
