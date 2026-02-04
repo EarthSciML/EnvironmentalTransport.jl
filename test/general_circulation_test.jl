@@ -3,27 +3,26 @@
     using ModelingToolkit
     using ModelingToolkit: mtkcompile
     using EnvironmentalTransport
-    using Symbolics
     using DynamicQuantities: @u_str
     using OrdinaryDiffEqDefault: solve
 end
 
 @testitem "GeneralCirculation - Structural Verification" setup=[GeneralCirculationSetup] tags=[:general_circulation] begin
-    sys=GeneralCirculation()
+    sys = GeneralCirculation()
 
     # Check that the system has the expected variables
-    vars=unknowns(sys)
-    var_names=[string(Symbolics.tosymbol(v, escape = false)) for v in vars]
+    vars = unknowns(sys)
+    var_names = Symbol.(vars)
 
-    @test "f" in var_names
-    @test "v_tan" in var_names
-    @test "u_g" in var_names
-    @test "v_g" in var_names
-    @test "du_g_dz" in var_names
-    @test "dv_g_dz" in var_names
+    @test Symbol("f(t)") in var_names
+    @test Symbol("v_tan(t)") in var_names
+    @test Symbol("u_g(t)") in var_names
+    @test Symbol("v_g(t)") in var_names
+    @test Symbol("du_g_dz(t)") in var_names
+    @test Symbol("dv_g_dz(t)") in var_names
 
     # Check that we have 6 equations (one for each variable)
-    eqs=equations(sys)
+    eqs = equations(sys)
     @test length(eqs) == 6
 end
 
@@ -215,19 +214,19 @@ end
 end
 
 @testitem "GeneralCirculation - Units Consistency" setup=[GeneralCirculationSetup] tags=[:general_circulation] begin
-    sys=GeneralCirculation()
+    sys = GeneralCirculation()
 
     # Check that variables have correct units
-    vars=unknowns(sys)
+    vars = unknowns(sys)
 
     for v in vars
-        unit=ModelingToolkit.get_unit(v)
-        name=string(Symbolics.tosymbol(v, escape = false))
-        if name=="f"
+        unit = ModelingToolkit.get_unit(v)
+        name = Symbol(v)
+        if name == Symbol("f(t)")
             @test unit == u"s^-1"
-        elseif name in ["v_tan", "u_g", "v_g"]
+        elseif name in [Symbol("v_tan(t)"), Symbol("u_g(t)"), Symbol("v_g(t)")]
             @test unit == u"m/s"
-        elseif name in ["du_g_dz", "dv_g_dz"]
+        elseif name in [Symbol("du_g_dz(t)"), Symbol("dv_g_dz(t)")]
             @test unit == u"s^-1"
         end
     end
