@@ -26,7 +26,7 @@ end
         sys_c.τ_S => 165000.0,    # ~46 hours in seconds
         sys_c.c => 0.5,
         sys_c.τ_S_d => 432000.0,  # ~120 hours in seconds
-        sys_c.τ_S_w => 324000.0,  # ~90 hours in seconds
+        sys_c.τ_S_w => 324000.0  # ~90 hours in seconds
     )
 
     prob = NonlinearProblem(sys_c, u0)
@@ -86,7 +86,7 @@ end
     yr_to_s = 31557600.0
     tspan = (0.0, 10.0 * yr_to_s)
     prob = ODEProblem(sys_c, [], tspan)
-    sol = solve(prob, abstol=1e-10, reltol=1e-10)
+    sol = solve(prob, abstol = 1e-10, reltol = 1e-10)
     @test sol.retcode == SciMLBase.ReturnCode.Success
 
     # Final state should be very close to initial (steady state)
@@ -287,10 +287,10 @@ end
 
     # Stratospheric OH concentration at 12 km: ~1 ppt = 6.48e6 molecules/cm^3
     # Temperature at 12 km (US Standard Atmosphere): 216.7 K
-    T_strat = 216.7
-    k_OH_strat = 1.6e-12 * exp(-1520.0 / T_strat)
-    OH_conc_strat = 6.48e6  # molecules/cm^3
-    k_S_removal = k_OH_strat * OH_conc_strat  # s^-1
+    T_stratosphere = 216.7
+    k_OH_stratosphere = 1.6e-12 * exp(-1520.0 / T_stratosphere)
+    OH_conc_stratosphere = 6.48e6  # molecules/cm^3
+    k_S_removal = k_OH_stratosphere * OH_conc_stratosphere  # s^-1
 
     # Set up the problem with CH3CCl3-specific parameters
     u0 = Dict(
@@ -299,7 +299,7 @@ end
         sys_c.Q_S_NH => 1e6,
         sys_c.Q_S_SH => 1e6,
         sys_c.Q_total => 2e8,
-        sys_c.τ_atm => 5.0 * yr_to_s,  # ~5 years
+        sys_c.τ_atm => 5.0 * yr_to_s  # ~5 years
     )
 
     p = Dict(
@@ -308,7 +308,7 @@ end
         sys_c.k_T_NH => k_T_removal,
         sys_c.k_T_SH => k_T_removal,
         sys_c.k_S_NH => k_S_removal,
-        sys_c.k_S_SH => k_S_removal,
+        sys_c.k_S_SH => k_S_removal
     )
 
     prob = NonlinearProblem(sys_c, u0, p)
