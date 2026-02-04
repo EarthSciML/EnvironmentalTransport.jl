@@ -1,5 +1,5 @@
 @testitem "Gaussian Dispersion" begin
-    using Dates
+    using Dates, Random
     using EarthSciMLBase, EarthSciData, EnvironmentalTransport
     using ModelingToolkit, StochasticDiffEq
     using OrdinaryDiffEqTsit5: Tsit5
