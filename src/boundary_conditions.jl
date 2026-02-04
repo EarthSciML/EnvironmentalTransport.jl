@@ -82,7 +82,9 @@ struct SpeciesConstantBCArray{P, T, N} <: BCArray{T, N}
     parent::P
     values::Dict{Int, T}
     default_value::T
-    function SpeciesConstantBCArray(x::AbstractArray{T, N}, values::Dict{Int, T}, default_value::T) where {T, N}
+    function SpeciesConstantBCArray(
+            x::AbstractArray{T, N}, values::Dict{
+                Int, T}, default_value::T) where {T, N}
         return new{typeof(x), T, N}(x, values, default_value)
     end
 end
@@ -114,18 +116,20 @@ Species-specific constant boundary conditions.
 Takes a dictionary mapping species names/indices to boundary values and a default value.
 
 Examples:
-- `SpeciesConstantBC(Dict("O3" => 40.0), 0.0)` sets O3 to 40.0 and others to 0.0
-- `SpeciesConstantBC(Dict(1 => 40.0), 0.0)` sets species 1 to 40.0 and others to 0.0
-- `SpeciesConstantBC(Dict("O3" => 40.0, "NO2" => 10.0), 0.0)` sets multiple species
 
-Note: When using species names, they will be resolved to indices when the boundary 
+  - `SpeciesConstantBC(Dict("O3" => 40.0), 0.0)` sets O3 to 40.0 and others to 0.0
+  - `SpeciesConstantBC(Dict(1 => 40.0), 0.0)` sets species 1 to 40.0 and others to 0.0
+  - `SpeciesConstantBC(Dict("O3" => 40.0, "NO2" => 10.0), 0.0)` sets multiple species
+
+Note: When using species names, they will be resolved to indices when the boundary
 condition is applied to a system with known species variables.
 """
 struct SpeciesConstantBC
     values::Dict{Union{String, Int}, AbstractFloat}
     default_value::AbstractFloat
-    
-    function SpeciesConstantBC(values::Dict{<:Union{String, Int}, <:AbstractFloat}, default_value::AbstractFloat)
+
+    function SpeciesConstantBC(
+            values::Dict{<:Union{String, Int}, <:AbstractFloat}, default_value::AbstractFloat)
         new(values, default_value)
     end
 end
@@ -151,7 +155,7 @@ This is used by AdvectionOperator when species information is available.
 """
 function resolve_species_bc(bc::SpeciesConstantBC, x, species_vars)
     resolved_values = Dict{Int, eltype(x)}()
-    
+
     for (key, value) in bc.values
         if isa(key, Int)
             # Already an index
@@ -166,7 +170,7 @@ function resolve_species_bc(bc::SpeciesConstantBC, x, species_vars)
             end
         end
     end
-    
+
     return SpeciesConstantBCArray(x, resolved_values, eltype(x)(bc.default_value))
 end
 

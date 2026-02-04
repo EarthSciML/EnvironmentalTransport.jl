@@ -56,6 +56,24 @@ DataFrame(
 equations(sys)
 ```
 
+### Table 18.5: Stability Classes and Temperature Stratification
+
+Table 18.5 from Seinfeld & Pandis (2006) relates the Pasquill-Gifford atmospheric stability
+classes to temperature gradients. This provides guidance for selecting appropriate stability
+parameters when applying the diffusivity formulas.
+
+| Stability Class | Description         | Ambient Temperature Gradient ∂T/∂z (°C 100 m⁻¹) | Potential Temperature Gradient ∂θ/∂z (°C 100 m⁻¹) |
+|:---------------:|:------------------- |:-----------------------------------------------:|:-------------------------------------------------:|
+| A               | Extremely unstable  | < -1.9                                          | < -0.9                                            |
+| B               | Moderately unstable | -1.9 to -1.7                                    | -0.9 to -0.7                                      |
+| C               | Slightly unstable   | -1.7 to -1.5                                    | -0.7 to -0.5                                      |
+| D               | Neutral             | -1.5 to -0.5                                    | -0.5 to 0.5                                       |
+| E               | Slightly stable     | -0.5 to 1.5                                     | 0.5 to 2.5                                        |
+| F               | Moderately stable   | > 1.5                                           | > 2.5                                             |
+
+*Note: The potential temperature gradient is calculated assuming ∂θ/∂z = ∂T/∂z + Γ,
+where Γ is the adiabatic lapse rate (0.986 °C 100 m⁻¹).*
+
 ## Analysis
 
 The following plots reproduce key figures from Chapter 18, Section 18.12 of
@@ -107,6 +125,62 @@ plot(Kzz_norm, z_vals ./ z_i,
     legend = :topright,
     size = (600, 400))
 hline!([1.0], color = :gray, linestyle = :dash, label = "z = z_i", alpha = 0.5)
+```
+
+### Figure 18.7: Neutral K_zz Profile
+
+This plot shows the normalized vertical eddy diffusivity ``K_{zz}/(u_* H)`` as a function
+of normalized height ``z/H`` under neutral conditions, based on the Myrup & Ranzieri (1976)
+formulation (Eq. 18.122). In neutral conditions, the scale height ``H = z_i`` (the mixed-layer
+depth). The profile shows linear growth with height near the surface, followed by a decrease
+toward the top of the boundary layer.
+
+```@example atmdiff
+using SciMLBase
+using Plots
+
+# Recompile system for neutral conditions
+sys_nns = ModelingToolkit.toggle_namespacing(sys, false)
+ssys = mtkcompile(sys; inputs = [sys_nns.z])
+prob = NonlinearProblem(ssys, Dict(ssys.z => 100.0))
+
+# Parameters for neutral case
+κ = 0.4
+u_star = 0.3
+z_i = 1000.0  # H = z_i for neutral conditions
+L_MO_neutral = 1e6  # Large |L| for neutral
+
+# Height range (z/z_i from 0 to 1.2)
+z_vals_neutral = 1.0:5.0:1200.0
+
+# Compute normalized K_zz under neutral conditions
+# Normalization: K_zz / (u_* * H) where H = z_i
+Kzz_norm_neutral = Float64[]
+for z in z_vals_neutral
+    sol = solve(remake(prob; p = Dict(ssys.z => z, ssys.L_MO => L_MO_neutral)))
+    push!(Kzz_norm_neutral, sol[ssys.K_zz] / (u_star * z_i))
+end
+
+plot(Kzz_norm_neutral, z_vals_neutral ./ z_i,
+    label = "Eq. 18.122 (Myrup & Ranzieri 1976)",
+    linewidth = 2,
+    xlabel = "K_zz / (u_* z_i)",
+    ylabel = "z / z_i",
+    title = "Figure 18.7: Neutral K_zz Profile",
+    xlims = (0, 0.12),
+    ylims = (0, 1.2),
+    legend = :topright,
+    size = (600, 400))
+hline!([1.0], color = :gray, linestyle = :dash, label = "z = z_i", alpha = 0.5)
+
+# Add reference line for surface layer similarity: K_zz = κ u_* z
+z_surface = 0.0:0.01:0.1
+Kzz_surface = κ .* z_surface  # κ * (z/z_i) normalized by u_* z_i
+plot!(Kzz_surface, z_surface,
+    label = "Surface layer: κz/z_i",
+    linestyle = :dot,
+    linewidth = 1.5,
+    color = :gray)
 ```
 
 ### Vertical Eddy Diffusivity Profiles
