@@ -1,8 +1,4 @@
-using EnvironmentalTransport
-using ModelingToolkit, EarthSciData, EarthSciMLBase
-using Test
-
-@testset "ZeroGradBC" begin
+@testitem "ZeroGradBC" begin
     a = rand(3, 4)
     x = ZeroGradBC()(a)
 
@@ -15,7 +11,7 @@ using Test
     @test CartesianIndices((3, 4)) == eachindex(x)
 end
 
-@testset "ConstantBC" begin
+@testitem "ConstantBC" begin
     v = 16.0
     a = rand(3, 4)
     x = ConstantBC(v)(a)

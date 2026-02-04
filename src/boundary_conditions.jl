@@ -72,7 +72,6 @@ struct ConstantBC
     value::AbstractFloat
     ConstantBC(value::AbstractFloat) = new(value)
 end
-(bc::ConstantBC)(x) = ConstantBCArray(x, bc.value)
 
 """
 $(SIGNATURES)
@@ -170,3 +169,5 @@ function resolve_species_bc(bc::SpeciesConstantBC, x, species_vars)
     
     return SpeciesConstantBCArray(x, resolved_values, eltype(x)(bc.default_value))
 end
+
+(bc::ConstantBC)(x) = ConstantBCArray(x, bc.value + zero(eltype(x)))

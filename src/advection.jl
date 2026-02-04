@@ -1,9 +1,9 @@
 export AdvectionOperator
 
-#=
+"""
 An advection kernel for a 4D array, where the first dimension is the state variables
 and the next three dimensions are the spatial dimensions.
-=#
+"""
 function advection_kernel_4d(u, stencil, vs, Δs, Δt, idx, p = NullParameters())
     lpad, rpad = stencil_size(stencil)
     offsets = ((CartesianIndex(0, lpad, 0, 0), CartesianIndex(0, rpad, 0, 0)),
@@ -40,19 +40,20 @@ function get_Δs(Δ_fs, i, j, k, p, t)
 end
 get_Δs(Δ_fs, idx::CartesianIndex{4}, p, t) = get_Δs(Δ_fs, idx[2], idx[3], idx[4], p, t)
 
-#=
+"""
 A function to create an advection operator for a 4D array,
 
 Arguments:
-    * `u_prototype`: A prototype array of the same size and type as the input array.
-    * `stencil`: The stencil operator, e.g. `l94_stencil` or `ppm_stencil`.
-    * `v_fs`: A vector of functions to get the wind velocity at a given place and time.
-            The function signature should be `v_fs(i, j, k, t)`.
-    * `Δ_fs`: A vector of functions to get the grid spacing at a given place and time.
-            The function signature should be `Δ_fs(i, j, k, t)`.
-    * `Δt`: The time step size, which is assumed to be fixed.
-    * `bc_type`: The boundary condition type, e.g. `ZeroGradBC()`.
-=#
+
+  - `u_prototype`: A prototype array of the same size and type as the input array.
+  - `stencil`: The stencil operator, e.g. `l94_stencil` or `ppm_stencil`.
+  - `v_fs`: A vector of functions to get the wind velocity at a given place and time.
+    The function signature should be `v_fs(i, j, k, t)`.
+  - `Δ_fs`: A vector of functions to get the grid spacing at a given place and time.
+    The function signature should be `Δ_fs(i, j, k, t)`.
+  - `Δt`: The time step size, which is assumed to be fixed.
+  - `bc_type`: The boundary condition type, e.g. `ZeroGradBC()`.
+"""
 function advection_op(u_prototype, stencil, v_fs, Δ_fs, Δt, bc_type, alg::MapAlgorithm;
         p = NullParameters())
     @assert length(size(u_prototype)) == 4 "Advection operator only supports 4D arrays."
@@ -64,17 +65,17 @@ function advection_op(u_prototype, stencil, v_fs, Δ_fs, Δt, bc_type, alg::MapA
     function advection(u, p, t) # Out-of-place
         u = bc_type(reshape(u, sz...))
         kernelII(II) = adv_kernel(u, II, Δt, t, p)
-        du = map_closure_to_range(kernelII, II, alg)
+        du = EarthSciMLBase.map_closure_to_range(kernelII, II, alg)
         reshape(du, :)
     end
     function advection(du, u, p, t) # In-place
         u = bc_type(reshape(u, sz...))
         du = reshape(du, sz...)
         kernelII(II) = du[II] = adv_kernel(u, II, Δt, t, p)
-        map_closure_to_range(kernelII, II, alg)
+        EarthSciMLBase.map_closure_to_range(kernelII, II, alg)
         nothing
     end
-    FunctionOperator(advection, reshape(u_prototype, :), p = p)
+    return advection
 end
 
 """
@@ -212,11 +213,11 @@ function get_datafs(op, csys, mtk_sys, coord_args, domain)
     v_fs, Δ_fs
 end
 
-function EarthSciMLBase.get_scimlop(op::AdvectionOperator, csys::CoupledSystem, mtk_sys,
+function EarthSciMLBase.get_odefunction(
+        op::AdvectionOperator, csys::CoupledSystem, mtk_sys,
         coord_args, domain::DomainInfo, u0, p, alg::MapAlgorithm)
     u0 = reshape(u0, :, length.(EarthSciMLBase.grid(EarthSciMLBase.domain(csys)))...)
     v_fs, Δ_fs = get_datafs(op, csys, mtk_sys, coord_args, domain)
-    
     # Handle SpeciesConstantBC specially to resolve species names
     bc_type = op.bc_type
     if isa(bc_type, SpeciesConstantBC)
@@ -225,9 +226,8 @@ function EarthSciMLBase.get_scimlop(op::AdvectionOperator, csys::CoupledSystem, 
         # Create a closure that applies the species-specific boundary condition
         bc_type = (x) -> resolve_species_bc(op.bc_type, x, species_vars)
     end
-    
-    scimlop = advection_op(u0, op.stencil, v_fs, Δ_fs, op.Δt, bc_type, alg, p = p)
-    cache_operator(scimlop, u0[:])
+
+    return advection_op(u0, op.stencil, v_fs, Δ_fs, op.Δt, bc_type, alg, p = p)
 end
 
 # Actual implementation is in EarthSciDataExt.jl.
