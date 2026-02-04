@@ -1,7 +1,53 @@
-@testitem "SulfurCycle - Structural" begin
+"""
+Test suite for Global Cycles implementation (Chapter 22 of Seinfeld and Pandis, 2006).
+
+Tests verify:
+1. Structural correctness (model components, variables, parameters)
+2. Equation verification against textbook formulas
+3. Numerical accuracy against known values from the chapter
+4. Conservation laws and qualitative behavior
+
+Reference: Seinfeld, J.H. and Pandis, S.N. (2006). Atmospheric Chemistry and Physics,
+2nd Edition, Chapter 22: Global Cycles: Sulfur and Carbon. Wiley-Interscience.
+"""
+
+#=============================================================================
+# Test Setup Snippets - shared imports for all tests
+=============================================================================#
+
+@testsnippet GlobalCyclesSetup begin
     using EnvironmentalTransport
     using ModelingToolkit
+    using ModelingToolkit: t, D, unknowns, parameters, equations, System, mtkcompile
+    using DynamicQuantities
+    using Test
+end
 
+@testsnippet NonlinearSetup begin
+    using EnvironmentalTransport
+    using ModelingToolkit
+    using ModelingToolkit: t, D, unknowns, parameters, equations, System, mtkcompile
+    using NonlinearSolve
+    using SciMLBase
+    using DynamicQuantities
+    using Test
+end
+
+@testsnippet ODESetup begin
+    using EnvironmentalTransport
+    using ModelingToolkit
+    using ModelingToolkit: t, D, unknowns, parameters, equations, System, mtkcompile
+    using OrdinaryDiffEqDefault
+    using SciMLBase
+    using DynamicQuantities
+    using Test
+end
+
+#=============================================================================
+# SulfurCycle Tests
+=============================================================================#
+
+@testitem "SulfurCycle - Structural" setup=[GlobalCyclesSetup] tags=[:global_cycles] begin
     sys = SulfurCycle()
 
     # Verify correct number of components
@@ -10,11 +56,7 @@
     @test length(equations(sys)) == 7
 end
 
-@testitem "SulfurCycle - Steady State Values" begin
-    using EnvironmentalTransport
-    using ModelingToolkit
-    using NonlinearSolve
-
+@testitem "SulfurCycle - Steady State Values" setup=[NonlinearSetup] tags=[:global_cycles] begin
     sys = SulfurCycle()
     sys_c = mtkcompile(sys)
 
@@ -58,10 +100,11 @@ end
     @test τ_S_val ≈ 46.8 rtol = 0.02
 end
 
-@testitem "CarbonCycle - Structural" begin
-    using EnvironmentalTransport
-    using ModelingToolkit
+#=============================================================================
+# CarbonCycle Tests
+=============================================================================#
 
+@testitem "CarbonCycle - Structural" setup=[GlobalCyclesSetup] tags=[:global_cycles] begin
     sys = CarbonCycle()
 
     # 8 state variables (M1-M7 + G) + 3 auxiliary flux variables
@@ -72,11 +115,7 @@ end
     @test length(equations(sys)) == 11
 end
 
-@testitem "CarbonCycle - Preindustrial Steady State" begin
-    using EnvironmentalTransport
-    using ModelingToolkit
-    using OrdinaryDiffEqDefault
-
+@testitem "CarbonCycle - Preindustrial Steady State" setup=[ODESetup] tags=[:global_cycles] begin
     sys = CarbonCycle()
     sys_c = mtkcompile(sys)
 
@@ -109,11 +148,7 @@ end
     @test G_final ≈ 1.0 rtol = 0.01
 end
 
-@testitem "CarbonCycle - Response to Fossil Fuel Emissions" begin
-    using EnvironmentalTransport
-    using ModelingToolkit
-    using OrdinaryDiffEqDefault
-
+@testitem "CarbonCycle - Response to Fossil Fuel Emissions" setup=[ODESetup] tags=[:global_cycles] begin
     sys = CarbonCycle()
     sys_c = mtkcompile(sys)
 
@@ -149,11 +184,7 @@ end
     @test total_initial ≈ total_final rtol = 1e-6
 end
 
-@testitem "CarbonCycle - Qualitative Response" begin
-    using EnvironmentalTransport
-    using ModelingToolkit
-    using OrdinaryDiffEqDefault
-
+@testitem "CarbonCycle - Qualitative Response" setup=[ODESetup] tags=[:global_cycles] begin
     sys = CarbonCycle()
     sys_c = mtkcompile(sys)
 
@@ -180,10 +211,11 @@ end
     @test M3_final > 140.0e12  # Cool ocean should absorb some CO2
 end
 
-@testitem "FourCompartmentAtmosphere - Structural" begin
-    using EnvironmentalTransport
-    using ModelingToolkit
+#=============================================================================
+# FourCompartmentAtmosphere Tests
+=============================================================================#
 
+@testitem "FourCompartmentAtmosphere - Structural" setup=[GlobalCyclesSetup] tags=[:global_cycles] begin
     sys = FourCompartmentAtmosphere()
 
     # 6 variables: Q_T_NH, Q_T_SH, Q_S_NH, Q_S_SH, Q_total, τ_atm
@@ -194,10 +226,7 @@ end
     @test length(equations(sys)) == 6
 end
 
-@testitem "FourCompartmentAtmosphere - Equation Structure" begin
-    using EnvironmentalTransport
-    using ModelingToolkit
-
+@testitem "FourCompartmentAtmosphere - Equation Structure" setup=[GlobalCyclesSetup] tags=[:global_cycles] begin
     sys = FourCompartmentAtmosphere()
 
     # Check that equations are properly formed algebraic equations
@@ -219,10 +248,7 @@ end
     @test "τ_atm(t)" in var_names
 end
 
-@testitem "FourCompartmentAtmosphere - Parameter Count" begin
-    using EnvironmentalTransport
-    using ModelingToolkit
-
+@testitem "FourCompartmentAtmosphere - Parameter Count" setup=[GlobalCyclesSetup] tags=[:global_cycles] begin
     sys = FourCompartmentAtmosphere()
 
     # Check that we have the expected number of parameters
@@ -238,11 +264,7 @@ end
     @test "P_SH" in param_names
 end
 
-@testitem "FourCompartmentAtmosphere - CH3CCl3 Validation" tags=[:global_cycles] begin
-    using EnvironmentalTransport
-    using ModelingToolkit
-    using NonlinearSolve
-
+@testitem "FourCompartmentAtmosphere - CH3CCl3 Validation" setup=[NonlinearSetup] tags=[:global_cycles] begin
     # CH3CCl3 example from Section 22.3, pp. 1021-1022
     # Reference: Prinn et al. (1992)
     #
