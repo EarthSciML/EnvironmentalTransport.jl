@@ -44,14 +44,15 @@ get_Δs(Δ_fs, idx::CartesianIndex{4}, p, t) = get_Δs(Δ_fs, idx[2], idx[3], id
 A function to create an advection operator for a 4D array,
 
 Arguments:
-    * `u_prototype`: A prototype array of the same size and type as the input array.
-    * `stencil`: The stencil operator, e.g. `l94_stencil` or `ppm_stencil`.
-    * `v_fs`: A vector of functions to get the wind velocity at a given place and time.
-            The function signature should be `v_fs(i, j, k, t)`.
-    * `Δ_fs`: A vector of functions to get the grid spacing at a given place and time.
-            The function signature should be `Δ_fs(i, j, k, t)`.
-    * `Δt`: The time step size, which is assumed to be fixed.
-    * `bc_type`: The boundary condition type, e.g. `ZeroGradBC()`.
+
+  - `u_prototype`: A prototype array of the same size and type as the input array.
+  - `stencil`: The stencil operator, e.g. `l94_stencil` or `ppm_stencil`.
+  - `v_fs`: A vector of functions to get the wind velocity at a given place and time.
+    The function signature should be `v_fs(i, j, k, t)`.
+  - `Δ_fs`: A vector of functions to get the grid spacing at a given place and time.
+    The function signature should be `Δ_fs(i, j, k, t)`.
+  - `Δt`: The time step size, which is assumed to be fixed.
+  - `bc_type`: The boundary condition type, e.g. `ZeroGradBC()`.
 """
 function advection_op(u_prototype, stencil, v_fs, Δ_fs, Δt, bc_type, alg::MapAlgorithm;
         p = NullParameters())
@@ -211,7 +212,8 @@ function get_datafs(op, csys, mtk_sys, coord_args, domain)
     v_fs, Δ_fs
 end
 
-function EarthSciMLBase.get_odefunction(op::AdvectionOperator, csys::CoupledSystem, mtk_sys,
+function EarthSciMLBase.get_odefunction(
+        op::AdvectionOperator, csys::CoupledSystem, mtk_sys,
         coord_args, domain::DomainInfo, u0, p, alg::MapAlgorithm)
     u0 = reshape(u0, :, length.(EarthSciMLBase.grid(EarthSciMLBase.domain(csys)))...)
     v_fs, Δ_fs = get_datafs(op, csys, mtk_sys, coord_args, domain)

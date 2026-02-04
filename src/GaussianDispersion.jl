@@ -26,23 +26,20 @@ within the planetary boundary layer.
 
 What this does:
 
-- Stability classification: Uses near-surface meteorology (10 m wind speed,
-  downward short-wave radiation, total cloud fraction, and the surface
-  temperature lapse) to determine the Pasquill stability class.
+  - Stability classification: Uses near-surface meteorology (10 m wind speed,
+    downward short-wave radiation, total cloud fraction, and the surface
+    temperature lapse) to determine the Pasquill stability class.
 
-- Dispersion coefficients: Maps the stability class to Briggs coefficients
-  (A_y, A_z, B_y, B_z) and evaluates the analytic expressions for the
-  horizontal (sigma_h ≡ sigma_y) and vertical (sigma_z) dispersion parameters as functions
-  of the down-wind distance 'x'.
-
-- Hypsometric height: Computes puff height above ground (z_agl) from pressure,
-  temperature, and humidity using the hypsometric equation with a virtual temperature
-  layer mean.
-
-- Ground-level concentration: Computes the Gaussian ground-level concentration
-  at the puff center for one unit of puff mass:
-      C_gl = 1 / ((2π)^{3/2} · σ_h² · σ_z) * exp(-z_agl² / (2 σ_z²)).
-
+  - Dispersion coefficients: Maps the stability class to Briggs coefficients
+    (A_y, A_z, B_y, B_z) and evaluates the analytic expressions for the
+    horizontal (sigma_h ≡ sigma_y) and vertical (sigma_z) dispersion parameters as functions
+    of the down-wind distance 'x'.
+  - Hypsometric height: Computes puff height above ground (z_agl) from pressure,
+    temperature, and humidity using the hypsometric equation with a virtual temperature
+    layer mean.
+  - Ground-level concentration: Computes the Gaussian ground-level concentration
+    at the puff center for one unit of puff mass:
+    C_gl = 1 / ((2π)^{3/2} · σ_h² · σ_z) * exp(-z_agl² / (2 σ_z²)).
 
 Example:
 
@@ -89,27 +86,27 @@ function GaussianPGB()
         R    = 6.371e6, [unit = u"m", description = "Earth mean radius"]
 
         # --- Briggs coefficients ------------------------------------------------
-        AY_A = 0.22,  [description="A_y for stability class A"]
-        AY_B = 0.16,  [description="A_y for stability class B"]
-        AY_C = 0.11,  [description="A_y for stability class C"]
-        AY_D = 0.08,  [description="A_y for stability class D"]
+        AY_A = 0.22, [description="A_y for stability class A"]
+        AY_B = 0.16, [description="A_y for stability class B"]
+        AY_C = 0.11, [description="A_y for stability class C"]
+        AY_D = 0.08, [description="A_y for stability class D"]
         AY_Ep = 0.06, [description="A_y for stability class E"]
-        AY_F = 0.04,  [description="A_y for stability class F"]
+        AY_F = 0.04, [description="A_y for stability class F"]
 
-        AZ_A = 0.20,  [description="A_z for class A"]
-        AZ_B = 0.12,  [description="A_z for class B"]
-        AZ_C = 0.08,  [description="A_z for class C"]
-        AZ_D = 0.06,  [description="A_z for class D"]
+        AZ_A = 0.20, [description="A_z for class A"]
+        AZ_B = 0.12, [description="A_z for class B"]
+        AZ_C = 0.08, [description="A_z for class C"]
+        AZ_D = 0.06, [description="A_z for class D"]
         AZ_Ep = 0.03, [description="A_z for class E"]
         AZ_F = 0.016, [description="A_z for class F"]
 
-        by = 1.0e-4,    [unit=u"m^-1",    description = "Briggs B_y (class-independent)"]
-        BZ_A = 0.0,     [unit=u"m^-1", description="B_z for class A"]
-        BZ_B = 0.0,     [unit=u"m^-1", description="B_z for class B"]
-        BZ_C = 0.0002,  [unit=u"m^-1", description="B_z for class C"]
-        BZ_D = 0.0015,  [unit=u"m^-1", description="B_z for class D"]
+        by = 1.0e-4, [unit=u"m^-1", description = "Briggs B_y (class-independent)"]
+        BZ_A = 0.0, [unit=u"m^-1", description="B_z for class A"]
+        BZ_B = 0.0, [unit=u"m^-1", description="B_z for class B"]
+        BZ_C = 0.0002, [unit=u"m^-1", description="B_z for class C"]
+        BZ_D = 0.0015, [unit=u"m^-1", description="B_z for class D"]
         BZ_Ep = 0.0003, [unit=u"m^-1", description="B_z for class E"]
-        BZ_F = 0.0003,  [unit=u"m^-1", description="B_z for class F"]
+        BZ_F = 0.0003, [unit=u"m^-1", description="B_z for class F"]
 
         # --- Wind‑speed thresholds for Pasquill classes -------------------------
         v2 = 2.0, [unit=u"m/s", description="Wind-speed threshold 2 m.s⁻¹"]
@@ -118,11 +115,12 @@ function GaussianPGB()
         v6 = 6.0, [unit=u"m/s", description="Wind-speed threshold 6 m.s⁻¹"]
 
         # --- Solar‑radiation thresholds ---------------------------------------
-        solrad_strong = 925.0, [unit=u"W/m^2", description="≥ 925 W.m⁻²: very strong insolation"]
-        solrad_moder  = 675.0, [unit=u"W/m^2", description="675-925 W.m⁻²: moderate"]
+        solrad_strong = 925.0,
+        [unit=u"W/m^2", description="≥ 925 W.m⁻²: very strong insolation"]
+        solrad_moder = 675.0, [unit=u"W/m^2", description="675-925 W.m⁻²: moderate"]
         solrad_slight = 175.0, [unit=u"W/m^2", description="175-675 W.m⁻²: slight"]
         # 10–175 W/m² is weak/low insolation that defaults to neutral stability class D.
-        solrad_night  = 10.0,  [unit=u"W/m^2", description="< 10 W.m⁻²: night"]
+        solrad_night = 10.0, [unit=u"W/m^2", description="< 10 W.m⁻²: night"]
 
         cloudfrac_clear = 0.5, [description="Cloud-fraction threshold for clear skies"]
 
@@ -137,12 +135,14 @@ function GaussianPGB()
     end
 
     @variables begin
-        lon(t),     [unit = u"rad",  description = "longitude", input=true]
-        lat(t),     [unit = u"rad",  description = "latitude", input=true]
-        sigma_h(t), [unit = u"m",  description = "horizontal dispersion coefficient"]
-        sigma_z(t), [unit = u"m",     description = "Vertical dispersion"]
-        z_agl(t),   [unit = u"m",     description = "Hypsometric height above ground"]
-        C_gl(t),    [unit = u"m^-3", description = "Ground-level concentration at puff center for unit mass (Gaussian)"]
+        lon(t), [unit = u"rad", description = "longitude", input=true]
+        lat(t), [unit = u"rad", description = "latitude", input=true]
+        sigma_h(t), [unit = u"m", description = "horizontal dispersion coefficient"]
+        sigma_z(t), [unit = u"m", description = "Vertical dispersion"]
+        z_agl(t), [unit = u"m", description = "Hypsometric height above ground"]
+        C_gl(t),
+        [unit = u"m^-3",
+            description = "Ground-level concentration at puff center for unit mass (Gaussian)"]
     end
 
     wind_speed = sqrt(U10M^2 + V10M^2) # Wind speed (m s⁻¹)
@@ -161,55 +161,55 @@ function GaussianPGB()
     #   6 → stable            (class F)
     stab_cls = ifelse(
         SWGDN .< solrad_night,                                    # night‑time
-            ifelse(CLDTOT .<= cloudfrac_clear,                     # clear
-                ifelse(dTsurf .> inversion_thresh,                # inversion on?
-                    ifelse(wind_speed .< v2, 6, 5),               # F or E
-                    4                                             # neutral (D)
-                ),
-                4                                                 # cloudy night → D
+        ifelse(CLDTOT .<= cloudfrac_clear,                     # clear
+            ifelse(dTsurf .> inversion_thresh,                # inversion on?
+                ifelse(wind_speed .< v2, 6, 5),               # F or E
+                4                                             # neutral (D)
             ),
+            4                                                 # cloudy night → D
+        ),
         ifelse(SWGDN .>= solrad_strong,                           # strong sun
             ifelse(wind_speed .< v3, 1,                           # A
                 ifelse(wind_speed .< v5, 2, 3)                    # B or C
             ),
-        ifelse(SWGDN .>= solrad_moder,                            # moderate sun
-            ifelse(wind_speed .< v2, 1,                           # A
-                ifelse(wind_speed .< v5, 2,                       # B
-                    ifelse(wind_speed .< v6, 3, 4)                # C or D
-                )
-            ),
-        ifelse(SWGDN .>= solrad_slight,                           # slight sun
-            ifelse(wind_speed .< v2, 2,                           # B
-                ifelse(wind_speed .< v5, 3, 4)                    # C or D
-            ),
-            4                                                     # default neutral
-        ))))
+            ifelse(SWGDN .>= solrad_moder,                            # moderate sun
+                ifelse(wind_speed .< v2, 1,                           # A
+                    ifelse(wind_speed .< v5, 2,                       # B
+                        ifelse(wind_speed .< v6, 3, 4)                # C or D
+                    )
+                ),
+                ifelse(SWGDN .>= solrad_slight,                           # slight sun
+                    ifelse(wind_speed .< v2, 2,                           # B
+                        ifelse(wind_speed .< v5, 3, 4)                    # C or D
+                    ),
+                    4                                                     # default neutral
+                ))))
 
     # ------------------------------------------------------------------
     # Briggs dispersion‑curve coefficients (unitless unless noted)
     # ------------------------------------------------------------------
     ay = ifelse(stab_cls .== 1, AY_A,   # class A
-         ifelse(stab_cls .== 2, AY_B,   # class B
-         ifelse(stab_cls .== 3, AY_C,   # class C
-         ifelse(stab_cls .== 4, AY_D,   # class D
-         ifelse(stab_cls .== 5, AY_Ep,  # class E
-                 AY_F)))))              # class F
+        ifelse(stab_cls .== 2, AY_B,   # class B
+            ifelse(stab_cls .== 3, AY_C,   # class C
+                ifelse(stab_cls .== 4, AY_D,   # class D
+                    ifelse(stab_cls .== 5, AY_Ep,  # class E
+                        AY_F)))))              # class F
 
     az = ifelse(stab_cls .== 1, AZ_A,   # class A
-         ifelse(stab_cls .== 2, AZ_B,   # class B
-         ifelse(stab_cls .== 3, AZ_C,   # class C
-         ifelse(stab_cls .== 4, AZ_D,   # class D
-         ifelse(stab_cls .== 5, AZ_Ep,  # class E
+        ifelse(stab_cls .== 2, AZ_B,   # class B
+            ifelse(stab_cls .== 3, AZ_C,   # class C
+                ifelse(stab_cls .== 4, AZ_D,   # class D
+                    ifelse(stab_cls .== 5, AZ_Ep,  # class E
                         AZ_F)))))       # class F
 
     bz = ifelse(stab_cls .== 1, BZ_A,   # class A
-         ifelse(stab_cls .== 2, BZ_B,   # class B
-         ifelse(stab_cls .== 3, BZ_C,   # class C
-         ifelse(stab_cls .== 4, BZ_D,   # class D
-         ifelse(stab_cls .== 5, BZ_Ep,  # class E
-                       BZ_F)))))        # class F, unit: m⁻¹
+        ifelse(stab_cls .== 2, BZ_B,   # class B
+            ifelse(stab_cls .== 3, BZ_C,   # class C
+                ifelse(stab_cls .== 4, BZ_D,   # class D
+                    ifelse(stab_cls .== 5, BZ_Ep,  # class E
+                        BZ_F)))))        # class F, unit: m⁻¹
 
-        # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # Down‑wind distance x (m) via haversine great‑circle formula
     # ------------------------------------------------------------------
     delta_lon = lon - lon0
@@ -234,7 +234,7 @@ function GaussianPGB()
     # C = 1 / ((2π)^(3/2) σ_h^2 σ_z) * exp(-z_agl^2/(2 σ_z^2))
     # ------------------------------------------------------------------
     C_gl_expr = 1 / ((2*pi)^(3/2) * sigma_h^2 * sigma_z) *
-                   exp(- (z_agl^2) / (2 * sigma_z^2))
+                exp(- (z_agl^2) / (2 * sigma_z^2))
 
     # ------------------------------------------------------------------
     # Equation set
@@ -242,7 +242,7 @@ function GaussianPGB()
     eqs = [
         sigma_h ~ sigma_h_expr,
         sigma_z ~ sigma_z_expr,
-        C_gl ~ C_gl_expr,
+        C_gl ~ C_gl_expr
     ]
 
     System(

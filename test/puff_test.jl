@@ -2,7 +2,7 @@
     using EarthSciMLBase
     using ModelingToolkit
     using ModelingToolkit: t
-    using OrdinaryDiffEq
+    using OrdinaryDiffEqDefault
     using DynamicQuantities
     using Dates
 
@@ -14,10 +14,10 @@
 
     di = DomainInfo(
         starttime, endtime,
-            xrange = -1.1:0.1:1.1,
-            yrange = -1.1:0.1:1.1,
-            levrange = -1:0.1:1
-        )
+        xrange = -1.1:0.1:1.1,
+        yrange = -1.1:0.1:1.1,
+        levrange = -1:0.1:1
+    )
 
     puff = Puff(di)
     puff = mtkcompile(puff)
