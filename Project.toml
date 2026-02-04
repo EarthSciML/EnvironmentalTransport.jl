@@ -4,6 +4,7 @@ version = "0.6.2"
 authors = ["EarthSciML authors and contributors"]
 
 [deps]
+DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 DynamicQuantities = "06fc5a27-2a28-4c7c-a15d-362465fb6821"
 EarthSciMLBase = "e53f1632-a13c-4728-9402-0c66d48804b0"
@@ -11,6 +12,7 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 RuntimeGeneratedFunctions = "7e49a35a-f44a-4d26-94aa-eba1b4ca6b47"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [weakdeps]
 EarthSciData = "a293c155-435f-439d-9c11-a083b6b47337"
@@ -27,10 +29,13 @@ EarthSciData = "0.14"
 EarthSciMLBase = "0.24"
 ModelingToolkit = "10"
 OrdinaryDiffEqDefault = "1"
+OrdinaryDiffEqSSPRK = "1"
+OrdinaryDiffEqTsit5 = "1"
 RuntimeGeneratedFunctions = "0.5.13"
 SciMLBase = "2.90"
+StaticArrays = "1"
 Symbolics = "6"
-TestItemRunner = "1"
+TestItemRunner = "1.1.0"
 julia = "1.10"
 
 [extras]
@@ -39,9 +44,11 @@ Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 DomainSets = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
 EarthSciData = "a293c155-435f-439d-9c11-a083b6b47337"
 OrdinaryDiffEqDefault = "50262376-6c5a-4cf5-baba-aaf4f84d72d7"
+OrdinaryDiffEqSSPRK = "669c94d9-1f4b-4b64-b377-1aa079aa2388"
+OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [targets]
-test = ["Dates", "Distributions", "DomainSets", "EarthSciData", "OrdinaryDiffEqDefault", "Symbolics", "Test", "TestItemRunner"]
+test = ["Dates", "Distributions", "DomainSets", "EarthSciData", "OrdinaryDiffEqDefault", "OrdinaryDiffEqSSPRK", "OrdinaryDiffEqTsit5", "Symbolics", "Test", "TestItemRunner"]

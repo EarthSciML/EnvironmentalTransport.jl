@@ -3,10 +3,11 @@
 ## Overview
 
 This module implements equations for local-scale atmospheric boundary layer meteorology, including:
-- Atmospheric stability classification based on potential temperature
-- Monin-Obukhov similarity theory for the surface layer
-- Logarithmic wind profiles with stability corrections
-- Pasquill stability class estimation
+
+  - Atmospheric stability classification based on potential temperature
+  - Monin-Obukhov similarity theory for the surface layer
+  - Logarithmic wind profiles with stability corrections
+  - Pasquill stability class estimation
 
 These equations are essential for understanding pollutant dispersion in the atmospheric boundary layer, where turbulent mixing is driven by mechanical (wind shear) and thermal (buoyancy) effects.
 
@@ -22,9 +23,9 @@ SurfaceLayerProfile
 
 The implementation consists of three main systems:
 
-1. **`AtmosphericStability`**: Computes potential temperature and vertical stability based on temperature gradients
-2. **`SurfaceLayerProfile`**: Implements Monin-Obukhov similarity theory for wind profiles
-3. **`LocalScaleMeteorology`**: A comprehensive system combining both stability and wind profile calculations
+ 1. **`AtmosphericStability`**: Computes potential temperature and vertical stability based on temperature gradients
+ 2. **`SurfaceLayerProfile`**: Implements Monin-Obukhov similarity theory for wind profiles
+ 3. **`LocalScaleMeteorology`**: A comprehensive system combining both stability and wind profile calculations
 
 ### State Variables
 
@@ -91,13 +92,13 @@ Potential temperature is the temperature an air parcel would have if brought adi
 
 ```@example local_met
 using OrdinaryDiffEqDefault, Plots
-default(size=(700,400))
+default(size = (700, 400))
 
 sys = LocalScaleMeteorology()
 csys = mtkcompile(sys)
 
 # Calculate potential temperature at different pressure levels
-pressures = range(101325, 50000, length=20)  # Pa
+pressures = range(101325, 50000, length = 20)  # Pa
 T_ambient = 288.15 .- 0.0065 .* (1 .- pressures ./ 101325) .* 8500  # Approximate T profile
 
 θ_values = Float64[]
@@ -108,21 +109,21 @@ for (p, T) in zip(pressures, T_ambient)
 end
 
 plot(θ_values, pressures ./ 100,
-    xlabel="Potential Temperature (K)",
-    ylabel="Pressure (hPa)",
-    yflip=true,
-    label="θ",
-    linewidth=2,
-    title="Potential Temperature Profile")
+    xlabel = "Potential Temperature (K)",
+    ylabel = "Pressure (hPa)",
+    yflip = true,
+    label = "θ",
+    linewidth = 2,
+    title = "Potential Temperature Profile")
 ```
 
 ### Atmospheric Stability Classification
 
 Atmospheric stability determines the tendency of vertically displaced air parcels to return to equilibrium or continue moving. The stability is characterized by the potential temperature gradient:
 
-- **Stable** (``\partial\theta/\partial z > 0``): Displaced parcels return to original position
-- **Neutral** (``\partial\theta/\partial z = 0``): Displaced parcels remain at new position
-- **Unstable** (``\partial\theta/\partial z < 0``): Displaced parcels accelerate away
+  - **Stable** (``\partial\theta/\partial z > 0``): Displaced parcels return to original position
+  - **Neutral** (``\partial\theta/\partial z = 0``): Displaced parcels remain at new position
+  - **Unstable** (``\partial\theta/\partial z < 0``): Displaced parcels accelerate away
 
 ```@example local_met
 sys = AtmosphericStability()
@@ -143,7 +144,7 @@ for (label, T_above) in cases
     prob = ODEProblem(csys, Dict(), (0.0, 1.0),
         Dict(csys.T => T_above, csys.T_below => T_surface, csys.Δz => Δz))
     sol = solve(prob)
-    push!(results, (label=label, S=sol[csys.S][end] * 1000))  # K/km
+    push!(results, (label = label, S = sol[csys.S][end] * 1000))  # K/km
 end
 
 DataFrame(results)
@@ -158,16 +159,17 @@ L = -\frac{\rho \hat{c}_p T_0 u_*^3}{\kappa g \bar{q}_z}
 ```
 
 where:
-- ``u_*`` is the friction velocity
-- ``\bar{q}_z`` is the surface sensible heat flux
-- ``\kappa = 0.4`` is the von Karman constant
+
+  - ``u_*`` is the friction velocity
+  - ``\bar{q}_z`` is the surface sensible heat flux
+  - ``\kappa = 0.4`` is the von Karman constant
 
 ```@example local_met
 sys = SurfaceLayerProfile()
 csys = mtkcompile(sys)
 
 # Calculate Monin-Obukhov length for different heat flux conditions
-heat_fluxes = range(-100, 200, length=50)  # W/m²
+heat_fluxes = range(-100, 200, length = 50)  # W/m²
 L_values = Float64[]
 
 for q in heat_fluxes
@@ -183,16 +185,16 @@ for q in heat_fluxes
 end
 
 plot(heat_fluxes, L_values,
-    xlabel="Surface Heat Flux (W/m²)",
-    ylabel="Monin-Obukhov Length L (m)",
-    label="L",
-    linewidth=2,
-    title="Monin-Obukhov Length vs Heat Flux\n(u* = 0.3 m/s)",
-    ylims=(-500, 500))
-hline!([0], linestyle=:dash, color=:gray, label="")
-vline!([0], linestyle=:dash, color=:gray, label="")
+    xlabel = "Surface Heat Flux (W/m²)",
+    ylabel = "Monin-Obukhov Length L (m)",
+    label = "L",
+    linewidth = 2,
+    title = "Monin-Obukhov Length vs Heat Flux\n(u* = 0.3 m/s)",
+    ylims = (-500, 500))
+hline!([0], linestyle = :dash, color = :gray, label = "")
+vline!([0], linestyle = :dash, color = :gray, label = "")
 annotate!([(100, -200, text("Unstable\n(L < 0)", 8)),
-           (-50, 200, text("Stable\n(L > 0)", 8))])
+    (-50, 200, text("Stable\n(L > 0)", 8))])
 ```
 
 ### Businger-Dyer Stability Functions (Eq. 16.75)
@@ -200,36 +202,38 @@ annotate!([(100, -200, text("Unstable\n(L < 0)", 8)),
 The universal functions ``\phi_m(\zeta)`` and ``\phi_h(\zeta)`` describe how momentum and heat transfer deviate from neutral conditions:
 
 **Unstable** (``\zeta < 0``):
+
 ```math
 \phi_m = (1 - 15\zeta)^{-1/4}, \quad \phi_h = (1 - 15\zeta)^{-1/2}
 ```
 
 **Stable** (``\zeta > 0``):
+
 ```math
 \phi_m = \phi_h = 1 + 4.7\zeta
 ```
 
 ```@example local_met
 # Plot stability functions
-ζ_unstable = range(-2, 0, length=50)
-ζ_stable = range(0, 2, length=50)
+ζ_unstable = range(-2, 0, length = 50)
+ζ_stable = range(0, 2, length = 50)
 ζ_all = vcat(ζ_unstable, ζ_stable)
 
-φ_m_unstable = (1 .- 15 .* ζ_unstable).^(-0.25)
+φ_m_unstable = (1 .- 15 .* ζ_unstable) .^ (-0.25)
 φ_m_stable = 1 .+ 4.7 .* ζ_stable
 φ_m_all = vcat(φ_m_unstable, φ_m_stable)
 
-φ_h_unstable = (1 .- 15 .* ζ_unstable).^(-0.5)
+φ_h_unstable = (1 .- 15 .* ζ_unstable) .^ (-0.5)
 φ_h_stable = 1 .+ 4.7 .* ζ_stable
 φ_h_all = vcat(φ_h_unstable, φ_h_stable)
 
-plot(ζ_all, φ_m_all, label="φ_m (momentum)", linewidth=2)
-plot!(ζ_all, φ_h_all, label="φ_h (heat)", linewidth=2)
+plot(ζ_all, φ_m_all, label = "φ_m (momentum)", linewidth = 2)
+plot!(ζ_all, φ_h_all, label = "φ_h (heat)", linewidth = 2)
 xlabel!("ζ = z/L")
 ylabel!("φ")
 title!("Businger-Dyer Stability Functions (Eq. 16.75)")
-hline!([1], linestyle=:dash, color=:gray, label="Neutral")
-vline!([0], linestyle=:dash, color=:gray, label="")
+hline!([1], linestyle = :dash, color = :gray, label = "Neutral")
+vline!([0], linestyle = :dash, color = :gray, label = "")
 ```
 
 ### Logarithmic Wind Profile (Eq. 16.66)
@@ -247,7 +251,7 @@ sys = SurfaceLayerProfile()
 csys = mtkcompile(sys)
 
 # Wind profiles for different stability conditions
-heights = range(1, 50, length=30)  # m
+heights = range(1, 50, length = 30)  # m
 z₀ = 0.1  # m
 u_star = 0.4  # m/s
 
@@ -258,8 +262,9 @@ stabilities = [
     ("Unstable", 100.0)  # Positive flux = upward = unstable
 ]
 
-p = plot(title="Wind Profiles for Different Stability Conditions\n(u* = 0.4 m/s, z₀ = 0.1 m)",
-         xlabel="Wind Speed (m/s)", ylabel="Height (m)")
+p = plot(
+    title = "Wind Profiles for Different Stability Conditions\n(u* = 0.4 m/s, z₀ = 0.1 m)",
+    xlabel = "Wind Speed (m/s)", ylabel = "Height (m)")
 
 for (label, q_z) in stabilities
     u_values = Float64[]
@@ -269,7 +274,7 @@ for (label, q_z) in stabilities
         sol = solve(prob)
         push!(u_values, sol[csys.ū][end])
     end
-    plot!(p, u_values, heights, label=label, linewidth=2)
+    plot!(p, u_values, heights, label = label, linewidth = 2)
 end
 p
 ```
@@ -278,14 +283,14 @@ p
 
 The Pasquill-Gifford stability classification provides a practical way to categorize atmospheric stability based on observable meteorological conditions:
 
-| Class | Description | Conditions |
-|:---:|:---|:---|
-| A | Very unstable | Strong daytime insolation, light winds |
-| B | Moderately unstable | Moderate daytime insolation |
-| C | Slightly unstable | Weak daytime insolation |
-| D | Neutral | Overcast or high winds |
-| E | Slightly stable | Night, partial cloud cover |
-| F | Moderately stable | Night, clear skies, light winds |
+| Class | Description         | Conditions                             |
+|:-----:|:------------------- |:-------------------------------------- |
+| A     | Very unstable       | Strong daytime insolation, light winds |
+| B     | Moderately unstable | Moderate daytime insolation            |
+| C     | Slightly unstable   | Weak daytime insolation                |
+| D     | Neutral             | Overcast or high winds                 |
+| E     | Slightly stable     | Night, partial cloud cover             |
+| F     | Moderately stable   | Night, clear skies, light winds        |
 
 The Golder (1972) correlation relates Pasquill classes to Monin-Obukhov length via:
 
@@ -304,17 +309,18 @@ golder_params = [
     ("F", 0.035, -0.036)
 ]
 
-z0_range = 10 .^ range(-4, 1, length=100)  # m
+z0_range = 10 .^ range(-4, 1, length = 100)  # m
 
-p = plot(title="Monin-Obukhov Length vs Roughness Length\nfor Pasquill Stability Classes (Eq. 16.83)",
-         xlabel="Roughness Length z₀ (m)", ylabel="1/L (m⁻¹)",
-         xscale=:log10, legend=:topright)
+p = plot(
+    title = "Monin-Obukhov Length vs Roughness Length\nfor Pasquill Stability Classes (Eq. 16.83)",
+    xlabel = "Roughness Length z₀ (m)", ylabel = "1/L (m⁻¹)",
+    xscale = :log10, legend = :topright)
 
 for (class, a, b) in golder_params
     L_inv = a .+ b .* log10.(z0_range)
-    plot!(p, z0_range, L_inv, label="Class $class", linewidth=2)
+    plot!(p, z0_range, L_inv, label = "Class $class", linewidth = 2)
 end
-hline!([0], linestyle=:dash, color=:gray, label="Neutral")
+hline!([0], linestyle = :dash, color = :gray, label = "Neutral")
 ylims!(-0.15, 0.1)
 p
 ```
@@ -360,13 +366,13 @@ println("\nInterpretation: Atmosphere is $stability (typical for sunny afternoon
 
 The roughness length ``z_0`` depends on surface characteristics:
 
-| Surface Type | z₀ (m) |
-|:---|:---:|
-| Very smooth (ice, mud flats) | 10⁻⁵ |
-| Snow, smooth sea, level desert | 10⁻³ |
-| Lawn | 10⁻² |
-| Uncut grass | 0.05 |
-| Full-grown root crops | 0.1 |
-| Tree-covered terrain | 1 |
-| Low-density residential | 2 |
-| Central business district | 5-10 |
+| Surface Type                   | z₀ (m) |
+|:------------------------------ |:------:|
+| Very smooth (ice, mud flats)   | 10⁻⁵   |
+| Snow, smooth sea, level desert | 10⁻³   |
+| Lawn                           | 10⁻²   |
+| Uncut grass                    | 0.05   |
+| Full-grown root crops          | 0.1    |
+| Tree-covered terrain           | 1      |
+| Low-density residential        | 2      |
+| Central business district      | 5-10   |
