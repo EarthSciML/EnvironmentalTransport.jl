@@ -272,11 +272,6 @@ Default parameter values correspond to the CH3CCl3 example in Section 22.3.
 From Air Pollution to Climate Change*, 2nd Ed., John Wiley & Sons, Ch. 22, pp. 1018-1022.
 """
 @component function FourCompartmentAtmosphere(; name = :FourCompartmentAtmosphere)
-    # Unit conversion: 1 year = 31557600 s (Julian year)
-    @constants begin
-        yr_to_s = 31557600.0, [description = "Conversion from year to seconds", unit = u"s"]
-    end
-
     @parameters begin
         # Interhemispheric exchange rates (converted from yr^-1 to s^-1)
         k_T_NH_SH = 1.0 / 31557600.0,
