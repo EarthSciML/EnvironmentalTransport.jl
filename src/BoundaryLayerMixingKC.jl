@@ -1,5 +1,5 @@
 export BoundaryLayerMixingKC 
-export BoundaryLayerMixingKCCoupler
+public BoundaryLayerMixingKCCoupler
 
 struct BoundaryLayerMixingKCCoupler
     sys::Any

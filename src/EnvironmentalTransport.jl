@@ -2,7 +2,7 @@ module EnvironmentalTransport
 
 using DocStringExtensions
 using LinearAlgebra
-using SciMLBase: NullParameters
+using OrdinaryDiffEq: NullParameters
 using ModelingToolkit: t, D, get_unit, getdefault, System, @brownians, @variables, @parameters,
                        @constants, Equation, unknowns, ParentScope, get_defaults, @unpack
 using SciMLBase: terminate!
