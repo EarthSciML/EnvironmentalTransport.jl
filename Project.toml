@@ -21,6 +21,7 @@ EarthSciData = "a293c155-435f-439d-9c11-a083b6b47337"
 EarthSciDataExt = "EarthSciData"
 
 [compat]
+DiffEqCallbacks = "4"
 Distributions = "0.25.113"
 DocStringExtensions = "0.9.3"
 DomainSets = "0.7.15"
