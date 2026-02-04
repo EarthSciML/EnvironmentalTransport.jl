@@ -96,6 +96,25 @@ function EarthSciMLBase.get_needed_vars(
     return vcat(windvars)
 end
 
+function EarthSciMLBase.get_needed_vars(
+        ::PBLMixingCallback, csys, mtk_sys, domain::EarthSciMLBase.DomainInfo)
+    found = 0
+    pblvars = []
+    for sys in csys.systems
+        if EarthSciMLBase.get_coupletype(sys) == GEOSFPCoupler
+            found += 1
+            # need PBLH: PBL height (m) and area transform factors
+            push!(pblvars, sys.A1₊PBLH, sys.δxδlon, sys.δyδlat)
+        end
+    end
+    if found == 0
+        error("Could not find a source of PBL data in the coupled system. Valid sources are currently {EarthSciData.GEOSFP}.")
+    elseif found > 1
+        error("Found multiple sources of PBL data in the coupled system. Valid sources are currently {EarthSciData.GEOSFP}")
+    end
+    return vcat(pblvars)
+end
+
 function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, gfp::GEOSFPCoupler)
     s12, gfp = s12.sys, gfp.sys
 

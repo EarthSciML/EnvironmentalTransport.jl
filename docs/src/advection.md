@@ -42,7 +42,7 @@ function emissions(μ_lon, μ_lat, σ)
     dist = MvNormal([datetime2unix(starttime), μ_lon, μ_lat, 1],
         Diagonal(map(abs2, [3600.0*24*3, σ, σ, 1])))
     ODESystem([D(c) ~ pdf(dist, [t/t_unit, lon, lat, lev]) * v_emis],
-        t, name = :emissions, metadata = Dict(:coupletype => EmissionsCoupler))
+        t, name = :emissions, metadata = Dict(CoupleType => EmissionsCoupler))
 end
 function EarthSciMLBase.couple2(e::EmissionsCoupler, g::EarthSciData.GEOSFPCoupler)
     e, g = e.sys, g.sys
@@ -70,7 +70,7 @@ domain = DomainInfo(
     latrange = deg2rad(25):deg2rad(1):deg2rad(53.7),
     levrange = 1:1:15)
 
-geosfp = GEOSFP("0.5x0.625_NA", domain)
+geosfp = GEOSFP("4x5", domain)
 geosfp = EarthSciMLBase.copy_with_change(geosfp, discrete_events = []) # Workaround for bug.
 
 outfile = ("RUNNER_TEMP" ∈ keys(ENV) ? ENV["RUNNER_TEMP"] : tempname()) * "out.nc" # This is just a location to save the output.
