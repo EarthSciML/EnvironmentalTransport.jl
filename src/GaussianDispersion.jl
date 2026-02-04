@@ -81,9 +81,9 @@ C_gl    = sol[sys.GaussianPGB₊C_gl]
 """
 function GaussianPGB()
     @parameters begin
-        lon0 = 0.0, [unit = u"rad",  description = "Source longitude (radians)"]
-        lat0 = 0.0, [unit = u"rad",  description = "Source latitude  (radians)"]
-        R    = 6.371e6, [unit = u"m", description = "Earth mean radius"]
+        lon0 = 0.0, [unit = u"rad", description = "Source longitude (radians)"]
+        lat0 = 0.0, [unit = u"rad", description = "Source latitude  (radians)"]
+        R = 6.371e6, [unit = u"m", description = "Earth mean radius"]
 
         # --- Briggs coefficients ------------------------------------------------
         AY_A = 0.22, [description="A_y for stability class A"]
@@ -124,14 +124,16 @@ function GaussianPGB()
 
         cloudfrac_clear = 0.5, [description="Cloud-fraction threshold for clear skies"]
 
-        inversion_thresh = 0.0, [unit=u"K", description="ΔT (10 m - 2 m) > 0 K indicates surface inversion"]
+        inversion_thresh = 0.0,
+        [unit=u"K", description="ΔT (10 m - 2 m) > 0 K indicates surface inversion"]
 
-        U10M =  3.0,    [unit = u"m/s", description = "10 m wind U component"]
-        V10M =  0.0,    [unit = u"m/s", description = "10 m wind V component"]
-        SWGDN = 700.0,  [unit = u"W/m^2", description = "surface incoming shortwave radiation flux"]
-        CLDTOT = 0.3,   [description = "total cloud fraction"]
-        T2M = 293.15,   [unit = u"K", description = "2 m air temperature"]
-        T10M = 292.65,  [unit = u"K", description = "10 m air temperature"]
+        U10M = 3.0, [unit = u"m/s", description = "10 m wind U component"]
+        V10M = 0.0, [unit = u"m/s", description = "10 m wind V component"]
+        SWGDN = 700.0,
+        [unit = u"W/m^2", description = "surface incoming shortwave radiation flux"]
+        CLDTOT = 0.3, [description = "total cloud fraction"]
+        T2M = 293.15, [unit = u"K", description = "2 m air temperature"]
+        T10M = 292.65, [unit = u"K", description = "10 m air temperature"]
     end
 
     @variables begin
@@ -263,13 +265,12 @@ function GaussianPGB()
             AY_A, AY_B, AY_C, AY_D, AY_Ep, AY_F,
             AZ_A, AZ_B, AZ_C, AZ_D, AZ_Ep, AZ_F,
             BZ_A, BZ_B, BZ_C, BZ_D, BZ_Ep, BZ_F,
-            U10M, V10M, SWGDN, CLDTOT, T2M, T10M,
+            U10M, V10M, SWGDN, CLDTOT, T2M, T10M
         ];
         name = :GaussianPGB,
         metadata = Dict(CoupleType => GaussianPGBCoupler)
     )
 end
-
 
 """
 GaussianKC()
@@ -277,8 +278,8 @@ GaussianKC()
 Returns a `ModelingToolkit.System` that calculates the time evolution of horizontal puff dispersion
 (sigma_x, sigma_y) based on turbulent velocity fluctuations (σu_x, σu_y).
 
-It also computes the ground-level centerline concentration (C_gl) per unit mass assuming a 
-top-hat vertical distribution within the lowest layer. The concentration is evaluated 
+It also computes the ground-level centerline concentration (C_gl) per unit mass assuming a
+top-hat vertical distribution within the lowest layer. The concentration is evaluated
 only when the puff is within the surface layer (z_agl ≤ Δz); otherwise, it is set to zero.
 
 Note: Must be coupled with `BoundaryLayerMixingKC`.
@@ -329,17 +330,23 @@ C_gl    = sol[sys.GaussianKC₊C_gl]
 """
 function GaussianKC()
     @parameters begin
-        Δz        = 50.0,           [unit = u"m",           description = "Grid-cell height"]
-        C_zero    = 0.0,            [unit = u"m^-3",        description = "Zero concentration"]
+        Δz = 50.0, [unit = u"m", description = "Grid-cell height"]
+        C_zero = 0.0, [unit = u"m^-3", description = "Zero concentration"]
     end
 
     @variables begin
-        σu_x(t),    [unit = u"m/s",  description = "Turbulent horizontal velocity std. dev in x", input = true]
-        σu_y(t),    [unit = u"m/s",  description = "Turbulent horizontal velocity std. dev in y", input = true]
-        sigma_x(t), [unit = u"m",    description = "Horizontal dispersion std dev in x"]
-        sigma_y(t), [unit = u"m",    description = "Horizontal dispersion std dev in y"]
-        z_agl(t),   [unit = u"m",    description = "Height AGL"]
-        C_gl(t),    [unit = u"m^-3", description = "Ground-level concentration at puff center for unit mass (Gaussian)"]
+        σu_x(t),
+        [
+            unit = u"m/s", description = "Turbulent horizontal velocity std. dev in x", input = true]
+        σu_y(t),
+        [
+            unit = u"m/s", description = "Turbulent horizontal velocity std. dev in y", input = true]
+        sigma_x(t), [unit = u"m", description = "Horizontal dispersion std dev in x"]
+        sigma_y(t), [unit = u"m", description = "Horizontal dispersion std dev in y"]
+        z_agl(t), [unit = u"m", description = "Height AGL"]
+        C_gl(t),
+        [unit = u"m^-3",
+            description = "Ground-level concentration at puff center for unit mass (Gaussian)"]
     end
 
     Dt = Differential(t)
@@ -352,14 +359,14 @@ function GaussianKC()
     eqs = [
         Dt(sigma_x) ~ Dt_sigma_x_expr,
         Dt(sigma_y) ~ Dt_sigma_y_expr,
-        C_gl        ~ ifelse(z_agl <= Δz, C_expr, C_zero),
+        C_gl ~ ifelse(z_agl <= Δz, C_expr, C_zero)
     ]
 
     System(
         eqs, t,
         [σu_x, σu_y, sigma_x, sigma_y, z_agl, C_gl],
-        [Δz, C_zero,];
+        [Δz, C_zero];
         name = :GaussianKC,
-        metadata = Dict(CoupleType => GaussianKCCoupler),
+        metadata = Dict(CoupleType => GaussianKCCoupler)
     )
 end

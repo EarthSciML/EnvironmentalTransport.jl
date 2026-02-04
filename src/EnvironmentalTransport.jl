@@ -2,7 +2,8 @@ module EnvironmentalTransport
 
 using DocStringExtensions
 using LinearAlgebra
-using ModelingToolkit: t, D, get_unit, getdefault, System, @brownians, @variables, @parameters,
+using ModelingToolkit: t, D, get_unit, getdefault, System, @brownians, @variables,
+                       @parameters,
                        @constants, Equation, unknowns, ParentScope, get_defaults, @unpack
 using SciMLBase: terminate!, NullParameters
 using DynamicQuantities: @u_str
