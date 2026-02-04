@@ -211,11 +211,11 @@ s_to_hr = 1 / 3600.0
 sulfur_results = DataFrame(
     :Quantity => ["τ_SO2", "τ_SO4", "b", "τ_S", "c"],
     :Calculated => [
-        round(sol[sys_c.τ_SO2] * s_to_hr, digits=1),
-        round(sol[sys_c.τ_SO4] * s_to_hr, digits=1),
-        round(sol[sys_c.b], digits=3),
-        round(sol[sys_c.τ_S] * s_to_hr, digits=1),
-        round(sol[sys_c.c], digits=3)
+        round(sol[sys_c.τ_SO2] * s_to_hr, digits = 1),
+        round(sol[sys_c.τ_SO4] * s_to_hr, digits = 1),
+        round(sol[sys_c.b], digits = 3),
+        round(sol[sys_c.τ_S] * s_to_hr, digits = 1),
+        round(sol[sys_c.c], digits = 3)
     ],
     :Reference => ["~25.5 hr", "~66.7 hr", "~0.319", "~46.8 hr", "~0.545"],
     :Description => [
@@ -394,13 +394,14 @@ Q_S_NH_kg = sol[sys_c.Q_S_NH]
 Q_S_SH_kg = sol[sys_c.Q_S_SH]
 
 ch3ccl3_results = DataFrame(
-    :Compartment => ["NH Troposphere", "SH Troposphere", "NH Stratosphere", "SH Stratosphere", "Atmospheric Lifetime"],
+    :Compartment => ["NH Troposphere", "SH Troposphere", "NH Stratosphere",
+        "SH Stratosphere", "Atmospheric Lifetime"],
     :Value => [
-        string(round(Q_T_NH_kg / 1e9, digits=2), " Tg"),
-        string(round(Q_T_SH_kg / 1e9, digits=2), " Tg"),
-        string(round(Q_S_NH_kg / 1e9, digits=2), " Tg"),
-        string(round(Q_S_SH_kg / 1e9, digits=2), " Tg"),
-        string(round(τ_atm_years, digits=2), " years")
+        string(round(Q_T_NH_kg / 1e9, digits = 2), " Tg"),
+        string(round(Q_T_SH_kg / 1e9, digits = 2), " Tg"),
+        string(round(Q_S_NH_kg / 1e9, digits = 2), " Tg"),
+        string(round(Q_S_SH_kg / 1e9, digits = 2), " Tg"),
+        string(round(τ_atm_years, digits = 2), " years")
     ],
     :Description => [
         "Steady-state burden in NH troposphere",
