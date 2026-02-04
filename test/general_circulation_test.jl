@@ -8,11 +8,11 @@
 end
 
 @testitem "GeneralCirculation - Structural Verification" setup=[GeneralCirculationSetup] tags=[:general_circulation] begin
-    sys = GeneralCirculation()
+    sys=GeneralCirculation()
 
     # Check that the system has the expected variables
-    vars = unknowns(sys)
-    var_names = Symbol.(vars)
+    vars=unknowns(sys)
+    var_names=Symbol.(vars)
 
     @test Symbol("f(t)") in var_names
     @test Symbol("v_tan(t)") in var_names
@@ -22,7 +22,7 @@ end
     @test Symbol("dv_g_dz(t)") in var_names
 
     # Check that we have 6 equations (one for each variable)
-    eqs = equations(sys)
+    eqs=equations(sys)
     @test length(eqs) == 6
 end
 
@@ -214,15 +214,15 @@ end
 end
 
 @testitem "GeneralCirculation - Units Consistency" setup=[GeneralCirculationSetup] tags=[:general_circulation] begin
-    sys = GeneralCirculation()
+    sys=GeneralCirculation()
 
     # Check that variables have correct units
-    vars = unknowns(sys)
+    vars=unknowns(sys)
 
     for v in vars
-        unit = ModelingToolkit.get_unit(v)
-        name = Symbol(v)
-        if name == Symbol("f(t)")
+        unit=ModelingToolkit.get_unit(v)
+        name=Symbol(v)
+        if name==Symbol("f(t)")
             @test unit == u"s^-1"
         elseif name in [Symbol("v_tan(t)"), Symbol("u_g(t)"), Symbol("v_g(t)")]
             @test unit == u"m/s"
