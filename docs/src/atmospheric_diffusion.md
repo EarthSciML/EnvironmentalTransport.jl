@@ -43,9 +43,9 @@ DataFrame(
 
 ```@example atmdiff
 params = parameters(sys)
-# Filter out internal threshold parameters
 DataFrame(
     :Name => [string(Symbolics.tosymbol(p, escape = false)) for p in params],
+    :Units => [string(ModelingToolkit.get_unit(p)) for p in params],
     :Description => [ModelingToolkit.getdescription(p) for p in params]
 )
 ```
@@ -62,11 +62,57 @@ The following plots reproduce key figures from Chapter 18, Section 18.12 of
 Seinfeld & Pandis (2006), showing the vertical profiles of eddy diffusivity
 under different atmospheric stability conditions.
 
+### Figure 18.6: Normalized Unstable K_zz Profile
+
+This plot reproduces Figure 18.6 from Seinfeld & Pandis (2006), showing the
+dimensionless vertical eddy diffusivity ``K_{zz}/(w_* z_i)`` as a function of
+normalized height ``z/z_i`` under unstable (convective) conditions. The profile
+is derived from the numerical turbulence model of Lamb & Duran (1977), as given
+in Eq. 18.121.
+
+```@example atmdiff
+using SciMLBase
+using Plots
+
+sys_nns = ModelingToolkit.toggle_namespacing(sys, false)
+ssys = mtkcompile(sys; inputs = [sys_nns.z])
+prob = NonlinearProblem(ssys, Dict(ssys.z => 100.0))
+
+# Parameters for normalization
+κ = 0.4
+u_star = 0.3
+z_i = 1000.0
+L_MO = -100.0
+w_star = u_star * (-z_i / (κ * L_MO))^(1 / 3)
+wzi = w_star * z_i  # Normalization factor
+
+# Height range (focus on z/z_i from 0 to 1.2)
+z_vals = 1.0:5.0:1200.0
+
+# Compute normalized K_zz under unstable conditions
+Kzz_norm = Float64[]
+for z in z_vals
+    sol = solve(remake(prob; p = Dict(ssys.z => z, ssys.L_MO => L_MO)))
+    push!(Kzz_norm, sol[ssys.K_zz] / wzi)
+end
+
+plot(Kzz_norm, z_vals ./ z_i,
+    label = "Eq. 18.121 (Lamb & Duran 1977)",
+    linewidth = 2,
+    xlabel = "K_zz / (w_* z_i)",
+    ylabel = "z / z_i",
+    title = "Figure 18.6: Unstable K_zz Profile",
+    xlims = (0, 0.25),
+    ylims = (0, 1.2),
+    legend = :topright,
+    size = (600, 400))
+hline!([1.0], color = :gray, linestyle = :dash, label = "z = z_i", alpha = 0.5)
+```
+
 ### Vertical Eddy Diffusivity Profiles
 
-This plot shows the normalized vertical eddy diffusivity ``K_{zz}`` as a function
-of normalized height ``z/z_i`` for unstable, neutral, and stable atmospheric conditions,
-corresponding to Figures 18.12 and 18.13 in the textbook.
+This plot shows the vertical eddy diffusivity ``K_{zz}`` (in dimensional units) as a function
+of normalized height ``z/z_i`` for unstable, neutral, and stable atmospheric conditions.
 
 ```@example atmdiff
 using SciMLBase

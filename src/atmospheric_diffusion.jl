@@ -32,14 +32,16 @@ to Climate Change, 2nd Edition, John Wiley & Sons, 2006, Chapter 18, Section 18.
         # Physical constants
         κ = 0.4, [description = "von Karman constant (dimensionless)", unit = u"1"]
         # Zero diffusivity for above-BL fallback (needs units for ifelse branches)
-        Kzz_zero = 0.0, [unit = u"m^2/s", description = "Zero diffusivity for above-BL fallback"]
+        Kzz_zero = 0.0,
+        [unit = u"m^2/s", description = "Zero diffusivity for above-BL fallback"]
     end
 
     @parameters begin
         # Wind profile parameters (Eq. 18.118)
         u_r = 5.0, [unit = u"m/s", description = "Reference wind speed"]
         z_r = 10.0, [unit = u"m", description = "Reference height for wind profile"]
-        p_wind = 0.15, [description = "Power-law exponent for wind profile (dimensionless)", unit = u"1"]
+        p_wind = 0.15,
+        [description = "Power-law exponent for wind profile (dimensionless)", unit = u"1"]
 
         # Boundary layer parameters
         z_i = 1000.0, [unit = u"m", description = "Mixed-layer (inversion) height"]
