@@ -2,15 +2,16 @@ module EarthSciDataExt
 
 using DocStringExtensions
 import EarthSciMLBase
-using EarthSciMLBase: param_to_var, ConnectorSystem, CoupledSystem, get_coupltype, operator_compose
+using EarthSciMLBase: param_to_var, ConnectorSystem, CoupledSystem, get_coupltype,
+                      operator_compose
 using EarthSciData: GEOSFPCoupler, WRFCoupler, Ap, Bp
 using EnvironmentalTransport: PuffCoupler, GaussianPGBCoupler, GaussianKCCoupler,
-    BoundaryLayerMixingKCCoupler, AdvectionOperator, Sofiev2012PlumeRiseCoupler
+                              BoundaryLayerMixingKCCoupler, AdvectionOperator,
+                              Sofiev2012PlumeRiseCoupler
 using ModelingToolkit: ParentScope, get_defaults, @unpack
 using ModelingToolkit: t
 using ModelingToolkit: @parameters, @variables, @constants
 using DynamicQuantities: @u_str
-
 
 function EarthSciMLBase.couple2(p::PuffCoupler, g::GEOSFPCoupler)
     p, g = p.sys, g.sys
@@ -32,21 +33,25 @@ end
 
 function EarthSciMLBase.couple2(blm::BoundaryLayerMixingKCCoupler, g::GEOSFPCoupler)
     t, m = blm.sys, g.sys
-    t = param_to_var(t, :PBLH, :USTAR, :HFLUX, :EFLUX, :PS, :T2M, :QV2M, :z_agl, :z2lev, :x_trans, :y_trans)
-    
-    ConnectorSystem([
-        t.PBLH   ~ m.A1₊PBLH,
-        t.USTAR  ~ m.A1₊USTAR,
-        t.HFLUX  ~ m.A1₊HFLUX,
-        t.EFLUX  ~ m.A1₊EFLUX,
-        t.PS     ~ m.I3₊PS,
-        t.T2M    ~ m.A1₊T2M,
-        t.QV2M   ~ m.A1₊QV2M,
-        t.x_trans ~ 1 / m.δxδlon,
-        t.y_trans ~ 1 / m.δyδlat,
-        t.z_agl ~ m.Z_agl,
-        t.z2lev ~ 1 / m.δZδlev
-    ], t, m)
+    t = param_to_var(t, :PBLH, :USTAR, :HFLUX, :EFLUX, :PS, :T2M,
+        :QV2M, :z_agl, :z2lev, :x_trans, :y_trans)
+
+    ConnectorSystem(
+        [
+            t.PBLH ~ m.A1₊PBLH,
+            t.USTAR ~ m.A1₊USTAR,
+            t.HFLUX ~ m.A1₊HFLUX,
+            t.EFLUX ~ m.A1₊EFLUX,
+            t.PS ~ m.I3₊PS,
+            t.T2M ~ m.A1₊T2M,
+            t.QV2M ~ m.A1₊QV2M,
+            t.x_trans ~ 1 / m.δxδlon,
+            t.y_trans ~ 1 / m.δyδlat,
+            t.z_agl ~ m.Z_agl,
+            t.z2lev ~ 1 / m.δZδlev
+        ],
+        t,
+        m)
 end
 
 function EarthSciMLBase.couple2(p::PuffCoupler, b::BoundaryLayerMixingKCCoupler)
@@ -54,7 +59,6 @@ function EarthSciMLBase.couple2(p::PuffCoupler, b::BoundaryLayerMixingKCCoupler)
     sys_b = b.sys
     operator_compose(sys_p, sys_b)
 end
-
 
 function EarthSciMLBase.couple2(p::PuffCoupler, w::WRFCoupler)
     p, w = p.sys, w.sys
@@ -64,17 +68,20 @@ function EarthSciMLBase.couple2(p::PuffCoupler, w::WRFCoupler)
     @constants c1 = 1.0 [unit = u"kg/m^2/s^2"]
     @constants c2 = 1.0 [unit = u"m^2/kg*s^2"]
 
-    ConnectorSystem([
-        w.lon ~ p.lon,
-        w.lat ~ p.lat,
-        w.lev ~ clamp(p.lev, 1, 42),
-        p.v_lon ~ w.U,
-        p.v_lat ~ w.V,
-        p.v_lev ~ w.W * c1,
-        p.x_trans ~ 1 / w.δxδlon,
-        p.y_trans ~ 1 / w.δyδlat,
-        p.lev_trans ~ (1 / w.δzδlev) * c2
-    ], p, w)
+    ConnectorSystem(
+        [
+            w.lon ~ p.lon,
+            w.lat ~ p.lat,
+            w.lev ~ clamp(p.lev, 1, 42),
+            p.v_lon ~ w.U,
+            p.v_lat ~ w.V,
+            p.v_lev ~ w.W * c1,
+            p.x_trans ~ 1 / w.δxδlon,
+            p.y_trans ~ 1 / w.δyδlat,
+            p.lev_trans ~ (1 / w.δzδlev) * c2
+        ],
+        p,
+        w)
 end
 
 function EarthSciMLBase.get_needed_vars(
@@ -199,34 +206,33 @@ function EarthSciMLBase.couple2(gd::GaussianPGBCoupler, g::GEOSFPCoupler)
     d, m = gd.sys, g.sys
     d = param_to_var(d, :U10M, :V10M, :SWGDN, :CLDTOT, :T2M, :T10M)
 
-    ConnectorSystem([
-        d.lat ~ m.lat
-        d.lon ~ m.lon
-        d.U10M ~ m.A1₊U10M
-        d.V10M  ~ m.A1₊V10M
-        d.SWGDN ~ m.A1₊SWGDN
-        d.CLDTOT ~ m.A1₊CLDTOT
-        d.T2M   ~ m.A1₊T2M
-        d.T10M  ~ m.A1₊T10M
-        d.z_agl ~ m.Z_agl
-    ], d, m)
+    ConnectorSystem(
+        [d.lat ~ m.lat
+         d.lon ~ m.lon
+         d.U10M ~ m.A1₊U10M
+         d.V10M ~ m.A1₊V10M
+         d.SWGDN ~ m.A1₊SWGDN
+         d.CLDTOT ~ m.A1₊CLDTOT
+         d.T2M ~ m.A1₊T2M
+         d.T10M ~ m.A1₊T10M
+         d.z_agl ~ m.Z_agl],
+        d,
+        m)
 end
 
 function EarthSciMLBase.couple2(gk::GaussianKCCoupler, g::GEOSFPCoupler)
     d, m = gk.sys, g.sys
 
     ConnectorSystem([
-        d.z_agl ~ m.Z_agl
-    ], d, m)
+            d.z_agl ~ m.Z_agl
+        ], d, m)
 end
 
 function EarthSciMLBase.couple2(b::BoundaryLayerMixingKCCoupler, gk::GaussianKCCoupler)
     b, gk = b.sys, gk.sys
 
-    ConnectorSystem([
-        gk.σu_x ~ b.σu
-        gk.σu_y ~ b.σv
-    ], b, gk)
+    ConnectorSystem([gk.σu_x ~ b.σu
+                     gk.σu_y ~ b.σv], b, gk)
 end
 
 end

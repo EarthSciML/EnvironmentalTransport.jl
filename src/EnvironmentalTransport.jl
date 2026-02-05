@@ -2,10 +2,10 @@ module EnvironmentalTransport
 
 using DocStringExtensions
 using LinearAlgebra
-using OrdinaryDiffEq: NullParameters
-using ModelingToolkit: t, D, get_unit, getdefault, System, @brownians, @variables, @parameters,
+using ModelingToolkit: t, D, get_unit, getdefault, System, @brownians, @variables,
+                       @parameters,
                        @constants, Equation, unknowns, ParentScope, get_defaults, @unpack
-using SciMLBase: terminate!
+using SciMLBase: terminate!, NullParameters
 using DynamicQuantities: @u_str
 using EarthSciMLBase
 import RuntimeGeneratedFunctions
