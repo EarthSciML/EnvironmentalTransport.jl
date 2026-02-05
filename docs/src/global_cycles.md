@@ -39,13 +39,13 @@ The key equations are:
 
 Default parameter values are from Rodhe (1978):
 
-| Parameter | Value | Description |
-|-----------|-------|-------------|
-| τ\_SO2\_d | 60 hr | SO2 dry deposition residence time |
-| τ\_SO2\_w | 100 hr | SO2 wet deposition residence time |
-| τ\_SO2\_c | 80 hr | SO2 chemical conversion residence time |
-| τ\_SO4\_d | 400 hr | SO4 dry deposition residence time |
-| τ\_SO4\_w | 80 hr | SO4 wet deposition residence time |
+| Parameter | Value  | Description                            |
+|:--------- |:------ |:-------------------------------------- |
+| τ\_SO2\_d | 60 hr  | SO2 dry deposition residence time      |
+| τ\_SO2\_w | 100 hr | SO2 wet deposition residence time      |
+| τ\_SO2\_c | 80 hr  | SO2 chemical conversion residence time |
+| τ\_SO4\_d | 400 hr | SO4 dry deposition residence time      |
+| τ\_SO4\_w | 80 hr  | SO4 wet deposition residence time      |
 
 #### State Variables
 
@@ -92,29 +92,29 @@ The carbon cycle model implements the six-compartment model from Table 22.1, bas
 
 **Transfer coefficients** from Table 22.1 (Schmitz, 2002):
 
-| Coefficient | Value (yr⁻¹) | Description |
-|-------------|-------------|-------------|
-| k₁₂ | 0.0931 | Atmosphere → warm ocean |
-| k₁₃ | 0.0311 | Atmosphere → cool ocean |
-| k₂₃ | 0.0781 | Warm ocean → cool ocean |
-| k₂₄ | 0.0164 | Warm ocean → deep ocean |
-| k₃₄ | 0.714 | Cool ocean → deep ocean |
-| k₄₂ | 0.00189 | Deep ocean → warm ocean |
-| k₄₃ | 0.00114 | Deep ocean → cool ocean |
-| k₅₁ | 0.0862 | Biota → atmosphere |
-| k₅₆ | 0.0862 | Biota → soils/detritus |
-| k₆₁ | 0.0333 | Soils/detritus → atmosphere |
+| Coefficient | Value (yr⁻¹) | Description                 |
+|:----------- |:------------ |:--------------------------- |
+| k₁₂         | 0.0931       | Atmosphere → warm ocean     |
+| k₁₃         | 0.0311       | Atmosphere → cool ocean     |
+| k₂₃         | 0.0781       | Warm ocean → cool ocean     |
+| k₂₄         | 0.0164       | Warm ocean → deep ocean     |
+| k₃₄         | 0.714        | Cool ocean → deep ocean     |
+| k₄₂         | 0.00189      | Deep ocean → warm ocean     |
+| k₄₃         | 0.00114      | Deep ocean → cool ocean     |
+| k₅₁         | 0.0862       | Biota → atmosphere          |
+| k₅₆         | 0.0862       | Biota → soils/detritus      |
+| k₆₁         | 0.0333       | Soils/detritus → atmosphere |
 
 **Nonlinear parameters** from Table 22.1:
 
-| Parameter | Value | Description |
-|-----------|-------|-------------|
-| β₂ | 9.4 | Warm ocean carbonate buffer exponent |
-| β₃ | 10.2 | Cool ocean carbonate buffer exponent |
-| γ | 62 Pg C | CO2 uptake threshold for biota |
-| Γ | 198 Pg C | CO2 saturation parameter for biota |
-| a\_d | 0.230 | Deforestation land-use change fraction |
-| a\_r | 1.0 | Reforestation land-use change fraction |
+| Parameter | Value    | Description                            |
+|:--------- |:-------- |:-------------------------------------- |
+| β₂        | 9.4      | Warm ocean carbonate buffer exponent   |
+| β₃        | 10.2     | Cool ocean carbonate buffer exponent   |
+| γ         | 62 Pg C  | CO2 uptake threshold for biota         |
+| Γ         | 198 Pg C | CO2 saturation parameter for biota     |
+| a\_d      | 0.230    | Deforestation land-use change fraction |
+| a\_r      | 1.0      | Reforestation land-use change fraction |
 
 Key features:
 
