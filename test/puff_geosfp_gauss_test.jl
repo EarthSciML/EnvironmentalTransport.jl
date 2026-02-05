@@ -45,7 +45,7 @@
         sol = solve(prob, Tsit5())
 
         C_gl_val = sol[sys.GaussianPGB₊C_gl][end]
-        C_gl_want = 8.23e-11
+        C_gl_want = 6.40e-11
 
         @test isapprox(C_gl_val, C_gl_want; rtol = 1e-2)
     end

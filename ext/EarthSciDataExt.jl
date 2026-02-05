@@ -269,40 +269,13 @@ function EarthSciMLBase.couple2(gd::GaussianPGBCoupler, g::GEOSFPCoupler)
         m)
 end
 
-function EarthSciMLBase.couple2(gk::GaussianKCCoupler, g::GEOSFPCoupler)
-    d, m = gk.sys, g.sys
-
-    # Compute Z_agl from GEOSFP interpolators (hypsometric equation)
-    @constants _Rd_kc = 287.05 [
-        unit = u"J/(kg*K)", description = "Specific gas constant for dry air"]
-    @constants _g_kc = 9.80665 [unit = u"m/s^2", description = "Gravitational acceleration"]
-    @constants _Pu_kc = 1.0 [unit = u"Pa", description = "Pressure unit"]
-    τ = ParentScope(m.t_ref)
-    λ = ParentScope(m.lon)
-    φ = ParentScope(m.lat)
-    ℓ = ParentScope(m.lev)
-    T_itp = ParentScope(m.I3₊T_itp)
-    QV_itp = ParentScope(m.I3₊QV_itp)
-    PS_itp = ParentScope(m.I3₊PS_itp)
-    T2M_itp = ParentScope(m.A1₊T2M_itp)
-    QV2M_itp = ParentScope(m.A1₊QV2M_itp)
-    Tv = T_itp(τ + t, λ, φ, ℓ) * (1 + 0.61 * QV_itp(τ + t, λ, φ, ℓ))
-    Tv2 = T2M_itp(τ + t, λ, φ) * (1 + 0.61 * QV2M_itp(τ + t, λ, φ))
-    Tv̄ = 0.5 * (Tv + Tv2)
-    PS_v = PS_itp(τ + t, λ, φ)
-    Pmid = _Pu_kc * Ap(ℓ + 0.5) + Bp(ℓ + 0.5) * PS_v
-    Z_agl_expr = (_Rd_kc * Tv̄ / _g_kc) * log(PS_v / Pmid)
-
-    ConnectorSystem([
-            d.z_agl ~ Z_agl_expr
-        ], d, m)
-end
-
 function EarthSciMLBase.couple2(b::BoundaryLayerMixingKCCoupler, gk::GaussianKCCoupler)
     b, gk = b.sys, gk.sys
 
+    # z_agl is provided from BLM (which gets it from GEOSFP via param_to_var)
     ConnectorSystem([gk.σu_x ~ b.σu
-                     gk.σu_y ~ b.σv], b, gk)
+                     gk.σu_y ~ b.σv
+                     gk.z_agl ~ b.z_agl], b, gk)
 end
 
 end
