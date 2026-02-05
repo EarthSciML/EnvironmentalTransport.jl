@@ -857,3 +857,180 @@ end
     @test ε_key !== nothing
     @test isapprox(const_names[collect(keys(const_names))[ε_key]], 0.1, rtol = 0.01)
 end
+
+# =============================================================================
+# Additional Coverage Tests
+# =============================================================================
+
+@testitem "NonlocalABL stable conditions" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    # In stable conditions (L > 0, wθᵥ₀ < 0), w_star = 0 and γc = 0
+    nl=HoltslagBovilleNonlocalABL()
+    csys=mtkcompile(nl)
+
+    prob=ODEProblem(csys,
+        Dict(
+            csys.z=>500.0,
+            csys.h=>1000.0,
+            csys.u_star=>0.3,
+            csys.wθᵥ₀=>-0.05,
+            csys.wC₀=>1e-5,
+            csys.θᵥ₀=>300.0,
+            csys.L=>100.0
+        ),
+        (0.0, 1.0))
+    sol=solve(prob)
+
+    # w_star should be zero in stable conditions
+    @test isapprox(sol[csys.w_star][end], 0.0, atol = 1e-10)
+
+    # γc should be zero in stable conditions
+    @test isapprox(sol[csys.γc][end], 0.0, atol = 1e-10)
+
+    # Kc should still be positive (diffusion still occurs)
+    @test sol[csys.Kc][end] > 0
+
+    # In stable conditions with z/h = 0.5 > ε, wₘ = wₘ_outer = (u*³ + 0)^(1/3) = u*
+    @test isapprox(sol[csys.wₘ_outer][end], 0.3, rtol = 0.01)
+    @test isapprox(sol[csys.wₘ][end], sol[csys.wₘ_outer][end], rtol = 0.01)
+
+    # Stable φₘ and φₕ: ζ_ε = 0.1*1000/100 = 1.0 → φ = 1 + 5*1.0 = 6.0
+    @test isapprox(sol[csys.φₘ][end], 6.0, rtol = 0.01)
+    @test isapprox(sol[csys.φₕ][end], 6.0, rtol = 0.01)
+end
+
+@testitem "NonlocalABL surface layer wₜ Eq. A1" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    # In the surface layer (z/h ≤ 0.1), wₜ = u*/φₕ(z/L) (Eq. A1)
+    nl=HoltslagBovilleNonlocalABL()
+    csys=mtkcompile(nl)
+
+    # z = 50, h = 1000 → η = 0.05 < 0.1 (surface layer)
+    # L = -200 → ζ = 50/(-200) = -0.25
+    # φₕ_local = (1 - 15*(-0.25))^(-1/2) = (4.75)^(-0.5)
+    # wₜ = 0.3 / φₕ_local
+    prob=ODEProblem(csys,
+        Dict(
+            csys.z=>50.0,
+            csys.h=>1000.0,
+            csys.u_star=>0.3,
+            csys.wθᵥ₀=>0.1,
+            csys.wC₀=>1e-5,
+            csys.θᵥ₀=>300.0,
+            csys.L=>-200.0
+        ),
+        (0.0, 1.0))
+    sol=solve(prob)
+
+    φₕ_local_val = sol[csys.φₕ_local][end]
+    wₜ_expected = 0.3 / φₕ_local_val
+    @test isapprox(sol[csys.wₜ][end], wₜ_expected, rtol = 0.01)
+end
+
+@testitem "NonlocalABL outer layer wₜ Eq. A10" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    # In the outer layer (z/h > 0.1), wₜ = wₘ/Pr (Eq. A10)
+    nl=HoltslagBovilleNonlocalABL()
+    csys=mtkcompile(nl)
+
+    # z = 500, h = 1000 → η = 0.5 > 0.1 (outer layer)
+    prob=ODEProblem(csys,
+        Dict(
+            csys.z=>500.0,
+            csys.h=>1000.0,
+            csys.u_star=>0.3,
+            csys.wθᵥ₀=>0.1,
+            csys.wC₀=>1e-5,
+            csys.θᵥ₀=>300.0,
+            csys.L=>-100.0
+        ),
+        (0.0, 1.0))
+    sol=solve(prob)
+
+    wₘ_val = sol[csys.wₘ][end]
+    Pr_val = sol[csys.Pr][end]
+    wₜ_expected = wₘ_val / Pr_val
+    @test isapprox(sol[csys.wₜ][end], wₜ_expected, rtol = 1e-6)
+end
+
+@testitem "SurfaceFlux unstable stability function numerical Eq. 2.9-2.10" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    # Verify fₘ and fₕ numerical values for a specific unstable case
+    sf=HoltslagBovilleSurfaceFlux()
+    csys=mtkcompile(sf)
+
+    prob=ODEProblem(csys,
+        Dict(
+            csys.θᵥ₀=>305.0,
+            csys.θᵥ₁=>300.0,
+            csys.θ₀=>305.0,
+            csys.θ₁=>300.0,
+            csys.u₁=>5.0,
+            csys.v₁=>0.0,
+            csys.z₁=>10.0,
+            csys.z₀ₘ=>0.1
+        ),
+        (0.0, 1.0))
+    sol=solve(prob)
+
+    # Compute expected values manually
+    V₁ = sqrt(25.0 + 1.0)  # V_min_sq = 1.0
+    z_ratio = (10.0 + 0.1) / 0.1
+    Cₙ = 0.4^2 / (log(z_ratio))^2
+    Ri₀ = 9.81 * 10.0 * (300.0 - 305.0) / (300.0 * V₁^2)
+
+    # Eq. 2.9: fₘ = 1 - 10Ri₀ / (1 + 75·Cₙ·sqrt(z_ratio·|Ri₀|))
+    fₘ_expected = 1 - 10 * Ri₀ / (1 + 75 * Cₙ * sqrt(z_ratio * abs(Ri₀)))
+    # Eq. 2.10: fₕ = 1 - 15Ri₀ / (1 + 75·Cₙ·sqrt(z_ratio·|Ri₀|))
+    fₕ_expected = 1 - 15 * Ri₀ / (1 + 75 * Cₙ * sqrt(z_ratio * abs(Ri₀)))
+
+    @test isapprox(sol[csys.fₘ][end], fₘ_expected, rtol = 1e-6)
+    @test isapprox(sol[csys.fₕ][end], fₕ_expected, rtol = 1e-6)
+end
+
+@testitem "SurfaceFlux stable stability function numerical Eq. 2.11" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    # Verify fₘ = fₕ = 1/(1 + 10Ri₀(1 + 8Ri₀)) for stable case
+    sf=HoltslagBovilleSurfaceFlux()
+    csys=mtkcompile(sf)
+
+    prob=ODEProblem(csys,
+        Dict(
+            csys.θᵥ₀=>295.0,
+            csys.θᵥ₁=>300.0,
+            csys.θ₀=>295.0,
+            csys.θ₁=>300.0,
+            csys.u₁=>5.0,
+            csys.v₁=>0.0,
+            csys.z₁=>10.0,
+            csys.z₀ₘ=>0.1
+        ),
+        (0.0, 1.0))
+    sol=solve(prob)
+
+    Ri₀ = sol[csys.Ri₀][end]
+    f_expected = 1 / (1 + 10 * Ri₀ * (1 + 8 * Ri₀))
+    @test isapprox(sol[csys.fₘ][end], f_expected, rtol = 1e-6)
+    @test isapprox(sol[csys.fₕ][end], f_expected, rtol = 1e-6)
+end
+
+@testitem "LocalDiffusion Richardson number neutral Eq. 3.5" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    # When ∂θᵥ/∂z ≈ 0, Ri ≈ 0, Fc ≈ 1 (neutral)
+    ld=HoltslagBovilleLocalDiffusion()
+    csys=mtkcompile(ld)
+
+    prob=ODEProblem(csys,
+        Dict(
+            csys.z=>500.0,
+            csys.θᵥ=>300.0,
+            csys.∂θᵥ_∂z=>0.0,
+            csys.∂u_∂z=>0.01,
+            csys.∂v_∂z=>0.0
+        ),
+        (0.0, 1.0))
+    sol=solve(prob)
+
+    @test isapprox(sol[csys.Ri][end], 0.0, atol = 1e-6)
+    # Neutral: stable branch with Ri=0 gives Fc = 1/(1+0) = 1
+    @test isapprox(sol[csys.Fc][end], 1.0, rtol = 1e-6)
+
+    # Verify Kc = lc² · S · 1 = lc² · S for neutral
+    lc = sol[csys.lc][end]
+    S_val = sol[csys.S][end]
+    @test isapprox(sol[csys.Kc][end], lc^2 * S_val, rtol = 1e-6)
+end

@@ -54,7 +54,7 @@ Key equations from the paper:
 vars = unknowns(sf)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(v, escape = false)) for v in vars],
-    :Units => [dimension(ModelingToolkit.get_unit(v)) for v in vars],
+    :Units => [string(ModelingToolkit.get_unit(v)) for v in vars],
     :Description => [ModelingToolkit.getdescription(v) for v in vars]
 )
 ```
@@ -66,7 +66,7 @@ params = parameters(sf)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(p, escape = false)) for p in params],
     :Default => [ModelingToolkit.getdefault(p) for p in params],
-    :Units => [dimension(ModelingToolkit.get_unit(p)) for p in params],
+    :Units => [string(ModelingToolkit.get_unit(p)) for p in params],
     :Description => [ModelingToolkit.getdescription(p) for p in params]
 )
 ```
@@ -101,7 +101,7 @@ Key equations:
 vars_ld = unknowns(ld)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(v, escape = false)) for v in vars_ld],
-    :Units => [dimension(ModelingToolkit.get_unit(v)) for v in vars_ld],
+    :Units => [string(ModelingToolkit.get_unit(v)) for v in vars_ld],
     :Description => [ModelingToolkit.getdescription(v) for v in vars_ld]
 )
 ```
@@ -113,7 +113,7 @@ params_ld = parameters(ld)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(p, escape = false)) for p in params_ld],
     :Default => [ModelingToolkit.getdefault(p) for p in params_ld],
-    :Units => [dimension(ModelingToolkit.get_unit(p)) for p in params_ld],
+    :Units => [string(ModelingToolkit.get_unit(p)) for p in params_ld],
     :Description => [ModelingToolkit.getdescription(p) for p in params_ld]
 )
 ```
@@ -153,7 +153,7 @@ Key equations:
 vars_nl = unknowns(nl)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(v, escape = false)) for v in vars_nl],
-    :Units => [dimension(ModelingToolkit.get_unit(v)) for v in vars_nl],
+    :Units => [string(ModelingToolkit.get_unit(v)) for v in vars_nl],
     :Description => [ModelingToolkit.getdescription(v) for v in vars_nl]
 )
 ```
@@ -165,7 +165,7 @@ params_nl = parameters(nl)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(p, escape = false)) for p in params_nl],
     :Default => [ModelingToolkit.getdefault(p) for p in params_nl],
-    :Units => [dimension(ModelingToolkit.get_unit(p)) for p in params_nl],
+    :Units => [string(ModelingToolkit.get_unit(p)) for p in params_nl],
     :Description => [ModelingToolkit.getdescription(p) for p in params_nl]
 )
 ```
