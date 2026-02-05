@@ -70,14 +70,16 @@ end
     @test nl isa ModelingToolkit.System
 
     eqs=equations(nl)
-    @test length(eqs) == 12
+    @test length(eqs) == 14
 
     var_names=Symbol.(unknowns(nl))
     @test Symbol("w_star(t)") in var_names
     @test Symbol("φₕ(t)") in var_names
     @test Symbol("φₘ(t)") in var_names
     @test Symbol("φₕ_local(t)") in var_names
+    @test Symbol("φₘ_local(t)") in var_names
     @test Symbol("wₘ(t)") in var_names
+    @test Symbol("wₘ_outer(t)") in var_names
     @test Symbol("Pr(t)") in var_names
     @test Symbol("wₜ(t)") in var_names
     @test Symbol("Kc(t)") in var_names
@@ -361,6 +363,7 @@ end
     nl=HoltslagBovilleNonlocalABL()
     csys=mtkcompile(nl)
 
+    # z = 500, h = 1000 → η = 0.5 > 0.1 (outer layer)
     prob=ODEProblem(csys,
         Dict(
             csys.z=>500.0,
@@ -374,13 +377,16 @@ end
         (0.0, 1.0))
     sol=solve(prob)
 
-    # Eq. A11: wₘ = (u*³ + c₁·w*³)^(1/3)
+    # Eq. A11: wₘ_outer = (u*³ + c₁·w*³)^(1/3)
     w_star=sol[csys.w_star][end]
     wₘ_expected=(0.3^3+0.6*w_star^3)^(1/3)
-    @test isapprox(sol[csys.wₘ][end], wₘ_expected, rtol = 0.01)
+    @test isapprox(sol[csys.wₘ_outer][end], wₘ_expected, rtol = 0.01)
 
-    # wₘ ≥ u* always
-    @test sol[csys.wₘ][end] >= 0.3
+    # In outer layer, wₘ = wₘ_outer
+    @test isapprox(sol[csys.wₘ][end], sol[csys.wₘ_outer][end], rtol = 0.01)
+
+    # wₘ_outer ≥ u* always
+    @test sol[csys.wₘ_outer][end] >= 0.3
 end
 
 @testitem "NonlocalABL eddy diffusivity profile Eq. 3.9" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
@@ -488,12 +494,12 @@ end
         (0.0, 1.0))
     sol_unstable=solve(prob_unstable)
 
-    # Verify Prandtl number matches Eq. A13 formula
+    # Verify Prandtl number matches Eq. A13 formula (uses outer-layer wₘ)
     w_star=sol_unstable[csys.w_star][end]
-    wₘ=sol_unstable[csys.wₘ][end]
+    wₘ_outer=sol_unstable[csys.wₘ_outer][end]
     φₕ_val=sol_unstable[csys.φₕ][end]
     φₘ_val=sol_unstable[csys.φₘ][end]
-    Pr_expected=φₕ_val/φₘ_val + 7.2*0.4*0.1*(w_star/wₘ)
+    Pr_expected=φₕ_val/φₘ_val + 7.2*0.4*0.1*(w_star/wₘ_outer)
     @test isapprox(sol_unstable[csys.Pr][end], Pr_expected, rtol = 0.01)
     @test sol_unstable[csys.Pr][end] > 0
 end
@@ -576,7 +582,7 @@ end
 
     # Unstable case: L = -100, h = 1000 → ζ_ε = 0.1*1000/(-100) = -1.0
     # φₕ = (1 - 15*(-1.0))^(-1/2) = (16)^(-1/2) = 0.25 (Eq. A6)
-    # φₘ = (1 - 15*(-1.0))^(-1/4) = (16)^(-1/4) = 0.5 (Eq. A6)
+    # φₘ = (1 - 15*(-1.0))^(-1/3) = (16)^(-1/3) ≈ 0.3969 (Eq. A8)
     prob3=ODEProblem(csys,
         Dict(
             csys.z=>50.0,
@@ -590,20 +596,22 @@ end
         (0.0, 1.0))
     sol3=solve(prob3)
     @test isapprox(sol3[csys.φₕ][end], 0.25, rtol = 0.01)
-    @test isapprox(sol3[csys.φₘ][end], 0.5, rtol = 0.01)
+    @test isapprox(sol3[csys.φₘ][end], 16.0^(-1/3), rtol = 0.01)
 end
 
-@testitem "NonlocalABL phi_h_local vs phi_h Eq. A1" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+@testitem "NonlocalABL phi_h_local and phi_m_local Eq. A1/A7" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
     nl=HoltslagBovilleNonlocalABL()
     csys=mtkcompile(nl)
 
     # φₕ is evaluated at ζ_ε = εh/L (surface layer top), for use in Prandtl number (Eq. A13)
     # φₕ_local is evaluated at ζ = z/L (local height), for use in surface layer wₜ (Eq. A1)
-    # When z ≠ εh, they should differ
+    # φₘ_local is evaluated at ζ = z/L (local height), for use in surface layer wₘ (Eq. A7)
+    # When z ≠ εh, local and surface-layer-top values should differ
 
     # Unstable: L = -200, h = 1000, z = 50
     # ζ_ε = 0.1*1000/(-200) = -0.5 → φₕ = (1 - 15*(-0.5))^(-1/2) = (8.5)^(-0.5)
     # ζ = 50/(-200) = -0.25 → φₕ_local = (1 - 15*(-0.25))^(-1/2) = (4.75)^(-0.5)
+    # ζ = 50/(-200) = -0.25 → φₘ_local = (1 - 15*(-0.25))^(-1/3) = (4.75)^(-1/3)
     prob=ODEProblem(csys,
         Dict(
             csys.z=>50.0,
@@ -619,11 +627,59 @@ end
 
     φₕ_at_ε_expected = 1 / sqrt(1 - 15 * (-0.5))
     φₕ_local_expected = 1 / sqrt(1 - 15 * (-0.25))
+    φₘ_local_expected = 1 / (1 - 15 * (-0.25))^(1/3)
     @test isapprox(sol[csys.φₕ][end], φₕ_at_ε_expected, rtol = 0.01)
     @test isapprox(sol[csys.φₕ_local][end], φₕ_local_expected, rtol = 0.01)
+    @test isapprox(sol[csys.φₘ_local][end], φₘ_local_expected, rtol = 0.01)
 
     # They should differ because z ≠ εh
     @test !isapprox(sol[csys.φₕ][end], sol[csys.φₕ_local][end], rtol = 0.01)
+end
+
+@testitem "NonlocalABL surface layer w_m Eq. A7" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    nl=HoltslagBovilleNonlocalABL()
+    csys=mtkcompile(nl)
+
+    # In the surface layer (z/h ≤ 0.1), wₘ = u*/φₘ(z/L) (Eq. A7)
+    # z = 50, h = 1000 → η = 0.05 < 0.1 (surface layer)
+    # L = -200 → ζ = 50/(-200) = -0.25
+    # φₘ_local = (1 - 15*(-0.25))^(-1/3) = (4.75)^(-1/3)
+    # wₘ = 0.3 / φₘ_local
+    prob=ODEProblem(csys,
+        Dict(
+            csys.z=>50.0,
+            csys.h=>1000.0,
+            csys.u_star=>0.3,
+            csys.wθᵥ₀=>0.1,
+            csys.wC₀=>1e-5,
+            csys.θᵥ₀=>300.0,
+            csys.L=>-200.0
+        ),
+        (0.0, 1.0))
+    sol=solve(prob)
+
+    φₘ_local_val = sol[csys.φₘ_local][end]
+    wₘ_expected = 0.3 / φₘ_local_val
+    @test isapprox(sol[csys.wₘ][end], wₘ_expected, rtol = 0.01)
+
+    # In the outer layer (z/h > 0.1), wₘ = (u*³ + c₁w*³)^(1/3) (Eq. A11)
+    # z = 500, h = 1000 → η = 0.5 > 0.1 (outer layer)
+    prob2=ODEProblem(csys,
+        Dict(
+            csys.z=>500.0,
+            csys.h=>1000.0,
+            csys.u_star=>0.3,
+            csys.wθᵥ₀=>0.1,
+            csys.wC₀=>1e-5,
+            csys.θᵥ₀=>300.0,
+            csys.L=>-100.0
+        ),
+        (0.0, 1.0))
+    sol2=solve(prob2)
+
+    w_star=sol2[csys.w_star][end]
+    wₘ_outer_expected=(0.3^3+0.6*w_star^3)^(1/3)
+    @test isapprox(sol2[csys.wₘ][end], wₘ_outer_expected, rtol = 0.01)
 end
 
 @testitem "NonlocalABL constants match paper" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin

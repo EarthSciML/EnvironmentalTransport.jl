@@ -18,6 +18,7 @@ HoltslagBovilleNonlocalABL
 
 ```@example holtslag
 using DataFrames, ModelingToolkit, Symbolics, DynamicQuantities
+using ModelingToolkit: @named
 using EnvironmentalTransport
 using OrdinaryDiffEqDefault
 using Plots
@@ -43,10 +44,9 @@ Key equations from the paper:
 #### State Variables
 
 ```@example holtslag
-sf = HoltslagBovilleSurfaceFlux()
-sys_sf = mtkcompile(sf)
+@named sf = HoltslagBovilleSurfaceFlux()
 
-vars = unknowns(sys_sf)
+vars = unknowns(sf)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(v, escape = false)) for v in vars],
     :Units => [string(ModelingToolkit.get_unit(v)) for v in vars],
@@ -57,7 +57,7 @@ DataFrame(
 #### Parameters
 
 ```@example holtslag
-params = parameters(sys_sf)
+params = parameters(sf)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(p, escape = false)) for p in params],
     :Default => [ModelingToolkit.getdefault(p) for p in params],
@@ -69,7 +69,7 @@ DataFrame(
 #### Equations
 
 ```@example holtslag
-equations(sys_sf)
+equations(sf)
 ```
 
 ### Local Diffusion Scheme
@@ -91,10 +91,9 @@ Key equations:
 #### State Variables
 
 ```@example holtslag
-ld = HoltslagBovilleLocalDiffusion()
-sys_ld = mtkcompile(ld)
+@named ld = HoltslagBovilleLocalDiffusion()
 
-vars_ld = unknowns(sys_ld)
+vars_ld = unknowns(ld)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(v, escape = false)) for v in vars_ld],
     :Units => [string(ModelingToolkit.get_unit(v)) for v in vars_ld],
@@ -105,7 +104,7 @@ DataFrame(
 #### Parameters
 
 ```@example holtslag
-params_ld = parameters(sys_ld)
+params_ld = parameters(ld)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(p, escape = false)) for p in params_ld],
     :Default => [ModelingToolkit.getdefault(p) for p in params_ld],
@@ -117,7 +116,7 @@ DataFrame(
 #### Equations
 
 ```@example holtslag
-equations(sys_ld)
+equations(ld)
 ```
 
 ### Nonlocal ABL Scheme
@@ -132,20 +131,21 @@ Key equations:
 | 3.9      | Eddy diffusivity profile: ``K_c = \kappa w_t z (1 - z/h)^2``                             |
 | 3.10     | Nonlocal transport: ``\gamma_c = a w_* (\overline{w'C'})_0 / (w_m^2 h)``                 |
 | A1       | Surface layer eddy diffusivity: ``K = \kappa u_* z / \phi_h(z/L)``                       |
-| A2/A4    | Dimensionless wind shear: ``\phi_m`` (stable/unstable)                                   |
-| A3/A5    | Dimensionless temperature gradient: ``\phi_h`` (stable/unstable)                          |
-| A6       | Unstable profiles: ``\phi_m = (1-15z/L)^{-1/4}``, ``\phi_h = (1-15z/L)^{-1/2}``         |
-| A11      | Momentum velocity scale: ``w_m = (u_*^3 + c_1 w_*^3)^{1/3}``                             |
+| A2/A4    | Dimensionless wind shear (stable): ``\phi_m = 1 + 5z/L`` / ``\phi_m = 5 + z/L``         |
+| A3/A5    | Dimensionless temperature gradient (stable): ``\phi_h = 1 + 5z/L`` / ``\phi_h = 5 + z/L``|
+| A6       | Unstable temperature profile: ``\phi_h = (1-15z/L)^{-1/2}``                              |
+| A7       | Surface layer momentum velocity scale: ``w_m = u_*/\phi_m``                               |
+| A8       | Unstable wind shear profile: ``\phi_m = (1-15z/L)^{-1/3}``                                |
+| A11      | Outer-layer momentum velocity scale: ``w_m = (u_*^3 + c_1 w_*^3)^{1/3}``                  |
 | A12      | Convective velocity scale: ``w_* = ((g/\theta_{v0})(\overline{w'\theta_v'})_0 h)^{1/3}`` |
 | A13      | Turbulent Prandtl number: ``\text{Pr} = \phi_h/\phi_m + a \kappa \varepsilon (w_*/w_m)`` |
 
 #### State Variables
 
 ```@example holtslag
-nl = HoltslagBovilleNonlocalABL()
-sys_nl = mtkcompile(nl)
+@named nl = HoltslagBovilleNonlocalABL()
 
-vars_nl = unknowns(sys_nl)
+vars_nl = unknowns(nl)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(v, escape = false)) for v in vars_nl],
     :Units => [string(ModelingToolkit.get_unit(v)) for v in vars_nl],
@@ -156,7 +156,7 @@ DataFrame(
 #### Parameters
 
 ```@example holtslag
-params_nl = parameters(sys_nl)
+params_nl = parameters(nl)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(p, escape = false)) for p in params_nl],
     :Default => [ModelingToolkit.getdefault(p) for p in params_nl],
@@ -168,7 +168,7 @@ DataFrame(
 #### Equations
 
 ```@example holtslag
-equations(sys_nl)
+equations(nl)
 ```
 
 ## Analysis
@@ -178,6 +178,10 @@ equations(sys_nl)
 The stability functions modify the neutral exchange coefficient based on the Richardson number. For unstable conditions (Ri < 0), mixing is enhanced (f > 1), while for stable conditions (Ri > 0), mixing is suppressed (f < 1). In unstable conditions, heat transfer is more enhanced than momentum (fₕ > fₘ) due to the larger coefficient (15 vs 10).
 
 ```@example holtslag
+sys_sf = mtkcompile(sf)
+sys_ld = mtkcompile(ld)
+sys_nl = mtkcompile(nl)
+
 Δθv_values = -10.0:0.5:10.0
 fM_values = Float64[]
 fH_values = Float64[]

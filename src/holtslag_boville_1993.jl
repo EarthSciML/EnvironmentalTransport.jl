@@ -246,6 +246,8 @@ Key equations implemented:
   - Eq. 3.9: Eddy diffusivity Kc = κ·wₜ·z·(1 - z/h)²
   - Eq. 3.10: Nonlocal transport term γc = a·w*·(w'C')₀/(wₘ²·h)
   - Appendix A (Eq. A1-A14): Velocity scales wₜ and wₘ, φₘ and φₕ profiles
+  - Eq. A7: Surface layer momentum velocity scale wₘ = u*/φₘ
+  - Eq. A8: Unstable wind shear profile φₘ = (1-15z/L)^(-1/3)
 
 The nonlocal scheme accounts for transport by large convective eddies
 in unstable conditions, which the local scheme cannot represent.
@@ -312,8 +314,13 @@ sys = mtkcompile(nl)
         φₕ_local(t),
         [description = "Dimensionless temperature gradient at local height z (Eq. A3/A6) (dimensionless)",
             unit = u"1"]
+        φₘ_local(t),
+        [description = "Dimensionless wind shear at local height z (Eq. A2/A8) (dimensionless)",
+            unit = u"1"]
         wₘ(t),
-        [description = "Velocity scale for momentum (Eq. A11)", unit = u"m/s"]
+        [description = "Velocity scale for momentum (Eq. A7/A11)", unit = u"m/s"]
+        wₘ_outer(t),
+        [description = "Outer-layer momentum velocity scale (Eq. A11)", unit = u"m/s"]
         Pr(t),
         [description = "Turbulent Prandtl number (Eq. A13) (dimensionless)",
             unit = u"1"]
@@ -347,14 +354,14 @@ sys = mtkcompile(nl)
             ((g / θᵥ₀) * wθᵥ₀ * h / w_ref^3)^(1 / 3) * w_ref,
             zero_velocity),
 
-        # Eq. A2/A4/A6: Dimensionless wind shear
+        # Eq. A2/A4/A8: Dimensionless wind shear
         # Stable (L > 0): φₘ = 1 + 5z/L for 0 ≤ z/L ≤ 1 (Eq. A2)
         #                 φₘ = 5 + z/L for z/L > 1 (Eq. A4)
-        # Unstable (L < 0): φₘ = (1 - 15z/L)^(-1/4) (Eq. A6)
+        # Unstable (L < 0): φₘ = (1 - 15z/L)^(-1/3) (Eq. A8)
         φₘ ~ ifelse(L > zero_length,
             ifelse(ζ_ε <= 1, 1 + 5 * ζ_ε, 5 + ζ_ε),
             ifelse(L < zero_length,
-                1 / (1 - 15 * ζ_ε)^(1 / 4),
+                1 / (1 - 15 * ζ_ε)^(1 / 3),
                 1.0)),
 
         # Eq. A3/A5/A6: Dimensionless temperature gradient at surface layer top (for Pr, Eq. A13)
@@ -374,15 +381,30 @@ sys = mtkcompile(nl)
                 1 / sqrt(1 - 15 * ζ),
                 1.0)),
 
-        # Eq. A11: Momentum velocity scale (outer layer)
+        # Eq. A2/A4/A8: Dimensionless wind shear at local height z (for wₘ in surface layer, Eq. A7)
+        φₘ_local ~ ifelse(L > zero_length,
+            ifelse(ζ <= 1, 1 + 5 * ζ, 5 + ζ),
+            ifelse(L < zero_length,
+                1 / (1 - 15 * ζ)^(1 / 3),
+                1.0)),
+
+        # Eq. A11: Outer-layer momentum velocity scale
         # wₘ = (u*³ + c₁·w*³)^(1/3)
-        # Non-dimensionalize before cube root
-        wₘ ~ ((u_star / w_ref)^3 + c₁ * (w_star / w_ref)^3)^(1 / 3) * w_ref,
+        # Non-dimensionalize before cube root, then re-dimensionalize
+        wₘ_outer ~ ((u_star / w_ref)^3 + c₁ * (w_star / w_ref)^3)^(1 / 3) * w_ref,
+
+        # Eq. A7/A11: Momentum velocity scale (height-dependent)
+        # Surface layer (z/h ≤ ε): wₘ = u*/φₘ(z/L) (Eq. A7)
+        # Outer layer (z/h > ε): wₘ = (u*³ + c₁·w*³)^(1/3) (Eq. A11)
+        wₘ ~ ifelse(η <= ε_sl,
+            u_star / φₘ_local,
+            wₘ_outer),
 
         # Eq. A13: Turbulent Prandtl number
         # Pr = φₕ(ε)/φₘ(ε) + a·κ·ε·(w*/wₘ)
-        # where ε = 0.1h/L (evaluated at surface layer top)
-        Pr ~ φₕ / φₘ + a_coeff * κ * ε_sl * (w_star / wₘ),
+        # where ε = 0.1, evaluated at surface layer top
+        # Uses outer-layer wₘ (Eq. A11) since Pr is a property of the outer layer
+        Pr ~ φₕ / φₘ + a_coeff * κ * ε_sl * (w_star / wₘ_outer),
 
         # Eq. A1/A10: Scalar velocity scale
         # Surface layer (z/h ≤ ε): wₜ = u*/φₕ(z/L) (Eq. A1)
@@ -396,9 +418,9 @@ sys = mtkcompile(nl)
         Kc ~ κ * wₜ * z * (1 - η)^2,
 
         # Eq. 3.10: Nonlocal transport term (only for unstable conditions)
-        # γc = a·w*·(w'C')₀/(wₘ²·h)
+        # γc = a·w*·(w'C')₀/(wₘ²·h) using outer-layer wₘ (Eq. A11)
         γc ~ ifelse(wθᵥ₀ > zero_heat_flux,
-            a_coeff * w_star * wC₀ / (wₘ^2 * h),
+            a_coeff * w_star * wC₀ / (wₘ_outer^2 * h),
             γc_zero)
     ]
 
