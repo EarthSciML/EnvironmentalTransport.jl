@@ -1,207 +1,600 @@
 @testsnippet HoltslagBoville1993Setup begin
     using Test
     using ModelingToolkit
-    using ModelingToolkit: t
+    using ModelingToolkit: t, mtkcompile
     using EnvironmentalTransport
+    using OrdinaryDiffEqDefault
     using DynamicQuantities
 end
 
-@testitem "HoltslagBovilleSurfaceFlux construction" setup = [HoltslagBoville1993Setup] tags = [:holtslag] begin
-    # Test system construction
-    sf = HoltslagBovilleSurfaceFlux()
+# =============================================================================
+# Structural Tests
+# =============================================================================
+
+@testitem "SurfaceFlux structure" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    sf=HoltslagBovilleSurfaceFlux()
     @test sf isa ModelingToolkit.System
 
-    # Test that we can access the equations
-    eqs = equations(sf)
-    @test length(eqs) > 0
+    eqs=equations(sf)
+    @test length(eqs) == 11
+
+    var_names=Symbol.(unknowns(sf))
+    @test Symbol("V₁(t)") in var_names
+    @test Symbol("Ri₀(t)") in var_names
+    @test Symbol("Cₙ(t)") in var_names
+    @test Symbol("fₘ(t)") in var_names
+    @test Symbol("fₕ(t)") in var_names
+    @test Symbol("Cₘ(t)") in var_names
+    @test Symbol("Cₕ(t)") in var_names
+    @test Symbol("wu₀(t)") in var_names
+    @test Symbol("wv₀(t)") in var_names
+    @test Symbol("wθ₀(t)") in var_names
+    @test Symbol("wq₀(t)") in var_names
+
+    param_names=Symbol.(parameters(sf))
+    @test :z₁ in param_names
+    @test :z₀ₘ in param_names
+    @test :u₁ in param_names
+    @test :v₁ in param_names
+    @test :θ₀ in param_names
+    @test :θ₁ in param_names
+    @test :θᵥ₀ in param_names
+    @test :θᵥ₁ in param_names
 end
 
-@testitem "HoltslagBovilleSurfaceFlux neutral stability" setup = [HoltslagBoville1993Setup] tags = [:holtslag] begin
-    # Test neutral conditions (θᵥ₁ = θᵥ₀)
-    sf = HoltslagBovilleSurfaceFlux()
-
-    # For neutral conditions, Ri₀ should be zero when θᵥ₁ = θᵥ₀
-    # We can verify this through the equations
-    eqs = equations(sf)
-    @test length(eqs) > 0
-
-    # Check the system has expected parameters
-    ps = parameters(sf)
-    param_names = [string(p) for p in ps]
-    @test any(contains(n, "θᵥ₀") for n in param_names)
-    @test any(contains(n, "θᵥ₁") for n in param_names)
-end
-
-@testitem "HoltslagBovilleLocalDiffusion construction" setup = [HoltslagBoville1993Setup] tags = [:holtslag] begin
-    # Test system construction
-    ld = HoltslagBovilleLocalDiffusion()
+@testitem "LocalDiffusion structure" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    ld=HoltslagBovilleLocalDiffusion()
     @test ld isa ModelingToolkit.System
 
-    # Test that we can access the equations
-    eqs = equations(ld)
-    @test length(eqs) > 0
-end
-
-@testitem "HoltslagBovilleLocalDiffusion equations" setup = [HoltslagBoville1993Setup] tags = [:holtslag] begin
-    # Test that the local diffusion system has the correct number of equations
-    ld = HoltslagBovilleLocalDiffusion()
-    eqs = equations(ld)
-
-    # Should have equations for λc, lc, S, Ri, Fc, Kc
+    eqs=equations(ld)
     @test length(eqs) == 6
 
-    # Check parameters exist
-    ps = parameters(ld)
-    param_names = [string(p) for p in ps]
-    @test any(contains(n, "z") for n in param_names)
-    @test any(contains(n, "θᵥ") for n in param_names)
+    var_names=Symbol.(unknowns(ld))
+    @test Symbol("λc(t)") in var_names
+    @test Symbol("lc(t)") in var_names
+    @test Symbol("S(t)") in var_names
+    @test Symbol("Ri(t)") in var_names
+    @test Symbol("Fc(t)") in var_names
+    @test Symbol("Kc(t)") in var_names
+
+    param_names=Symbol.(parameters(ld))
+    @test :z in param_names
+    @test :θᵥ in param_names
+    @test :∂θᵥ_∂z in param_names
+    @test :∂u_∂z in param_names
+    @test :∂v_∂z in param_names
 end
 
-@testitem "HoltslagBovilleNonlocalABL construction" setup = [HoltslagBoville1993Setup] tags = [:holtslag] begin
-    # Test system construction
-    nl = HoltslagBovilleNonlocalABL()
+@testitem "NonlocalABL structure" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    nl=HoltslagBovilleNonlocalABL()
     @test nl isa ModelingToolkit.System
 
-    # Test that we can access the equations
-    eqs = equations(nl)
-    @test length(eqs) > 0
-end
-
-@testitem "HoltslagBovilleNonlocalABL equations" setup = [HoltslagBoville1993Setup] tags = [:holtslag] begin
-    # Test the nonlocal ABL system equations
-    nl = HoltslagBovilleNonlocalABL()
-    eqs = equations(nl)
-
-    # Should have equations for: ζ, η, w_star, φₕ, wₘ, Pr, wₜ, Kc, γc
+    eqs=equations(nl)
     @test length(eqs) == 9
 
-    # Check parameters exist
-    ps = parameters(nl)
-    param_names = [string(p) for p in ps]
-    @test any(contains(n, "h") for n in param_names)  # Boundary layer height
-    @test any(contains(n, "u_star") for n in param_names)  # Friction velocity
-    @test any(contains(n, "wθᵥ₀") for n in param_names)  # Surface heat flux
+    var_names=Symbol.(unknowns(nl))
+    @test Symbol("w_star(t)") in var_names
+    @test Symbol("φₕ(t)") in var_names
+    @test Symbol("wₘ(t)") in var_names
+    @test Symbol("Pr(t)") in var_names
+    @test Symbol("wₜ(t)") in var_names
+    @test Symbol("Kc(t)") in var_names
+    @test Symbol("γc(t)") in var_names
+    @test Symbol("ζ(t)") in var_names
+    @test Symbol("η(t)") in var_names
+
+    param_names=Symbol.(parameters(nl))
+    @test :z in param_names
+    @test :h in param_names
+    @test :u_star in param_names
+    @test :wθᵥ₀ in param_names
+    @test :wC₀ in param_names
+    @test :θᵥ₀ in param_names
+    @test :L in param_names
 end
 
-@testitem "HoltslagBoville constants check" setup = [HoltslagBoville1993Setup] tags = [:holtslag] begin
-    # Test that the constants match the paper values
+# =============================================================================
+# Surface Flux Equation Verification
+# =============================================================================
 
-    nl = HoltslagBovilleNonlocalABL()
+@testitem "SurfaceFlux neutral conditions" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    # Under neutral conditions (θᵥ₁ = θᵥ₀), Ri₀ = 0, so fₘ = fₕ = 1
+    sf=HoltslagBovilleSurfaceFlux()
+    csys=mtkcompile(sf)
 
-    # Get the constants from the defaults
-    defaults = ModelingToolkit.get_defaults(nl)
-    const_names = Dict(string(k) => v for (k, v) in defaults)
+    prob=ODEProblem(csys,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            csys.θᵥ₀=>300.0,
+            csys.θᵥ₁=>300.0,
+            csys.θ₀=>300.0,
+            csys.θ₁=>300.0,
+            csys.u₁=>5.0,
+            csys.v₁=>0.0,
+            csys.z₁=>10.0,
+            csys.z₀ₘ=>0.1
+        ))
+    sol=solve(prob)
 
-    # Check key constants from the paper (Appendix A)
-    # a = 7.2 (Eq. A14)
-    a_key = findfirst(k -> contains(k, "a") && !contains(k, "star") && !contains(k, "gamma"), collect(keys(const_names)))
-    if a_key !== nothing
-        a_val = const_names[collect(keys(const_names))[a_key]]
-        @test isapprox(a_val, 7.2, rtol=0.01)
-    end
+    # Ri₀ should be zero for neutral
+    @test isapprox(sol[csys.Ri₀][end], 0.0, atol = 1e-10)
+
+    # Stability functions should be 1 for neutral
+    @test isapprox(sol[csys.fₘ][end], 1.0, rtol = 1e-6)
+    @test isapprox(sol[csys.fₕ][end], 1.0, rtol = 1e-6)
+
+    # Exchange coefficients should equal neutral value
+    Cₙ=sol[csys.Cₙ][end]
+    @test isapprox(sol[csys.Cₘ][end], Cₙ, rtol = 1e-6)
+    @test isapprox(sol[csys.Cₕ][end], Cₙ, rtol = 1e-6)
+
+    # Eq. 2.7: Verify neutral exchange coefficient
+    # Cₙ = κ²/[ln((z₁+z₀ₘ)/z₀ₘ)]² = 0.4²/[ln(10.1/0.1)]² = 0.16/[4.615]² ≈ 0.00751
+    z_ratio=(10.0+0.1)/0.1
+    Cₙ_expected=0.4^2/(log(z_ratio))^2
+    @test isapprox(Cₙ, Cₙ_expected, rtol = 1e-6)
+end
+
+@testitem "SurfaceFlux stable conditions" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    # Stable: θᵥ₁ > θᵥ₀ (warm air above cold surface), Ri₀ > 0
+    sf=HoltslagBovilleSurfaceFlux()
+    csys=mtkcompile(sf)
+
+    prob=ODEProblem(csys,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            csys.θᵥ₀=>290.0,
+            csys.θᵥ₁=>295.0,
+            csys.θ₀=>290.0,
+            csys.θ₁=>295.0,
+            csys.u₁=>5.0,
+            csys.v₁=>0.0,
+            csys.z₁=>10.0,
+            csys.z₀ₘ=>0.1
+        ))
+    sol=solve(prob)
+
+    # Ri₀ > 0 for stable
+    @test sol[csys.Ri₀][end] > 0
+
+    # Stability functions < 1 for stable (suppressed mixing)
+    @test sol[csys.fₘ][end] < 1.0
+    @test sol[csys.fₕ][end] < 1.0
+    @test sol[csys.fₘ][end] > 0.0
+    @test sol[csys.fₕ][end] > 0.0
+
+    # Eq. 2.11: fₘ = fₕ for stable conditions
+    @test isapprox(sol[csys.fₘ][end], sol[csys.fₕ][end], rtol = 1e-6)
+
+    # Surface heat flux should be negative (downward) for stable
+    @test sol[csys.wθ₀][end] < 0
+end
+
+@testitem "SurfaceFlux unstable conditions" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    # Unstable: θᵥ₁ < θᵥ₀ (cold air above warm surface), Ri₀ < 0
+    sf=HoltslagBovilleSurfaceFlux()
+    csys=mtkcompile(sf)
+
+    prob=ODEProblem(csys,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            csys.θᵥ₀=>305.0,
+            csys.θᵥ₁=>300.0,
+            csys.θ₀=>305.0,
+            csys.θ₁=>300.0,
+            csys.u₁=>5.0,
+            csys.v₁=>0.0,
+            csys.z₁=>10.0,
+            csys.z₀ₘ=>0.1
+        ))
+    sol=solve(prob)
+
+    # Ri₀ < 0 for unstable
+    @test sol[csys.Ri₀][end] < 0
+
+    # Stability functions > 1 for unstable (enhanced mixing)
+    @test sol[csys.fₘ][end] > 1.0
+    @test sol[csys.fₕ][end] > 1.0
+
+    # Eq. 2.9-2.10: fₕ > fₘ for unstable (coefficient 15 > 10)
+    @test sol[csys.fₕ][end] > sol[csys.fₘ][end]
+
+    # Surface heat flux positive (upward) for unstable (warm surface)
+    @test sol[csys.wθ₀][end] > 0
+end
+
+@testitem "SurfaceFlux momentum flux direction" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    # Eq. 2.1-2.2: Momentum flux opposes wind direction
+    sf=HoltslagBovilleSurfaceFlux()
+    csys=mtkcompile(sf)
+
+    prob=ODEProblem(csys,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            csys.θᵥ₀=>300.0,
+            csys.θᵥ₁=>300.0,
+            csys.θ₀=>300.0,
+            csys.θ₁=>300.0,
+            csys.u₁=>5.0,
+            csys.v₁=>3.0,
+            csys.z₁=>10.0,
+            csys.z₀ₘ=>0.1
+        ))
+    sol=solve(prob)
+
+    # wu₀ should be negative (opposing positive u₁)
+    @test sol[csys.wu₀][end] < 0
+    # wv₀ should be negative (opposing positive v₁)
+    @test sol[csys.wv₀][end] < 0
+end
+
+# =============================================================================
+# Local Diffusion Equation Verification
+# =============================================================================
+
+@testitem "LocalDiffusion length scale Eq. 3.6" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    ld=HoltslagBovilleLocalDiffusion()
+    csys=mtkcompile(ld)
+
+    # At z = 1000 m: λc = 30 + 270·exp(0) = 300 m (paper states λc ≈ 300 m for z ≤ 1 km)
+    prob=ODEProblem(csys,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            csys.z=>1000.0,
+            csys.θᵥ=>300.0,
+            csys.∂θᵥ_∂z=>0.003,
+            csys.∂u_∂z=>0.01,
+            csys.∂v_∂z=>0.0
+        ))
+    sol=solve(prob)
+    @test isapprox(sol[csys.λc][end], 300.0, rtol = 0.01)
+
+    # At z = 5000 m: λc = 30 + 270·exp(-4) ≈ 34.9 m (approaches 30 m)
+    prob2=ODEProblem(csys,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            csys.z=>5000.0,
+            csys.θᵥ=>300.0,
+            csys.∂θᵥ_∂z=>0.003,
+            csys.∂u_∂z=>0.01,
+            csys.∂v_∂z=>0.0
+        ))
+    sol2=solve(prob2)
+    λc_expected=30+270*exp(-4)
+    @test isapprox(sol2[csys.λc][end], λc_expected, rtol = 0.01)
+end
+
+@testitem "LocalDiffusion mixing length Eq. 3.4" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    ld=HoltslagBovilleLocalDiffusion()
+    csys=mtkcompile(ld)
+
+    # At z = 1000 m with λc ≈ 300: lc = 1/(1/(0.4*1000) + 1/300) ≈ 1/(0.0025 + 0.00333)
+    # = 1/0.00583 ≈ 171.4 m. Paper states lc reaches max ~290 m near z = 1 km.
+    prob=ODEProblem(csys,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            csys.z=>1000.0,
+            csys.θᵥ=>300.0,
+            csys.∂θᵥ_∂z=>0.003,
+            csys.∂u_∂z=>0.01,
+            csys.∂v_∂z=>0.0
+        ))
+    sol=solve(prob)
+
+    κ=0.4
+    λc=sol[csys.λc][end]
+    lc_expected=1/(1/(κ*1000)+1/λc)
+    @test isapprox(sol[csys.lc][end], lc_expected, rtol = 1e-6)
+    @test sol[csys.lc][end] > 0
+end
+
+@testitem "LocalDiffusion stable vs unstable" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    ld=HoltslagBovilleLocalDiffusion()
+    csys=mtkcompile(ld)
+
+    # Stable: positive ∂θᵥ/∂z gives positive Ri, Fc < 1
+    prob_stable=ODEProblem(csys,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            csys.z=>500.0,
+            csys.θᵥ=>300.0,
+            csys.∂θᵥ_∂z=>0.01,
+            csys.∂u_∂z=>0.01,
+            csys.∂v_∂z=>0.0
+        ))
+    sol_stable=solve(prob_stable)
+    @test sol_stable[csys.Ri][end] > 0
+    @test sol_stable[csys.Fc][end] < 1.0
+    @test sol_stable[csys.Fc][end] > 0.0
+    @test sol_stable[csys.Kc][end] > 0.0
+
+    # Unstable: negative ∂θᵥ/∂z gives negative Ri, Fc > 1 (Eq. 3.7)
+    prob_unstable=ODEProblem(csys,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            csys.z=>500.0,
+            csys.θᵥ=>300.0,
+            csys.∂θᵥ_∂z=>-0.01,
+            csys.∂u_∂z=>0.01,
+            csys.∂v_∂z=>0.0
+        ))
+    sol_unstable=solve(prob_unstable)
+    @test sol_unstable[csys.Ri][end] < 0
+    @test sol_unstable[csys.Fc][end] > 1.0
+
+    # Unstable Kc should be larger than stable Kc
+    @test sol_unstable[csys.Kc][end] > sol_stable[csys.Kc][end]
+end
+
+# =============================================================================
+# Nonlocal ABL Equation Verification
+# =============================================================================
+
+@testitem "NonlocalABL convective velocity scale Eq. A12" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    nl=HoltslagBovilleNonlocalABL()
+    csys=mtkcompile(nl)
+
+    # Typical unstable conditions: wθᵥ₀ = 0.1 K·m/s, h = 1000 m
+    # w* = ((9.81/300)*0.1*1000)^(1/3) = (3.27)^(1/3) ≈ 1.485 m/s
+    prob=ODEProblem(csys,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            csys.z=>500.0,
+            csys.h=>1000.0,
+            csys.u_star=>0.3,
+            csys.wθᵥ₀=>0.1,
+            csys.wC₀=>1e-5,
+            csys.θᵥ₀=>300.0,
+            csys.L=>-100.0
+        ))
+    sol=solve(prob)
+
+    w_star_expected=((9.81/300.0)*0.1*1000.0)^(1/3)
+    @test isapprox(sol[csys.w_star][end], w_star_expected, rtol = 0.01)
+    @test 1.0 < sol[csys.w_star][end] < 2.0
+end
+
+@testitem "NonlocalABL momentum velocity scale Eq. A11" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    nl=HoltslagBovilleNonlocalABL()
+    csys=mtkcompile(nl)
+
+    prob=ODEProblem(csys,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            csys.z=>500.0,
+            csys.h=>1000.0,
+            csys.u_star=>0.3,
+            csys.wθᵥ₀=>0.1,
+            csys.wC₀=>1e-5,
+            csys.θᵥ₀=>300.0,
+            csys.L=>-100.0
+        ))
+    sol=solve(prob)
+
+    # Eq. A11: wₘ = (u*³ + c₁·w*³)^(1/3)
+    w_star=sol[csys.w_star][end]
+    wₘ_expected=(0.3^3+0.6*w_star^3)^(1/3)
+    @test isapprox(sol[csys.wₘ][end], wₘ_expected, rtol = 0.01)
+
+    # wₘ ≥ u* always
+    @test sol[csys.wₘ][end] >= 0.3
+end
+
+@testitem "NonlocalABL eddy diffusivity profile Eq. 3.9" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    nl=HoltslagBovilleNonlocalABL()
+    csys=mtkcompile(nl)
+
+    h=1000.0
+
+    # Test profile shape: Kc = κ·wₜ·z·(1-z/h)²
+    # Should be zero at z=0 and z=h, with maximum around z ≈ h/3
+
+    # Near the surface
+    prob_low=ODEProblem(csys,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            csys.z=>50.0,
+            csys.h=>h,
+            csys.u_star=>0.3,
+            csys.wθᵥ₀=>0.1,
+            csys.wC₀=>1e-5,
+            csys.θᵥ₀=>300.0,
+            csys.L=>-100.0
+        ))
+    sol_low=solve(prob_low)
+
+    # Mid-height (z ≈ h/3)
+    prob_mid=ODEProblem(csys,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            csys.z=>333.0,
+            csys.h=>h,
+            csys.u_star=>0.3,
+            csys.wθᵥ₀=>0.1,
+            csys.wC₀=>1e-5,
+            csys.θᵥ₀=>300.0,
+            csys.L=>-100.0
+        ))
+    sol_mid=solve(prob_mid)
+
+    # Near the top
+    prob_high=ODEProblem(csys,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            csys.z=>900.0,
+            csys.h=>h,
+            csys.u_star=>0.3,
+            csys.wθᵥ₀=>0.1,
+            csys.wC₀=>1e-5,
+            csys.θᵥ₀=>300.0,
+            csys.L=>-100.0
+        ))
+    sol_high=solve(prob_high)
+
+    # Mid-height should have highest Kc
+    @test sol_mid[csys.Kc][end] > sol_low[csys.Kc][end]
+    @test sol_mid[csys.Kc][end] > sol_high[csys.Kc][end]
+
+    # All Kc values should be positive
+    @test sol_low[csys.Kc][end] > 0
+    @test sol_mid[csys.Kc][end] > 0
+    @test sol_high[csys.Kc][end] > 0
+
+    # Paper Fig 8: typical max Kc ≈ 30-60 m²/s for h = 1000 m
+    @test 5.0 < sol_mid[csys.Kc][end] < 200.0
+end
+
+@testitem "NonlocalABL Prandtl number Eq. A13" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    nl=HoltslagBovilleNonlocalABL()
+    csys=mtkcompile(nl)
+
+    # Near-neutral conditions: small heat flux, Pr should be close to 1
+    prob_neutral=ODEProblem(csys,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            csys.z=>500.0,
+            csys.h=>1000.0,
+            csys.u_star=>1.0,
+            csys.wθᵥ₀=>0.001,
+            csys.wC₀=>1e-5,
+            csys.θᵥ₀=>300.0,
+            csys.L=>-10000.0
+        ))
+    sol_neutral=solve(prob_neutral)
+    @test isapprox(sol_neutral[csys.Pr][end], 1.0, atol = 0.15)
+
+    # Very unstable conditions: large heat flux, Pr → 0.6
+    prob_unstable=ODEProblem(csys,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            csys.z=>500.0,
+            csys.h=>2000.0,
+            csys.u_star=>0.1,
+            csys.wθᵥ₀=>0.5,
+            csys.wC₀=>1e-5,
+            csys.θᵥ₀=>300.0,
+            csys.L=>-10.0
+        ))
+    sol_unstable=solve(prob_unstable)
+    @test isapprox(sol_unstable[csys.Pr][end], 0.6, rtol = 0.1)
+end
+
+@testitem "NonlocalABL nonlocal transport term Eq. 3.10" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    nl=HoltslagBovilleNonlocalABL()
+    csys=mtkcompile(nl)
+
+    # Unstable: γc should be positive when wC₀ > 0
+    prob_unstable=ODEProblem(csys,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            csys.z=>500.0,
+            csys.h=>1000.0,
+            csys.u_star=>0.3,
+            csys.wθᵥ₀=>0.1,
+            csys.wC₀=>1e-4,
+            csys.θᵥ₀=>300.0,
+            csys.L=>-100.0
+        ))
+    sol_unstable=solve(prob_unstable)
+    @test sol_unstable[csys.γc][end] > 0
+
+    # Stable: γc should be zero
+    prob_stable=ODEProblem(csys,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            csys.z=>500.0,
+            csys.h=>1000.0,
+            csys.u_star=>0.3,
+            csys.wθᵥ₀=>-0.05,
+            csys.wC₀=>1e-4,
+            csys.θᵥ₀=>300.0,
+            csys.L=>100.0
+        ))
+    sol_stable=solve(prob_stable)
+    @test isapprox(sol_stable[csys.γc][end], 0.0, atol = 1e-10)
+end
+
+@testitem "NonlocalABL stable phi_h Eq. A3/A5" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    nl=HoltslagBovilleNonlocalABL()
+    csys=mtkcompile(nl)
+
+    # Stable: L > 0, z/L < 1: φₕ = 1 + 5z/L
+    prob=ODEProblem(csys,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            csys.z=>50.0,
+            csys.h=>1000.0,
+            csys.u_star=>0.3,
+            csys.wθᵥ₀=>-0.05,
+            csys.wC₀=>1e-5,
+            csys.θᵥ₀=>300.0,
+            csys.L=>100.0
+        ))
+    sol=solve(prob)
+
+    # φₕ = 1 + 5*50/100 = 1 + 2.5 = 3.5
+    @test isapprox(sol[csys.φₕ][end], 3.5, rtol = 0.01)
+
+    # Very stable: L > 0, z/L > 1: φₕ = 5 + z/L
+    prob2=ODEProblem(csys,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            csys.z=>500.0,
+            csys.h=>1000.0,
+            csys.u_star=>0.3,
+            csys.wθᵥ₀=>-0.05,
+            csys.wC₀=>1e-5,
+            csys.θᵥ₀=>300.0,
+            csys.L=>100.0
+        ))
+    sol2=solve(prob2)
+
+    # φₕ = 5 + 500/100 = 10
+    @test isapprox(sol2[csys.φₕ][end], 10.0, rtol = 0.01)
+end
+
+@testitem "NonlocalABL constants match paper" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    nl=HoltslagBovilleNonlocalABL()
+
+    defaults=ModelingToolkit.get_defaults(nl)
+    const_names=Dict(string(k)=>v for (k, v) in defaults)
 
     # κ = 0.4 (von Karman constant)
-    κ_key = findfirst(k -> contains(k, "κ"), collect(keys(const_names)))
-    if κ_key !== nothing
-        κ_val = const_names[collect(keys(const_names))[κ_key]]
-        @test isapprox(κ_val, 0.4, rtol=0.01)
-    end
+    κ_key=findfirst(k->contains(k, "κ"), collect(keys(const_names)))
+    @test κ_key !== nothing
+    @test isapprox(const_names[collect(keys(const_names))[κ_key]], 0.4, rtol = 0.01)
 
     # c₁ = 0.6 (Eq. A11)
-    c1_key = findfirst(k -> contains(k, "c₁"), collect(keys(const_names)))
-    if c1_key !== nothing
-        c1_val = const_names[collect(keys(const_names))[c1_key]]
-        @test isapprox(c1_val, 0.6, rtol=0.01)
-    end
-end
+    c1_key=findfirst(k->contains(k, "c₁"), collect(keys(const_names)))
+    @test c1_key !== nothing
+    @test isapprox(const_names[collect(keys(const_names))[c1_key]], 0.6, rtol = 0.01)
 
-@testitem "HoltslagBoville local diffusion length scale" setup = [HoltslagBoville1993Setup] tags = [:holtslag] begin
-    # Test Eq. 3.6: λc = 30 + 270·exp(1 - z/1000)
+    # a_coeff = 7.2 (Eq. A14)
+    a_key=findfirst(k->contains(k, "a_coeff"), collect(keys(const_names)))
+    @test a_key !== nothing
+    @test isapprox(const_names[collect(keys(const_names))[a_key]], 7.2, rtol = 0.01)
 
-    # At z = 1000 m: λc = 30 + 270·exp(0) = 300 m
-    λc_1000 = 30 + 270 * exp(1 - 1000 / 1000)
-    @test isapprox(λc_1000, 300.0, rtol=0.01)
-
-    # At z = 5000 m: λc ≈ 35 m
-    λc_5000 = 30 + 270 * exp(1 - 5000 / 1000)
-    @test isapprox(λc_5000, 30 + 270 * exp(-4), rtol=0.01)
-end
-
-@testitem "HoltslagBoville convective velocity scale" setup = [HoltslagBoville1993Setup] tags = [:holtslag] begin
-    # Test Eq. A12: w* = ((g/θᵥ₀)·(w'θᵥ')₀·h)^(1/3)
-
-    g = 9.81  # m/s²
-    θᵥ₀ = 300.0  # K
-    wθᵥ₀ = 0.1  # K·m/s
-    h = 1000.0  # m
-
-    w_star = ((g / θᵥ₀) * wθᵥ₀ * h)^(1 / 3)
-
-    # Typical values: w* ~ 1-2 m/s for convective conditions
-    @test 0.5 < w_star < 3.0
-end
-
-@testitem "HoltslagBoville stability functions" setup = [HoltslagBoville1993Setup] tags = [:holtslag] begin
-    # Test Eq. 2.9-2.11: Stability functions
-
-    # For neutral (Ri₀ = 0): fₘ = fₕ = 1
-    Ri₀_neutral = 0.0
-    fₘ_neutral = 1 / (1 + 10 * Ri₀_neutral * (1 + 8 * Ri₀_neutral))
-    fₕ_neutral = 1 / (1 + 10 * Ri₀_neutral * (1 + 8 * Ri₀_neutral))
-    @test isapprox(fₘ_neutral, 1.0, rtol=0.01)
-    @test isapprox(fₕ_neutral, 1.0, rtol=0.01)
-
-    # For stable (Ri₀ = 0.1): f < 1 (suppressed mixing)
-    Ri₀_stable = 0.1
-    fₘ_stable = 1 / (1 + 10 * Ri₀_stable * (1 + 8 * Ri₀_stable))
-    @test fₘ_stable < 1.0
-    @test fₘ_stable > 0.0
-end
-
-@testitem "HoltslagBoville eddy diffusivity profile shape" setup = [HoltslagBoville1993Setup] tags = [:holtslag] begin
-    # Test Eq. 3.9: Kc = κ·wₜ·z·(1 - z/h)²
-    # The profile should be zero at z=0 and z=h, with maximum in between
-
-    κ = 0.4
-    h = 1000.0  # m
-    wₜ = 1.0  # m/s (simplified)
-
-    # At z = 0: Kc = 0
-    Kc_0 = κ * wₜ * 0 * (1 - 0 / h)^2
-    @test Kc_0 == 0.0
-
-    # At z = h: Kc = 0
-    Kc_h = κ * wₜ * h * (1 - h / h)^2
-    @test Kc_h == 0.0
-
-    # At z = h/3: Kc > 0 (maximum is around z ≈ 0.3h)
-    z_mid = h / 3
-    Kc_mid = κ * wₜ * z_mid * (1 - z_mid / h)^2
-    @test Kc_mid > 0.0
-
-    # Check that mid-point has higher Kc than points near edges
-    z_low = h / 10
-    z_high = 9 * h / 10
-    Kc_low = κ * wₜ * z_low * (1 - z_low / h)^2
-    Kc_high = κ * wₜ * z_high * (1 - z_high / h)^2
-    @test Kc_mid > Kc_low
-    @test Kc_mid > Kc_high
-end
-
-@testitem "HoltslagBoville Prandtl number" setup = [HoltslagBoville1993Setup] tags = [:holtslag] begin
-    # Test Eq. A13: Pr decreases from 1 (neutral) to 0.6 (very unstable)
-
-    # For neutral: w*/u* ≈ 0, Pr ≈ 1
-    # For very unstable: w*/u* >= 10, Pr ≈ 0.6
-
-    # The formula given: Pr ≈ 1 - 0.4 * (w*/u*) / 10 for w*/u* < 10
-    # Pr = 0.6 for w*/u* >= 10
-
-    ratio_neutral = 0.0
-    Pr_neutral = 1 - 0.4 * ratio_neutral / 10
-    @test isapprox(Pr_neutral, 1.0, rtol=0.01)
-
-    ratio_unstable = 10.0
-    Pr_unstable = 0.6  # Cap at 0.6
-    @test isapprox(Pr_unstable, 0.6, rtol=0.01)
+    # Ri_cr = 0.5 is declared in the component but not used in equations
+    # (boundary layer height h is an input parameter), so it may be pruned from defaults.
+    # Its value is verified indirectly through documentation.
 end
