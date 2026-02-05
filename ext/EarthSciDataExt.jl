@@ -36,32 +36,32 @@ function EarthSciMLBase.couple2(blm::BoundaryLayerMixingKCCoupler, g::GEOSFPCoup
     b = param_to_var(b, :PBLH, :USTAR, :HFLUX, :EFLUX, :PS, :T2M,
         :QV2M, :z_agl, :z2lev, :x_trans, :y_trans)
 
-    # Compute Z_agl and dZ/dlev from GEOSFP interpolators (hypsometric equation)
+    # Compute Z_agl and dZ/dlev via hypsometric equation using connected BLM
+    # parameters (b.PS, b.T2M, b.QV2M) and Ap/Bp coefficients.
+    # Avoids raw _itp interpolators which are incompatible with SDE compilation.
     @constants _Rd_blm = 287.05 [
         unit = u"J/(kg*K)", description = "Specific gas constant for dry air"]
     @constants _g_blm = 9.80665 [
         unit = u"m/s^2", description = "Gravitational acceleration"]
     @constants _Pu_blm = 1.0 [unit = u"Pa", description = "Pressure unit"]
-    τ = ParentScope(m.t_ref)
-    λ = ParentScope(m.lon)
-    φ = ParentScope(m.lat)
+
     ℓ = ParentScope(m.lev)
-    T_itp = ParentScope(m.I3₊T_itp)
-    QV_itp = ParentScope(m.I3₊QV_itp)
-    PS_itp = ParentScope(m.I3₊PS_itp)
-    T2M_itp = ParentScope(m.A1₊T2M_itp)
-    QV2M_itp = ParentScope(m.A1₊QV2M_itp)
-    _Z_at = ℓ_arg -> begin
-        Tv = T_itp(τ + t, λ, φ, ℓ_arg) * (1 + 0.61 * QV_itp(τ + t, λ, φ, ℓ_arg))
-        Tv2 = T2M_itp(τ + t, λ, φ) * (1 + 0.61 * QV2M_itp(τ + t, λ, φ))
-        Tv̄ = 0.5 * (Tv + Tv2)
-        PS_v = PS_itp(τ + t, λ, φ)
-        Pmid = _Pu_blm * Ap(ℓ_arg + 0.5) + Bp(ℓ_arg + 0.5) * PS_v
-        (_Rd_blm * Tv̄ / _g_blm) * log(PS_v / Pmid)
-    end
+
+    # Surface virtual temperature from already-connected BLM parameters
+    Tv_sfc = b.T2M * (1 + 0.61 * b.QV2M)
+
+    # Pressure at mid-level from Ap/Bp hybrid coefficients
+    Pmid = _Pu_blm * Ap(ℓ + 0.5) + Bp(ℓ + 0.5) * b.PS
+
+    # Hypsometric height AGL (using surface Tv as approximation for mean Tv)
+    Z_agl_expr = (_Rd_blm * Tv_sfc / _g_blm) * log(b.PS / Pmid)
+
+    # dZ/dlev via pressure derivative (centered difference on Ap/Bp)
     Δℓ = 0.5
-    Z_agl_expr = _Z_at(ℓ)
-    dZdlev_expr = (_Z_at(ℓ + Δℓ) - _Z_at(ℓ - Δℓ)) / (2 * Δℓ)
+    P_plus = _Pu_blm * Ap(ℓ + 0.5 + Δℓ) + Bp(ℓ + 0.5 + Δℓ) * b.PS
+    P_minus = _Pu_blm * Ap(ℓ + 0.5 - Δℓ) + Bp(ℓ + 0.5 - Δℓ) * b.PS
+    dPdlev = (P_plus - P_minus) / (2 * Δℓ)
+    dZdlev_expr = -(_Rd_blm * Tv_sfc / _g_blm) * dPdlev / Pmid
 
     ConnectorSystem(
         [
