@@ -37,8 +37,10 @@ function EarthSciMLBase.couple2(blm::BoundaryLayerMixingKCCoupler, g::GEOSFPCoup
         :QV2M, :z_agl, :z2lev, :x_trans, :y_trans)
 
     # Compute Z_agl and dZ/dlev from GEOSFP interpolators (hypsometric equation)
-    @constants _Rd_blm = 287.05 [unit = u"J/(kg*K)", description = "Specific gas constant for dry air"]
-    @constants _g_blm = 9.80665 [unit = u"m/s^2", description = "Gravitational acceleration"]
+    @constants _Rd_blm = 287.05 [
+        unit = u"J/(kg*K)", description = "Specific gas constant for dry air"]
+    @constants _g_blm = 9.80665 [
+        unit = u"m/s^2", description = "Gravitational acceleration"]
     @constants _Pu_blm = 1.0 [unit = u"Pa", description = "Pressure unit"]
     τ = ParentScope(m.t_ref)
     λ = ParentScope(m.lon)
@@ -232,8 +234,10 @@ function EarthSciMLBase.couple2(gd::GaussianPGBCoupler, g::GEOSFPCoupler)
     d = param_to_var(d, :U10M, :V10M, :SWGDN, :CLDTOT, :T2M, :T10M)
 
     # Compute Z_agl from GEOSFP interpolators (hypsometric equation)
-    @constants _Rd_pgb = 287.05 [unit = u"J/(kg*K)", description = "Specific gas constant for dry air"]
-    @constants _g_pgb = 9.80665 [unit = u"m/s^2", description = "Gravitational acceleration"]
+    @constants _Rd_pgb = 287.05 [
+        unit = u"J/(kg*K)", description = "Specific gas constant for dry air"]
+    @constants _g_pgb = 9.80665 [
+        unit = u"m/s^2", description = "Gravitational acceleration"]
     @constants _Pu_pgb = 1.0 [unit = u"Pa", description = "Pressure unit"]
     τ = ParentScope(m.t_ref)
     λ = ParentScope(m.lon)
@@ -269,7 +273,8 @@ function EarthSciMLBase.couple2(gk::GaussianKCCoupler, g::GEOSFPCoupler)
     d, m = gk.sys, g.sys
 
     # Compute Z_agl from GEOSFP interpolators (hypsometric equation)
-    @constants _Rd_kc = 287.05 [unit = u"J/(kg*K)", description = "Specific gas constant for dry air"]
+    @constants _Rd_kc = 287.05 [
+        unit = u"J/(kg*K)", description = "Specific gas constant for dry air"]
     @constants _g_kc = 9.80665 [unit = u"m/s^2", description = "Gravitational acceleration"]
     @constants _Pu_kc = 1.0 [unit = u"Pa", description = "Pressure unit"]
     τ = ParentScope(m.t_ref)
