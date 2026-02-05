@@ -1,5 +1,4 @@
 [deps]
-CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
@@ -18,7 +17,6 @@ ProgressLogging = "33c8b6b6-d38a-422a-b730-caa89a2f386c"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 
 [compat]
-CairoMakie = "0.12"
 DataFrames = "1"
 DifferentialEquations = "7"
 Distributions = "0.25"

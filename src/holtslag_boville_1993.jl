@@ -245,9 +245,7 @@ Key equations implemented:
   - Eq. 3.8: Nonlocal flux w'C' = -Kc(∂C/∂z - γc)
   - Eq. 3.9: Eddy diffusivity Kc = κ·wₜ·z·(1 - z/h)²
   - Eq. 3.10: Nonlocal transport term γc = a·w*·(w'C')₀/(wₘ²·h)
-  - Eq. 3.11: Boundary layer height from bulk Richardson number
-  - Eq. 3.12: Surface temperature for unstable conditions θs = θᵥ(zs) + b·(w'θᵥ')₀/wₘ
-  - Appendix A (Eq. A1-A14): Velocity scales wₜ and wₘ
+  - Appendix A (Eq. A1-A14): Velocity scales wₜ and wₘ, φₘ and φₕ profiles
 
 The nonlocal scheme accounts for transport by large convective eddies
 in unstable conditions, which the local scheme cannot represent.
@@ -265,17 +263,14 @@ sys = mtkcompile(nl)
     @constants begin
         g = 9.81, [description = "Gravitational acceleration", unit = u"m/s^2"]
         κ = 0.4, [description = "von Karman constant (dimensionless)", unit = u"1"]
-        Ri_cr = 0.5,
-        [description = "Critical bulk Richardson number (Eq. 3.11) (dimensionless)",
-            unit = u"1"]
         a_coeff = 7.2,
         [description = "Nonlocal transport constant (Eq. A14: a ≈ 7.2) (dimensionless)",
             unit = u"1"]
-        b_coeff = 8.5,
-        [description = "Temperature excess constant (Eq. 3.12: b ≈ 8.5) (dimensionless)",
-            unit = u"1"]
         c₁ = 0.6,
         [description = "Velocity scale constant (Eq. A11) (dimensionless)", unit = u"1"]
+        ε_sl = 0.1,
+        [description = "Surface layer fraction of boundary layer height (dimensionless)",
+            unit = u"1"]
         w_ref = 1.0,
         [description = "Reference velocity scale for non-dimensionalization",
             unit = u"m/s"]
@@ -297,7 +292,9 @@ sys = mtkcompile(nl)
         h = 1000.0, [description = "Boundary layer height", unit = u"m"]
         u_star = 0.3, [description = "Friction velocity", unit = u"m/s"]
         wθᵥ₀ = 0.05, [description = "Surface virtual heat flux", unit = u"K*m/s"]
-        wC₀ = 1e-5, [description = "Surface flux of scalar C", unit = u"m/s"]
+        wC₀ = 1e-5,
+        [description = "Surface kinematic flux of scalar C (e.g. mixing ratio)",
+            unit = u"m/s"]
         θᵥ₀ = 300.0,
         [description = "Virtual potential temperature at surface", unit = u"K"]
         L = -100.0, [description = "Obukhov length", unit = u"m"]
@@ -308,6 +305,9 @@ sys = mtkcompile(nl)
         [description = "Convective velocity scale (Eq. A12)", unit = u"m/s"]
         φₕ(t),
         [description = "Dimensionless temperature gradient (Eq. A3/A6) (dimensionless)",
+            unit = u"1"]
+        φₘ(t),
+        [description = "Dimensionless wind shear (Eq. A2/A6) (dimensionless)",
             unit = u"1"]
         wₘ(t),
         [description = "Velocity scale for momentum (Eq. A11)", unit = u"m/s"]
@@ -321,14 +321,21 @@ sys = mtkcompile(nl)
         ζ(t),
         [description = "Stability parameter z/L (dimensionless)", unit = u"1"]
         η(t), [description = "Relative height z/h (dimensionless)", unit = u"1"]
+        ζ_ε(t),
+        [description = "Stability parameter at surface layer top εh/L (dimensionless)",
+            unit = u"1"]
     end
 
     eqs = [
         # Stability parameter: z/L (regularized to avoid division by zero)
-        ζ ~ ifelse(abs(L) > L_min, z / L, z / (L_min * sign(L))),
+        ζ ~ ifelse(abs(L) > L_min, z / L, z / (L_min * sign(L) + L_min * (1 - abs(sign(L))))),
 
         # Relative height: z/h
         η ~ z / h,
+
+        # Stability parameter at surface layer top: εh/L
+        ζ_ε ~ ifelse(abs(L) > L_min, ε_sl * h / L,
+            ε_sl * h / (L_min * sign(L) + L_min * (1 - abs(sign(L))))),
 
         # Eq. A12: Convective velocity scale
         # w* = ((g/θᵥ₀)·(w'θᵥ')₀·h)^(1/3)
@@ -337,14 +344,24 @@ sys = mtkcompile(nl)
             ((g / θᵥ₀) * wθᵥ₀ * h / w_ref^3)^(1 / 3) * w_ref,
             zero_velocity),
 
+        # Eq. A2/A4/A6: Dimensionless wind shear
+        # Stable (L > 0): φₘ = 1 + 5z/L for 0 ≤ z/L ≤ 1 (Eq. A2)
+        #                 φₘ = 5 + z/L for z/L > 1 (Eq. A4)
+        # Unstable (L < 0): φₘ = (1 - 15z/L)^(-1/4) (Eq. A6)
+        φₘ ~ ifelse(L > zero_length,
+            ifelse(ζ_ε <= 1, 1 + 5 * ζ_ε, 5 + ζ_ε),
+            ifelse(L < zero_length,
+                1 / (1 - 15 * ζ_ε)^(1 / 4),
+                1.0)),
+
         # Eq. A3/A5/A6: Dimensionless temperature gradient
         # Stable (L > 0): φₕ = 1 + 5z/L for 0 ≤ z/L ≤ 1 (Eq. A3)
         #                 φₕ = 5 + z/L for z/L > 1 (Eq. A5)
         # Unstable (L < 0): φₕ = (1 - 15z/L)^(-1/2) (Eq. A6)
         φₕ ~ ifelse(L > zero_length,
-            ifelse(ζ <= 1, 1 + 5 * ζ, 5 + ζ),
+            ifelse(ζ_ε <= 1, 1 + 5 * ζ_ε, 5 + ζ_ε),
             ifelse(L < zero_length,
-                1 / sqrt(1 - 15 * ζ),
+                1 / sqrt(1 - 15 * ζ_ε),
                 1.0)),
 
         # Eq. A11: Momentum velocity scale (outer layer)
@@ -353,17 +370,14 @@ sys = mtkcompile(nl)
         wₘ ~ ((u_star / w_ref)^3 + c₁ * (w_star / w_ref)^3)^(1 / 3) * w_ref,
 
         # Eq. A13: Turbulent Prandtl number
-        # Pr = φₕ/φₘ + a·k·(z/h)·(w*/wₘ) evaluated at z = 0.1h
-        # For neutral: Pr = 1; for very unstable (w*/u* ≈ 10): Pr ≈ 0.6
-        # Simplified profile: linear interpolation from 1 to 0.6
-        Pr ~ ifelse(w_star / u_star >= 10,
-            0.6,
-            1 - 0.4 * w_star / (u_star * 10)),
+        # Pr = φₕ(ε)/φₘ(ε) + a·κ·ε·(w*/wₘ)
+        # where ε = 0.1h/L (evaluated at surface layer top)
+        Pr ~ φₕ / φₘ + a_coeff * κ * ε_sl * (w_star / wₘ),
 
         # Eq. A1/A10: Scalar velocity scale
-        # Surface layer (z/h ≤ 0.1): wₜ = u*/φₕ (Eq. A1)
-        # Outer layer (z/h > 0.1): wₜ = wₘ/Pr (Eq. A10)
-        wₜ ~ ifelse(η <= 0.1,
+        # Surface layer (z/h ≤ ε): wₜ = u*/φₕ (Eq. A1)
+        # Outer layer (z/h > ε): wₜ = wₘ/Pr (Eq. A10)
+        wₜ ~ ifelse(η <= ε_sl,
             u_star / φₕ,
             wₘ / Pr),
 

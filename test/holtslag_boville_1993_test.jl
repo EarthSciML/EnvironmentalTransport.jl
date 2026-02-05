@@ -70,11 +70,12 @@ end
     @test nl isa ModelingToolkit.System
 
     eqs=equations(nl)
-    @test length(eqs) == 9
+    @test length(eqs) == 11
 
     var_names=Symbol.(unknowns(nl))
     @test Symbol("w_star(t)") in var_names
     @test Symbol("φₕ(t)") in var_names
+    @test Symbol("φₘ(t)") in var_names
     @test Symbol("wₘ(t)") in var_names
     @test Symbol("Pr(t)") in var_names
     @test Symbol("wₜ(t)") in var_names
@@ -82,6 +83,7 @@ end
     @test Symbol("γc(t)") in var_names
     @test Symbol("ζ(t)") in var_names
     @test Symbol("η(t)") in var_names
+    @test Symbol("ζ_ε(t)") in var_names
 
     param_names=Symbol.(parameters(nl))
     @test :z in param_names
@@ -462,7 +464,10 @@ end
     nl=HoltslagBovilleNonlocalABL()
     csys=mtkcompile(nl)
 
-    # Near-neutral conditions: small heat flux, Pr should be close to 1
+    # Eq. A13: Pr = φₕ(ε)/φₘ(ε) + a·κ·ε·(w*/wₘ)
+    # where ε = 0.1h/L (evaluated at surface layer top)
+
+    # Near-neutral conditions: small heat flux, w* ≈ 0, so Pr ≈ φₕ/φₘ ≈ 1
     prob_neutral=ODEProblem(csys,
         Dict(),
         (0.0, 1.0),
@@ -476,23 +481,36 @@ end
             csys.L=>-10000.0
         ))
     sol_neutral=solve(prob_neutral)
+    # For large negative L, ε = 0.1*1000/(-10000) = -0.01 → φₕ/φₘ ≈ 1
+    # w* is very small → second term ≈ 0 → Pr ≈ 1
     @test isapprox(sol_neutral[csys.Pr][end], 1.0, atol = 0.15)
 
-    # Very unstable conditions: large heat flux, Pr → 0.6
+    # Verify Pr > 0 (physical requirement)
+    @test sol_neutral[csys.Pr][end] > 0
+
+    # Unstable conditions: Pr should include convective contribution
     prob_unstable=ODEProblem(csys,
         Dict(),
         (0.0, 1.0),
         Dict(
             csys.z=>500.0,
-            csys.h=>2000.0,
-            csys.u_star=>0.1,
-            csys.wθᵥ₀=>0.5,
+            csys.h=>1000.0,
+            csys.u_star=>0.3,
+            csys.wθᵥ₀=>0.1,
             csys.wC₀=>1e-5,
             csys.θᵥ₀=>300.0,
-            csys.L=>-10.0
+            csys.L=>-100.0
         ))
     sol_unstable=solve(prob_unstable)
-    @test isapprox(sol_unstable[csys.Pr][end], 0.6, rtol = 0.1)
+
+    # Verify Prandtl number matches Eq. A13 formula
+    w_star=sol_unstable[csys.w_star][end]
+    wₘ=sol_unstable[csys.wₘ][end]
+    φₕ_val=sol_unstable[csys.φₕ][end]
+    φₘ_val=sol_unstable[csys.φₘ][end]
+    Pr_expected=φₕ_val/φₘ_val + 7.2*0.4*0.1*(w_star/wₘ)
+    @test isapprox(sol_unstable[csys.Pr][end], Pr_expected, rtol = 0.01)
+    @test sol_unstable[csys.Pr][end] > 0
 end
 
 @testitem "NonlocalABL nonlocal transport term Eq. 3.10" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
@@ -532,11 +550,14 @@ end
     @test isapprox(sol_stable[csys.γc][end], 0.0, atol = 1e-10)
 end
 
-@testitem "NonlocalABL stable phi_h Eq. A3/A5" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+@testitem "NonlocalABL phi_h and phi_m Eq. A2-A6" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
     nl=HoltslagBovilleNonlocalABL()
     csys=mtkcompile(nl)
 
-    # Stable: L > 0, z/L < 1: φₕ = 1 + 5z/L
+    # φₕ and φₘ are now evaluated at ζ_ε = εh/L where ε = 0.1
+    # Stable case: L = 100, h = 1000 → ζ_ε = 0.1*1000/100 = 1.0
+    # At ζ_ε = 1: φₕ = 1 + 5*1.0 = 6.0 (Eq. A3)
+    # φₘ = 1 + 5*1.0 = 6.0 (Eq. A2)
     prob=ODEProblem(csys,
         Dict(),
         (0.0, 1.0),
@@ -550,27 +571,46 @@ end
             csys.L=>100.0
         ))
     sol=solve(prob)
+    @test isapprox(sol[csys.φₕ][end], 6.0, rtol = 0.01)
+    @test isapprox(sol[csys.φₘ][end], 6.0, rtol = 0.01)
 
-    # φₕ = 1 + 5*50/100 = 1 + 2.5 = 3.5
-    @test isapprox(sol[csys.φₕ][end], 3.5, rtol = 0.01)
-
-    # Very stable: L > 0, z/L > 1: φₕ = 5 + z/L
+    # Very stable: L = 50, h = 1000 → ζ_ε = 0.1*1000/50 = 2.0 > 1
+    # φₕ = 5 + 2.0 = 7.0 (Eq. A5)
+    # φₘ = 5 + 2.0 = 7.0 (Eq. A4)
     prob2=ODEProblem(csys,
         Dict(),
         (0.0, 1.0),
         Dict(
-            csys.z=>500.0,
+            csys.z=>50.0,
             csys.h=>1000.0,
             csys.u_star=>0.3,
             csys.wθᵥ₀=>-0.05,
             csys.wC₀=>1e-5,
             csys.θᵥ₀=>300.0,
-            csys.L=>100.0
+            csys.L=>50.0
         ))
     sol2=solve(prob2)
+    @test isapprox(sol2[csys.φₕ][end], 7.0, rtol = 0.01)
+    @test isapprox(sol2[csys.φₘ][end], 7.0, rtol = 0.01)
 
-    # φₕ = 5 + 500/100 = 10
-    @test isapprox(sol2[csys.φₕ][end], 10.0, rtol = 0.01)
+    # Unstable case: L = -100, h = 1000 → ζ_ε = 0.1*1000/(-100) = -1.0
+    # φₕ = (1 - 15*(-1.0))^(-1/2) = (16)^(-1/2) = 0.25 (Eq. A6)
+    # φₘ = (1 - 15*(-1.0))^(-1/4) = (16)^(-1/4) = 0.5 (Eq. A6)
+    prob3=ODEProblem(csys,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            csys.z=>50.0,
+            csys.h=>1000.0,
+            csys.u_star=>0.3,
+            csys.wθᵥ₀=>0.1,
+            csys.wC₀=>1e-5,
+            csys.θᵥ₀=>300.0,
+            csys.L=>-100.0
+        ))
+    sol3=solve(prob3)
+    @test isapprox(sol3[csys.φₕ][end], 0.25, rtol = 0.01)
+    @test isapprox(sol3[csys.φₘ][end], 0.5, rtol = 0.01)
 end
 
 @testitem "NonlocalABL constants match paper" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
@@ -594,7 +634,8 @@ end
     @test a_key !== nothing
     @test isapprox(const_names[collect(keys(const_names))[a_key]], 7.2, rtol = 0.01)
 
-    # Ri_cr = 0.5 is declared in the component but not used in equations
-    # (boundary layer height h is an input parameter), so it may be pruned from defaults.
-    # Its value is verified indirectly through documentation.
+    # ε_sl = 0.1 (surface layer fraction)
+    ε_key=findfirst(k->contains(k, "ε_sl"), collect(keys(const_names)))
+    @test ε_key !== nothing
+    @test isapprox(const_names[collect(keys(const_names))[ε_key]], 0.1, rtol = 0.01)
 end

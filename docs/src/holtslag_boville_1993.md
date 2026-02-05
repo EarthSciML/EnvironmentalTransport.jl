@@ -49,7 +49,7 @@ sys_sf = mtkcompile(sf)
 vars = unknowns(sys_sf)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(v, escape = false)) for v in vars],
-    :Units => [ModelingToolkit.get_unit(v) for v in vars],
+    :Units => [string(ModelingToolkit.get_unit(v)) for v in vars],
     :Description => [ModelingToolkit.getdescription(v) for v in vars]
 )
 ```
@@ -61,7 +61,7 @@ params = parameters(sys_sf)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(p, escape = false)) for p in params],
     :Default => [ModelingToolkit.getdefault(p) for p in params],
-    :Units => [ModelingToolkit.get_unit(p) for p in params],
+    :Units => [string(ModelingToolkit.get_unit(p)) for p in params],
     :Description => [ModelingToolkit.getdescription(p) for p in params]
 )
 ```
@@ -97,8 +97,20 @@ sys_ld = mtkcompile(ld)
 vars_ld = unknowns(sys_ld)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(v, escape = false)) for v in vars_ld],
-    :Units => [ModelingToolkit.get_unit(v) for v in vars_ld],
+    :Units => [string(ModelingToolkit.get_unit(v)) for v in vars_ld],
     :Description => [ModelingToolkit.getdescription(v) for v in vars_ld]
+)
+```
+
+#### Parameters
+
+```@example holtslag
+params_ld = parameters(sys_ld)
+DataFrame(
+    :Name => [string(Symbolics.tosymbol(p, escape = false)) for p in params_ld],
+    :Default => [ModelingToolkit.getdefault(p) for p in params_ld],
+    :Units => [string(ModelingToolkit.get_unit(p)) for p in params_ld],
+    :Description => [ModelingToolkit.getdescription(p) for p in params_ld]
 )
 ```
 
@@ -119,9 +131,12 @@ Key equations:
 | 3.8      | Nonlocal flux: ``\overline{w'C'} = -K_c(\partial C/\partial z - \gamma_c)``              |
 | 3.9      | Eddy diffusivity profile: ``K_c = \kappa w_t z (1 - z/h)^2``                             |
 | 3.10     | Nonlocal transport: ``\gamma_c = a w_* (\overline{w'C'})_0 / (w_m^2 h)``                 |
+| A2/A4    | Dimensionless wind shear: ``\phi_m`` (stable/unstable)                                   |
+| A3/A5    | Dimensionless temperature gradient: ``\phi_h`` (stable/unstable)                          |
+| A6       | Unstable profiles: ``\phi_m = (1-15z/L)^{-1/4}``, ``\phi_h = (1-15z/L)^{-1/2}``         |
 | A11      | Momentum velocity scale: ``w_m = (u_*^3 + c_1 w_*^3)^{1/3}``                             |
 | A12      | Convective velocity scale: ``w_* = ((g/\theta_{v0})(\overline{w'\theta_v'})_0 h)^{1/3}`` |
-| A13      | Turbulent Prandtl number: ``\text{Pr} = w_m/w_t``                                        |
+| A13      | Turbulent Prandtl number: ``\text{Pr} = \phi_h/\phi_m + a \kappa \varepsilon (w_*/w_m)`` |
 
 #### State Variables
 
@@ -132,8 +147,20 @@ sys_nl = mtkcompile(nl)
 vars_nl = unknowns(sys_nl)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(v, escape = false)) for v in vars_nl],
-    :Units => [ModelingToolkit.get_unit(v) for v in vars_nl],
+    :Units => [string(ModelingToolkit.get_unit(v)) for v in vars_nl],
     :Description => [ModelingToolkit.getdescription(v) for v in vars_nl]
+)
+```
+
+#### Parameters
+
+```@example holtslag
+params_nl = parameters(sys_nl)
+DataFrame(
+    :Name => [string(Symbolics.tosymbol(p, escape = false)) for p in params_nl],
+    :Default => [ModelingToolkit.getdefault(p) for p in params_nl],
+    :Units => [string(ModelingToolkit.get_unit(p)) for p in params_nl],
+    :Description => [ModelingToolkit.getdescription(p) for p in params_nl]
 )
 ```
 
@@ -250,6 +277,53 @@ end
 p
 ```
 
+### Local Diffusion: Eddy Diffusivity vs Height (Eq. 3.2, 3.6)
+
+The local scheme's eddy diffusivity depends on the mixing length scale, which varies with height through the asymptotic length scale ``\lambda_c``. Higher heights lead to smaller mixing lengths and different diffusivity profiles depending on stability.
+
+```@example holtslag
+heights_local = 10.0:10.0:2000.0
+Kc_stable = Float64[]
+Kc_unstable = Float64[]
+
+for z in heights_local
+    # Stable conditions
+    prob_s = ODEProblem(sys_ld,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            sys_ld.z => z,
+            sys_ld.θᵥ => 300.0,
+            sys_ld.∂θᵥ_∂z => 0.005,
+            sys_ld.∂u_∂z => 0.01,
+            sys_ld.∂v_∂z => 0.0
+        ))
+    sol_s = solve(prob_s)
+    push!(Kc_stable, sol_s[sys_ld.Kc][end])
+
+    # Unstable conditions
+    prob_u = ODEProblem(sys_ld,
+        Dict(),
+        (0.0, 1.0),
+        Dict(
+            sys_ld.z => z,
+            sys_ld.θᵥ => 300.0,
+            sys_ld.∂θᵥ_∂z => -0.005,
+            sys_ld.∂u_∂z => 0.01,
+            sys_ld.∂v_∂z => 0.0
+        ))
+    sol_u = solve(prob_u)
+    push!(Kc_unstable, sol_u[sys_ld.Kc][end])
+end
+
+plot(Kc_stable, collect(heights_local), label = "Stable (∂θᵥ/∂z > 0)", linewidth = 2,
+    xlabel = "Eddy Diffusivity Kc (m²/s)",
+    ylabel = "Height z (m)",
+    title = "Local Scheme Eddy Diffusivity Profile (Eq. 3.2)")
+plot!(Kc_unstable, collect(heights_local), label = "Unstable (∂θᵥ/∂z < 0)", linewidth = 2,
+    linestyle = :dash)
+```
+
 ## Physical Interpretation
 
 ### Local vs Nonlocal Schemes
@@ -274,9 +348,8 @@ From the paper's findings:
 | Parameter | Value | Description                     |
 |:--------- |:----- |:------------------------------- |
 | κ         | 0.4   | von Karman constant             |
-| Ri_cr     | 0.5   | Critical bulk Richardson number |
 | a         | 7.2   | Nonlocal transport constant     |
-| b         | 8.5   | Temperature excess constant     |
 | c₁        | 0.6   | Velocity scale constant         |
+| ε         | 0.1   | Surface layer fraction of h     |
 | λc(z=1km) | 300 m | Asymptotic length scale at 1 km |
 | λc(z→∞)   | 30 m  | Free atmosphere length scale    |
