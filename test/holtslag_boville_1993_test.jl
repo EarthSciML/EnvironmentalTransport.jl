@@ -253,9 +253,9 @@ end
     sol=solve(prob)
 
     # V₁ = sqrt(3² + 4² + 1) = sqrt(26) (V_min_sq = 1.0)
-    V₁=sqrt(3.0^2 + 4.0^2 + 1.0)
+    V₁=sqrt(3.0^2+4.0^2+1.0)
     # Ri₀ = 9.81 * 20 * (300-295) / (300 * V₁²) = 981 / (300 * 26) = 0.12577
-    Ri₀_expected = 9.81 * 20.0 * 5.0 / (300.0 * V₁^2)
+    Ri₀_expected=9.81*20.0*5.0/(300.0*V₁^2)
     @test isapprox(sol[csys.Ri₀][end], Ri₀_expected, rtol = 1e-6)
 end
 
@@ -285,7 +285,7 @@ end
     Cₕ=sol[csys.Cₕ][end]
     V₁=sol[csys.V₁][end]
     # wq₀ = 0.8 * Cₕ * V₁ * (0.015 - 0.010) = 0.8 * Cₕ * V₁ * 0.005
-    wq₀_expected=0.8 * Cₕ * V₁ * 0.005
+    wq₀_expected=0.8*Cₕ*V₁*0.005
     @test isapprox(sol[csys.wq₀][end], wq₀_expected, rtol = 1e-6)
     # Positive (evaporation from moist surface)
     @test sol[csys.wq₀][end] > 0
@@ -401,13 +401,13 @@ end
     lc=sol[csys.lc][end]
     S_val=sol[csys.S][end]
     Fc=sol[csys.Fc][end]
-    Kc_expected=lc^2 * S_val * Fc
+    Kc_expected=lc^2*S_val*Fc
     @test isapprox(sol[csys.Kc][end], Kc_expected, rtol = 1e-6)
 
     # Also verify Ri numerically: Ri = (g/θᵥ)(∂θᵥ/∂z)/S²
     S_min=1e-6
-    S_expected=sqrt(0.02^2 + 0.01^2) + S_min
-    Ri_expected=(9.81/300.0) * (-0.005) / S_expected^2
+    S_expected=sqrt(0.02^2+0.01^2)+S_min
+    Ri_expected=(9.81/300.0)*(-0.005)/S_expected^2
     @test isapprox(sol[csys.Ri][end], Ri_expected, rtol = 1e-6)
     @test sol[csys.Ri][end] < 0  # Unstable
 end
@@ -592,7 +592,7 @@ end
 
     wₜ=sol[csys.wₜ][end]
     η=400.0/1000.0
-    Kc_expected=0.4 * wₜ * 400.0 * (1 - η)^2
+    Kc_expected=0.4*wₜ*400.0*(1-η)^2
     @test isapprox(sol[csys.Kc][end], Kc_expected, rtol = 1e-6)
 end
 
@@ -642,7 +642,7 @@ end
     wₘ_outer=sol_unstable[csys.wₘ_outer][end]
     φₕ_val=sol_unstable[csys.φₕ][end]
     φₘ_val=sol_unstable[csys.φₘ][end]
-    Pr_expected=φₕ_val/φₘ_val + 7.2*0.4*0.1*(w_star/wₘ_outer)
+    Pr_expected=φₕ_val/φₘ_val+7.2*0.4*0.1*(w_star/wₘ_outer)
     @test isapprox(sol_unstable[csys.Pr][end], Pr_expected, rtol = 0.01)
     @test sol_unstable[csys.Pr][end] > 0
 end
@@ -669,7 +669,7 @@ end
     # Verify γc numerically: γc = a·w*·(w'C')₀/(wₘ²·h)
     w_star=sol_unstable[csys.w_star][end]
     wₘ_outer=sol_unstable[csys.wₘ_outer][end]
-    γc_expected=7.2 * w_star * 1e-4 / (wₘ_outer^2 * 1000.0)
+    γc_expected=7.2*w_star*1e-4/(wₘ_outer^2*1000.0)
     @test isapprox(sol_unstable[csys.γc][end], γc_expected, rtol = 1e-6)
 
     # Stable: γc should be zero
@@ -774,9 +774,9 @@ end
         (0.0, 1.0))
     sol=solve(prob)
 
-    φₕ_at_ε_expected = 1 / sqrt(1 - 15 * (-0.5))
-    φₕ_local_expected = 1 / sqrt(1 - 15 * (-0.25))
-    φₘ_local_expected = 1 / (1 - 15 * (-0.25))^(1/3)
+    φₕ_at_ε_expected=1/sqrt(1-15*(-0.5))
+    φₕ_local_expected=1/sqrt(1-15*(-0.25))
+    φₘ_local_expected=1/(1-15*(-0.25))^(1/3)
     @test isapprox(sol[csys.φₕ][end], φₕ_at_ε_expected, rtol = 0.01)
     @test isapprox(sol[csys.φₕ_local][end], φₕ_local_expected, rtol = 0.01)
     @test isapprox(sol[csys.φₘ_local][end], φₘ_local_expected, rtol = 0.01)
@@ -807,8 +807,8 @@ end
         (0.0, 1.0))
     sol=solve(prob)
 
-    φₘ_local_val = sol[csys.φₘ_local][end]
-    wₘ_expected = 0.3 / φₘ_local_val
+    φₘ_local_val=sol[csys.φₘ_local][end]
+    wₘ_expected=0.3/φₘ_local_val
     @test isapprox(sol[csys.wₘ][end], wₘ_expected, rtol = 0.01)
 
     # In the outer layer (z/h > 0.1), wₘ = (u*³ + c₁w*³)^(1/3) (Eq. A11)
@@ -920,8 +920,8 @@ end
         (0.0, 1.0))
     sol=solve(prob)
 
-    φₕ_local_val = sol[csys.φₕ_local][end]
-    wₜ_expected = 0.3 / φₕ_local_val
+    φₕ_local_val=sol[csys.φₕ_local][end]
+    wₜ_expected=0.3/φₕ_local_val
     @test isapprox(sol[csys.wₜ][end], wₜ_expected, rtol = 0.01)
 end
 
@@ -944,9 +944,9 @@ end
         (0.0, 1.0))
     sol=solve(prob)
 
-    wₘ_val = sol[csys.wₘ][end]
-    Pr_val = sol[csys.Pr][end]
-    wₜ_expected = wₘ_val / Pr_val
+    wₘ_val=sol[csys.wₘ][end]
+    Pr_val=sol[csys.Pr][end]
+    wₜ_expected=wₘ_val/Pr_val
     @test isapprox(sol[csys.wₜ][end], wₜ_expected, rtol = 1e-6)
 end
 
@@ -970,15 +970,15 @@ end
     sol=solve(prob)
 
     # Compute expected values manually
-    V₁ = sqrt(25.0 + 1.0)  # V_min_sq = 1.0
-    z_ratio = (10.0 + 0.1) / 0.1
-    Cₙ = 0.4^2 / (log(z_ratio))^2
-    Ri₀ = 9.81 * 10.0 * (300.0 - 305.0) / (300.0 * V₁^2)
+    V₁=sqrt(25.0+1.0)  # V_min_sq = 1.0
+    z_ratio=(10.0+0.1)/0.1
+    Cₙ=0.4^2/(log(z_ratio))^2
+    Ri₀=9.81*10.0*(300.0-305.0)/(300.0*V₁^2)
 
     # Eq. 2.9: fₘ = 1 - 10Ri₀ / (1 + 75·Cₙ·sqrt(z_ratio·|Ri₀|))
-    fₘ_expected = 1 - 10 * Ri₀ / (1 + 75 * Cₙ * sqrt(z_ratio * abs(Ri₀)))
+    fₘ_expected=1-10*Ri₀/(1+75*Cₙ*sqrt(z_ratio*abs(Ri₀)))
     # Eq. 2.10: fₕ = 1 - 15Ri₀ / (1 + 75·Cₙ·sqrt(z_ratio·|Ri₀|))
-    fₕ_expected = 1 - 15 * Ri₀ / (1 + 75 * Cₙ * sqrt(z_ratio * abs(Ri₀)))
+    fₕ_expected=1-15*Ri₀/(1+75*Cₙ*sqrt(z_ratio*abs(Ri₀)))
 
     @test isapprox(sol[csys.fₘ][end], fₘ_expected, rtol = 1e-6)
     @test isapprox(sol[csys.fₕ][end], fₕ_expected, rtol = 1e-6)
@@ -1003,8 +1003,8 @@ end
         (0.0, 1.0))
     sol=solve(prob)
 
-    Ri₀ = sol[csys.Ri₀][end]
-    f_expected = 1 / (1 + 10 * Ri₀ * (1 + 8 * Ri₀))
+    Ri₀=sol[csys.Ri₀][end]
+    f_expected=1/(1+10*Ri₀*(1+8*Ri₀))
     @test isapprox(sol[csys.fₘ][end], f_expected, rtol = 1e-6)
     @test isapprox(sol[csys.fₕ][end], f_expected, rtol = 1e-6)
 end
@@ -1030,7 +1030,7 @@ end
     @test isapprox(sol[csys.Fc][end], 1.0, rtol = 1e-6)
 
     # Verify Kc = lc² · S · 1 = lc² · S for neutral
-    lc = sol[csys.lc][end]
-    S_val = sol[csys.S][end]
+    lc=sol[csys.lc][end]
+    S_val=sol[csys.S][end]
     @test isapprox(sol[csys.Kc][end], lc^2 * S_val, rtol = 1e-6)
 end

@@ -306,16 +306,20 @@ sys = mtkcompile(nl)
         w_star(t),
         [description = "Convective velocity scale (Eq. A12)", unit = u"m/s"]
         φₕ(t),
-        [description = "Dimensionless temperature gradient at surface layer top (Eq. A3/A6) (dimensionless)",
+        [
+            description = "Dimensionless temperature gradient at surface layer top (Eq. A3/A6) (dimensionless)",
             unit = u"1"]
         φₘ(t),
-        [description = "Dimensionless wind shear at surface layer top (Eq. A2/A6) (dimensionless)",
+        [
+            description = "Dimensionless wind shear at surface layer top (Eq. A2/A6) (dimensionless)",
             unit = u"1"]
         φₕ_local(t),
-        [description = "Dimensionless temperature gradient at local height z (Eq. A3/A6) (dimensionless)",
+        [
+            description = "Dimensionless temperature gradient at local height z (Eq. A3/A6) (dimensionless)",
             unit = u"1"]
         φₘ_local(t),
-        [description = "Dimensionless wind shear at local height z (Eq. A2/A8) (dimensionless)",
+        [
+            description = "Dimensionless wind shear at local height z (Eq. A2/A8) (dimensionless)",
             unit = u"1"]
         wₘ(t),
         [description = "Velocity scale for momentum (Eq. A7/A11)", unit = u"m/s"]
@@ -338,7 +342,8 @@ sys = mtkcompile(nl)
 
     eqs = [
         # Stability parameter: z/L (regularized to avoid division by zero)
-        ζ ~ ifelse(abs(L) > L_min, z / L, z / (L_min * sign(L) + L_min * (1 - abs(sign(L))))),
+        ζ ~
+        ifelse(abs(L) > L_min, z / L, z / (L_min * sign(L) + L_min * (1 - abs(sign(L))))),
 
         # Relative height: z/h
         η ~ z / h,

@@ -32,19 +32,19 @@ The surface flux parameterization computes kinematic fluxes of momentum, heat, a
 
 Key equations from the paper:
 
-| Equation | Description                                                                                 |
-|:-------- |:------------------------------------------------------------------------------------------- |
-| 2.1      | Surface momentum flux (u): ``(\overline{w'u'})_0 = -C_M|V_1|u_1``                           |
-| 2.2      | Surface momentum flux (v): ``(\overline{w'v'})_0 = -C_M|V_1|v_1``                           |
-| 2.3      | Surface heat flux: ``(\overline{w'\theta'})_0 = C_H|V_1|(\theta_0 - \theta_1)``             |
-| 2.4      | Surface moisture flux: ``(\overline{w'q'})_0 = D_wC_H|V_1|(q_0 - q_1)``                     |
-| 2.5      | Momentum exchange coefficient: ``C_M = C_N f_m``                                             |
-| 2.6      | Heat exchange coefficient: ``C_H = C_N f_h``                                                 |
-| 2.7      | Neutral exchange coefficient: ``C_N = k^2/[\ln((z_1+z_{0M})/z_{0M})]^2``                    |
-| 2.8      | Bulk Richardson number: ``\text{Ri}_0 = gz_1(\theta_{v1} - \theta_{v0})/(\theta_1|V_1|^2)`` |
+| Equation | Description                                                                                                  |
+|:-------- |:------------------------------------------------------------------------------------------------------------ |
+| 2.1      | Surface momentum flux (u): ``(\overline{w'u'})_0 = -C_M|V_1|u_1``                                            |
+| 2.2      | Surface momentum flux (v): ``(\overline{w'v'})_0 = -C_M|V_1|v_1``                                            |
+| 2.3      | Surface heat flux: ``(\overline{w'\theta'})_0 = C_H|V_1|(\theta_0 - \theta_1)``                              |
+| 2.4      | Surface moisture flux: ``(\overline{w'q'})_0 = D_wC_H|V_1|(q_0 - q_1)``                                      |
+| 2.5      | Momentum exchange coefficient: ``C_M = C_N f_m``                                                             |
+| 2.6      | Heat exchange coefficient: ``C_H = C_N f_h``                                                                 |
+| 2.7      | Neutral exchange coefficient: ``C_N = k^2/[\ln((z_1+z_{0M})/z_{0M})]^2``                                     |
+| 2.8      | Bulk Richardson number: ``\text{Ri}_0 = gz_1(\theta_{v1} - \theta_{v0})/(\theta_1|V_1|^2)``                  |
 | 2.9      | Unstable momentum stability: ``f_m = 1 - 10\text{Ri}_0/(1 + 75C_N[(z_1+z_{0M})/z_{0M}|\text{Ri}_0|]^{1/2})`` |
-| 2.10     | Unstable heat stability: ``f_h = 1 - 15\text{Ri}_0/(1 + 75C_N[(z_1+z_{0M})/z_{0M}|\text{Ri}_0|]^{1/2})`` |
-| 2.11     | Stable stability function: ``f_m = f_h = 1/(1 + 10\text{Ri}_0(1 + 8\text{Ri}_0))``         |
+| 2.10     | Unstable heat stability: ``f_h = 1 - 15\text{Ri}_0/(1 + 75C_N[(z_1+z_{0M})/z_{0M}|\text{Ri}_0|]^{1/2})``     |
+| 2.11     | Stable stability function: ``f_m = f_h = 1/(1 + 10\text{Ri}_0(1 + 8\text{Ri}_0))``                           |
 
 #### State Variables
 
@@ -130,20 +130,20 @@ The nonlocal scheme determines eddy diffusivity from boundary layer height and t
 
 Key equations:
 
-| Equation | Description                                                                              |
-|:-------- |:---------------------------------------------------------------------------------------- |
-| 3.8      | Nonlocal flux: ``\overline{w'C'} = -K_c(\partial C/\partial z - \gamma_c)``              |
-| 3.9      | Eddy diffusivity profile: ``K_c = \kappa w_t z (1 - z/h)^2``                             |
-| 3.10     | Nonlocal transport: ``\gamma_c = a w_* (\overline{w'C'})_0 / (w_m^2 h)``                 |
-| A1       | Surface layer eddy diffusivity: ``K = \kappa u_* z / \phi_h(z/L)``                       |
-| A2/A4    | Dimensionless wind shear (stable): ``\phi_m = 1 + 5z/L`` / ``\phi_m = 5 + z/L``         |
-| A3/A5    | Dimensionless temperature gradient (stable): ``\phi_h = 1 + 5z/L`` / ``\phi_h = 5 + z/L``|
-| A6       | Unstable temperature profile: ``\phi_h = (1-15z/L)^{-1/2}``                              |
+| Equation | Description                                                                               |
+|:-------- |:----------------------------------------------------------------------------------------- |
+| 3.8      | Nonlocal flux: ``\overline{w'C'} = -K_c(\partial C/\partial z - \gamma_c)``               |
+| 3.9      | Eddy diffusivity profile: ``K_c = \kappa w_t z (1 - z/h)^2``                              |
+| 3.10     | Nonlocal transport: ``\gamma_c = a w_* (\overline{w'C'})_0 / (w_m^2 h)``                  |
+| A1       | Surface layer eddy diffusivity: ``K = \kappa u_* z / \phi_h(z/L)``                        |
+| A2/A4    | Dimensionless wind shear (stable): ``\phi_m = 1 + 5z/L`` / ``\phi_m = 5 + z/L``           |
+| A3/A5    | Dimensionless temperature gradient (stable): ``\phi_h = 1 + 5z/L`` / ``\phi_h = 5 + z/L`` |
+| A6       | Unstable temperature profile: ``\phi_h = (1-15z/L)^{-1/2}``                               |
 | A7       | Surface layer momentum velocity scale: ``w_m = u_*/\phi_m``                               |
 | A8       | Unstable wind shear profile: ``\phi_m = (1-15z/L)^{-1/3}``                                |
 | A11      | Outer-layer momentum velocity scale: ``w_m = (u_*^3 + c_1 w_*^3)^{1/3}``                  |
-| A12      | Convective velocity scale: ``w_* = ((g/\theta_{v0})(\overline{w'\theta_v'})_0 h)^{1/3}`` |
-| A13      | Turbulent Prandtl number: ``\text{Pr} = \phi_h/\phi_m + a \kappa \varepsilon (w_*/w_m)`` |
+| A12      | Convective velocity scale: ``w_* = ((g/\theta_{v0})(\overline{w'\theta_v'})_0 h)^{1/3}``  |
+| A13      | Turbulent Prandtl number: ``\text{Pr} = \phi_h/\phi_m + a \kappa \varepsilon (w_*/w_m)``  |
 
 #### State Variables
 
