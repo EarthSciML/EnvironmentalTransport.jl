@@ -2,12 +2,12 @@ module EarthSciDataExt
 
 using DocStringExtensions
 import EarthSciMLBase
-using EarthSciMLBase: param_to_var, ConnectorSystem, CoupledSystem, get_coupltype,
+using EarthSciMLBase: param_to_var, ConnectorSystem, CoupledSystem, get_coupletype,
                       operator_compose
 using EarthSciData: GEOSFPCoupler, WRFCoupler, Ap, Bp
 using EnvironmentalTransport: PuffCoupler, GaussianPGBCoupler, GaussianKCCoupler,
                               BoundaryLayerMixingKCCoupler, AdvectionOperator,
-                              Sofiev2012PlumeRiseCoupler
+                              Sofiev2012PlumeRiseCoupler, PBLMixingCallback
 using ModelingToolkit: ParentScope, get_defaults, @unpack
 using ModelingToolkit: t
 using ModelingToolkit: @parameters, @variables, @constants
