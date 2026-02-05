@@ -15,9 +15,15 @@ RuntimeGeneratedFunctions.init(@__MODULE__) # Needed even though we don't use it
 include("advection_stencils.jl")
 include("boundary_conditions.jl")
 include("advection.jl")
+include("PBL_mixing.jl")
 include("puff.jl")
 include("plume_rise/sofiev_2012.jl")
 include("GaussianDispersion.jl")
 include("BoundaryLayerMixingKC.jl")
+include("general_circulation.jl")
+include("global_cycles.jl")
+include("seinfeld_pandis_ch1.jl")
+include("local_scale_meteorology.jl")
+include("atmospheric_diffusion.jl")
 
 end

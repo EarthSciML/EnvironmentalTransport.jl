@@ -34,7 +34,7 @@ geosfp = GEOSFP("4x5", domain; stream = false)
 puff = Puff(domain)
 
 model = couple(puff, geosfp)
-const sys = convert(ODESystem, model)
+const sys = convert(System, model)
 u0 = ModelingToolkit.get_defaults(sys)
 tspan = EarthSciMLBase.get_tspan(domain)
 prob=ODEProblem(sys, u0, tspan)
