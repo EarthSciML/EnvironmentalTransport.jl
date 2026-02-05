@@ -1,8 +1,11 @@
 @testitem "Sofiev2012PlumeRise" begin
     using EarthSciMLBase, EarthSciData, EnvironmentalTransport
     using ModelingToolkit
+    using ModelingToolkit: Initial
+    import SciMLBase
     using Dates
-    using OrdinaryDiffEq
+    using OrdinaryDiffEqDefault
+    using OrdinaryDiffEqTsit5: Tsit5
 
     starttime = DateTime(2022, 5, 1)
     endtime = DateTime(2022, 5, 1, 0, 1)
