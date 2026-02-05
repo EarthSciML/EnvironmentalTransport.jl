@@ -32,25 +32,50 @@ function EarthSciMLBase.couple2(p::PuffCoupler, g::GEOSFPCoupler)
 end
 
 function EarthSciMLBase.couple2(blm::BoundaryLayerMixingKCCoupler, g::GEOSFPCoupler)
-    t, m = blm.sys, g.sys
-    t = param_to_var(t, :PBLH, :USTAR, :HFLUX, :EFLUX, :PS, :T2M,
+    b, m = blm.sys, g.sys
+    b = param_to_var(b, :PBLH, :USTAR, :HFLUX, :EFLUX, :PS, :T2M,
         :QV2M, :z_agl, :z2lev, :x_trans, :y_trans)
+
+    # Compute Z_agl and dZ/dlev from GEOSFP interpolators (hypsometric equation)
+    @constants _Rd_blm = 287.05 [unit = u"J/(kg*K)", description = "Specific gas constant for dry air"]
+    @constants _g_blm = 9.80665 [unit = u"m/s^2", description = "Gravitational acceleration"]
+    @constants _Pu_blm = 1.0 [unit = u"Pa", description = "Pressure unit"]
+    τ = ParentScope(m.t_ref)
+    λ = ParentScope(m.lon)
+    φ = ParentScope(m.lat)
+    ℓ = ParentScope(m.lev)
+    T_itp = ParentScope(m.I3₊T_itp)
+    QV_itp = ParentScope(m.I3₊QV_itp)
+    PS_itp = ParentScope(m.I3₊PS_itp)
+    T2M_itp = ParentScope(m.A1₊T2M_itp)
+    QV2M_itp = ParentScope(m.A1₊QV2M_itp)
+    _Z_at = ℓ_arg -> begin
+        Tv = T_itp(τ + t, λ, φ, ℓ_arg) * (1 + 0.61 * QV_itp(τ + t, λ, φ, ℓ_arg))
+        Tv2 = T2M_itp(τ + t, λ, φ) * (1 + 0.61 * QV2M_itp(τ + t, λ, φ))
+        Tv̄ = 0.5 * (Tv + Tv2)
+        PS_v = PS_itp(τ + t, λ, φ)
+        Pmid = _Pu_blm * Ap(ℓ_arg + 0.5) + Bp(ℓ_arg + 0.5) * PS_v
+        (_Rd_blm * Tv̄ / _g_blm) * log(PS_v / Pmid)
+    end
+    Δℓ = 0.5
+    Z_agl_expr = _Z_at(ℓ)
+    dZdlev_expr = (_Z_at(ℓ + Δℓ) - _Z_at(ℓ - Δℓ)) / (2 * Δℓ)
 
     ConnectorSystem(
         [
-            t.PBLH ~ m.A1₊PBLH,
-            t.USTAR ~ m.A1₊USTAR,
-            t.HFLUX ~ m.A1₊HFLUX,
-            t.EFLUX ~ m.A1₊EFLUX,
-            t.PS ~ m.I3₊PS,
-            t.T2M ~ m.A1₊T2M,
-            t.QV2M ~ m.A1₊QV2M,
-            t.x_trans ~ 1 / m.δxδlon,
-            t.y_trans ~ 1 / m.δyδlat,
-            t.z_agl ~ m.Z_agl,
-            t.z2lev ~ 1 / m.δZδlev
+            b.PBLH ~ m.A1₊PBLH,
+            b.USTAR ~ m.A1₊USTAR,
+            b.HFLUX ~ m.A1₊HFLUX,
+            b.EFLUX ~ m.A1₊EFLUX,
+            b.PS ~ m.I3₊PS,
+            b.T2M ~ m.A1₊T2M,
+            b.QV2M ~ m.A1₊QV2M,
+            b.x_trans ~ 1 / m.δxδlon,
+            b.y_trans ~ 1 / m.δyδlat,
+            b.z_agl ~ Z_agl_expr,
+            b.z2lev ~ 1 / dZdlev_expr
         ],
-        t,
+        b,
         m)
 end
 
@@ -206,6 +231,26 @@ function EarthSciMLBase.couple2(gd::GaussianPGBCoupler, g::GEOSFPCoupler)
     d, m = gd.sys, g.sys
     d = param_to_var(d, :U10M, :V10M, :SWGDN, :CLDTOT, :T2M, :T10M)
 
+    # Compute Z_agl from GEOSFP interpolators (hypsometric equation)
+    @constants _Rd_pgb = 287.05 [unit = u"J/(kg*K)", description = "Specific gas constant for dry air"]
+    @constants _g_pgb = 9.80665 [unit = u"m/s^2", description = "Gravitational acceleration"]
+    @constants _Pu_pgb = 1.0 [unit = u"Pa", description = "Pressure unit"]
+    τ = ParentScope(m.t_ref)
+    λ = ParentScope(m.lon)
+    φ = ParentScope(m.lat)
+    ℓ = ParentScope(m.lev)
+    T_itp = ParentScope(m.I3₊T_itp)
+    QV_itp = ParentScope(m.I3₊QV_itp)
+    PS_itp = ParentScope(m.I3₊PS_itp)
+    T2M_itp = ParentScope(m.A1₊T2M_itp)
+    QV2M_itp = ParentScope(m.A1₊QV2M_itp)
+    Tv = T_itp(τ + t, λ, φ, ℓ) * (1 + 0.61 * QV_itp(τ + t, λ, φ, ℓ))
+    Tv2 = T2M_itp(τ + t, λ, φ) * (1 + 0.61 * QV2M_itp(τ + t, λ, φ))
+    Tv̄ = 0.5 * (Tv + Tv2)
+    PS_v = PS_itp(τ + t, λ, φ)
+    Pmid = _Pu_pgb * Ap(ℓ + 0.5) + Bp(ℓ + 0.5) * PS_v
+    Z_agl_expr = (_Rd_pgb * Tv̄ / _g_pgb) * log(PS_v / Pmid)
+
     ConnectorSystem(
         [d.lat ~ m.lat
          d.lon ~ m.lon
@@ -215,7 +260,7 @@ function EarthSciMLBase.couple2(gd::GaussianPGBCoupler, g::GEOSFPCoupler)
          d.CLDTOT ~ m.A1₊CLDTOT
          d.T2M ~ m.A1₊T2M
          d.T10M ~ m.A1₊T10M
-         d.z_agl ~ m.Z_agl],
+         d.z_agl ~ Z_agl_expr],
         d,
         m)
 end
@@ -223,8 +268,28 @@ end
 function EarthSciMLBase.couple2(gk::GaussianKCCoupler, g::GEOSFPCoupler)
     d, m = gk.sys, g.sys
 
+    # Compute Z_agl from GEOSFP interpolators (hypsometric equation)
+    @constants _Rd_kc = 287.05 [unit = u"J/(kg*K)", description = "Specific gas constant for dry air"]
+    @constants _g_kc = 9.80665 [unit = u"m/s^2", description = "Gravitational acceleration"]
+    @constants _Pu_kc = 1.0 [unit = u"Pa", description = "Pressure unit"]
+    τ = ParentScope(m.t_ref)
+    λ = ParentScope(m.lon)
+    φ = ParentScope(m.lat)
+    ℓ = ParentScope(m.lev)
+    T_itp = ParentScope(m.I3₊T_itp)
+    QV_itp = ParentScope(m.I3₊QV_itp)
+    PS_itp = ParentScope(m.I3₊PS_itp)
+    T2M_itp = ParentScope(m.A1₊T2M_itp)
+    QV2M_itp = ParentScope(m.A1₊QV2M_itp)
+    Tv = T_itp(τ + t, λ, φ, ℓ) * (1 + 0.61 * QV_itp(τ + t, λ, φ, ℓ))
+    Tv2 = T2M_itp(τ + t, λ, φ) * (1 + 0.61 * QV2M_itp(τ + t, λ, φ))
+    Tv̄ = 0.5 * (Tv + Tv2)
+    PS_v = PS_itp(τ + t, λ, φ)
+    Pmid = _Pu_kc * Ap(ℓ + 0.5) + Bp(ℓ + 0.5) * PS_v
+    Z_agl_expr = (_Rd_kc * Tv̄ / _g_kc) * log(PS_v / Pmid)
+
     ConnectorSystem([
-            d.z_agl ~ m.Z_agl
+            d.z_agl ~ Z_agl_expr
         ], d, m)
 end
 
