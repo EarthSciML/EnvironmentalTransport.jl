@@ -233,6 +233,95 @@ end
     @test sol[csys.wv₀][end] < 0
 end
 
+@testitem "SurfaceFlux Ri₀ numerical verification Eq. 2.8" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    # Verify explicit Ri₀ computation: Ri₀ = g·z₁·(θᵥ₁ - θᵥ₀)/(θ₁·V₁²)
+    sf=HoltslagBovilleSurfaceFlux()
+    csys=mtkcompile(sf)
+
+    prob=ODEProblem(csys,
+        Dict(
+            csys.θᵥ₀=>295.0,
+            csys.θᵥ₁=>300.0,
+            csys.θ₀=>295.0,
+            csys.θ₁=>300.0,
+            csys.u₁=>3.0,
+            csys.v₁=>4.0,
+            csys.z₁=>20.0,
+            csys.z₀ₘ=>0.01
+        ),
+        (0.0, 1.0))
+    sol=solve(prob)
+
+    # V₁ = sqrt(3² + 4² + 1) = sqrt(26) (V_min_sq = 1.0)
+    V₁=sqrt(3.0^2 + 4.0^2 + 1.0)
+    # Ri₀ = 9.81 * 20 * (300-295) / (300 * V₁²) = 981 / (300 * 26) = 0.12577
+    Ri₀_expected = 9.81 * 20.0 * 5.0 / (300.0 * V₁^2)
+    @test isapprox(sol[csys.Ri₀][end], Ri₀_expected, rtol = 1e-6)
+end
+
+@testitem "SurfaceFlux moisture flux Eq. 2.4" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    # Verify wq₀ = Dw·Cₕ·V₁·(q₀ - q₁)
+    sf=HoltslagBovilleSurfaceFlux()
+    csys=mtkcompile(sf)
+
+    prob=ODEProblem(csys,
+        Dict(
+            csys.θᵥ₀=>300.0,
+            csys.θᵥ₁=>300.0,
+            csys.θ₀=>300.0,
+            csys.θ₁=>300.0,
+            csys.u₁=>5.0,
+            csys.v₁=>0.0,
+            csys.z₁=>10.0,
+            csys.z₀ₘ=>0.1,
+            csys.q₀=>0.015,
+            csys.q₁=>0.010,
+            csys.Dw=>0.8
+        ),
+        (0.0, 1.0))
+    sol=solve(prob)
+
+    # Under neutral conditions, Cₕ = Cₙ
+    Cₕ=sol[csys.Cₕ][end]
+    V₁=sol[csys.V₁][end]
+    # wq₀ = 0.8 * Cₕ * V₁ * (0.015 - 0.010) = 0.8 * Cₕ * V₁ * 0.005
+    wq₀_expected=0.8 * Cₕ * V₁ * 0.005
+    @test isapprox(sol[csys.wq₀][end], wq₀_expected, rtol = 1e-6)
+    # Positive (evaporation from moist surface)
+    @test sol[csys.wq₀][end] > 0
+end
+
+@testitem "SurfaceFlux numerical flux values Eq. 2.1-2.3" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    # Verify surface flux equations numerically
+    sf=HoltslagBovilleSurfaceFlux()
+    csys=mtkcompile(sf)
+
+    prob=ODEProblem(csys,
+        Dict(
+            csys.θᵥ₀=>300.0,
+            csys.θᵥ₁=>300.0,
+            csys.θ₀=>305.0,
+            csys.θ₁=>300.0,
+            csys.u₁=>5.0,
+            csys.v₁=>0.0,
+            csys.z₁=>10.0,
+            csys.z₀ₘ=>0.1
+        ),
+        (0.0, 1.0))
+    sol=solve(prob)
+
+    Cₘ=sol[csys.Cₘ][end]
+    Cₕ=sol[csys.Cₕ][end]
+    V₁=sol[csys.V₁][end]
+
+    # Eq. 2.1: wu₀ = -Cₘ·V₁·u₁
+    @test isapprox(sol[csys.wu₀][end], -Cₘ * V₁ * 5.0, rtol = 1e-6)
+    # Eq. 2.2: wv₀ = -Cₘ·V₁·v₁ = 0 (v₁ = 0)
+    @test isapprox(sol[csys.wv₀][end], 0.0, atol = 1e-10)
+    # Eq. 2.3: wθ₀ = Cₕ·V₁·(θ₀ - θ₁) = Cₕ·V₁·5
+    @test isapprox(sol[csys.wθ₀][end], Cₕ * V₁ * 5.0, rtol = 1e-6)
+end
+
 # =============================================================================
 # Local Diffusion Equation Verification
 # =============================================================================
@@ -291,6 +380,36 @@ end
     lc_expected=1/(1/(κ*1000)+1/λc)
     @test isapprox(sol[csys.lc][end], lc_expected, rtol = 1e-6)
     @test sol[csys.lc][end] > 0
+end
+
+@testitem "LocalDiffusion Kc numerical verification Eq. 3.2" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    # Verify Kc = lc² · S · Fc with explicit numerical values
+    ld=HoltslagBovilleLocalDiffusion()
+    csys=mtkcompile(ld)
+
+    prob=ODEProblem(csys,
+        Dict(
+            csys.z=>500.0,
+            csys.θᵥ=>300.0,
+            csys.∂θᵥ_∂z=>-0.005,
+            csys.∂u_∂z=>0.02,
+            csys.∂v_∂z=>0.01
+        ),
+        (0.0, 1.0))
+    sol=solve(prob)
+
+    lc=sol[csys.lc][end]
+    S_val=sol[csys.S][end]
+    Fc=sol[csys.Fc][end]
+    Kc_expected=lc^2 * S_val * Fc
+    @test isapprox(sol[csys.Kc][end], Kc_expected, rtol = 1e-6)
+
+    # Also verify Ri numerically: Ri = (g/θᵥ)(∂θᵥ/∂z)/S²
+    S_min=1e-6
+    S_expected=sqrt(0.02^2 + 0.01^2) + S_min
+    Ri_expected=(9.81/300.0) * (-0.005) / S_expected^2
+    @test isapprox(sol[csys.Ri][end], Ri_expected, rtol = 1e-6)
+    @test sol[csys.Ri][end] < 0  # Unstable
 end
 
 @testitem "LocalDiffusion stable vs unstable" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
@@ -453,6 +572,30 @@ end
     @test 5.0 < sol_mid[csys.Kc][end] < 200.0
 end
 
+@testitem "NonlocalABL Kc numerical verification Eq. 3.9" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    # Verify Kc = κ·wₜ·z·(1-z/h)² with explicit numerical values
+    nl=HoltslagBovilleNonlocalABL()
+    csys=mtkcompile(nl)
+
+    prob=ODEProblem(csys,
+        Dict(
+            csys.z=>400.0,
+            csys.h=>1000.0,
+            csys.u_star=>0.3,
+            csys.wθᵥ₀=>0.1,
+            csys.wC₀=>1e-5,
+            csys.θᵥ₀=>300.0,
+            csys.L=>-100.0
+        ),
+        (0.0, 1.0))
+    sol=solve(prob)
+
+    wₜ=sol[csys.wₜ][end]
+    η=400.0/1000.0
+    Kc_expected=0.4 * wₜ * 400.0 * (1 - η)^2
+    @test isapprox(sol[csys.Kc][end], Kc_expected, rtol = 1e-6)
+end
+
 @testitem "NonlocalABL Prandtl number Eq. A13" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
     nl=HoltslagBovilleNonlocalABL()
     csys=mtkcompile(nl)
@@ -522,6 +665,12 @@ end
         (0.0, 1.0))
     sol_unstable=solve(prob_unstable)
     @test sol_unstable[csys.γc][end] > 0
+
+    # Verify γc numerically: γc = a·w*·(w'C')₀/(wₘ²·h)
+    w_star=sol_unstable[csys.w_star][end]
+    wₘ_outer=sol_unstable[csys.wₘ_outer][end]
+    γc_expected=7.2 * w_star * 1e-4 / (wₘ_outer^2 * 1000.0)
+    @test isapprox(sol_unstable[csys.γc][end], γc_expected, rtol = 1e-6)
 
     # Stable: γc should be zero
     prob_stable=ODEProblem(csys,

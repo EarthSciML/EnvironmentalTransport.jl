@@ -38,8 +38,13 @@ Key equations from the paper:
 | 2.2      | Surface momentum flux (v): ``(\overline{w'v'})_0 = -C_M|V_1|v_1``                           |
 | 2.3      | Surface heat flux: ``(\overline{w'\theta'})_0 = C_H|V_1|(\theta_0 - \theta_1)``             |
 | 2.4      | Surface moisture flux: ``(\overline{w'q'})_0 = D_wC_H|V_1|(q_0 - q_1)``                     |
+| 2.5      | Momentum exchange coefficient: ``C_M = C_N f_m``                                             |
+| 2.6      | Heat exchange coefficient: ``C_H = C_N f_h``                                                 |
 | 2.7      | Neutral exchange coefficient: ``C_N = k^2/[\ln((z_1+z_{0M})/z_{0M})]^2``                    |
 | 2.8      | Bulk Richardson number: ``\text{Ri}_0 = gz_1(\theta_{v1} - \theta_{v0})/(\theta_1|V_1|^2)`` |
+| 2.9      | Unstable momentum stability: ``f_m = 1 - 10\text{Ri}_0/(1 + 75C_N[(z_1+z_{0M})/z_{0M}|\text{Ri}_0|]^{1/2})`` |
+| 2.10     | Unstable heat stability: ``f_h = 1 - 15\text{Ri}_0/(1 + 75C_N[(z_1+z_{0M})/z_{0M}|\text{Ri}_0|]^{1/2})`` |
+| 2.11     | Stable stability function: ``f_m = f_h = 1/(1 + 10\text{Ri}_0(1 + 8\text{Ri}_0))``         |
 
 #### State Variables
 
@@ -49,7 +54,7 @@ Key equations from the paper:
 vars = unknowns(sf)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(v, escape = false)) for v in vars],
-    :Units => [string(ModelingToolkit.get_unit(v)) for v in vars],
+    :Units => [dimension(ModelingToolkit.get_unit(v)) for v in vars],
     :Description => [ModelingToolkit.getdescription(v) for v in vars]
 )
 ```
@@ -61,7 +66,7 @@ params = parameters(sf)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(p, escape = false)) for p in params],
     :Default => [ModelingToolkit.getdefault(p) for p in params],
-    :Units => [string(ModelingToolkit.get_unit(p)) for p in params],
+    :Units => [dimension(ModelingToolkit.get_unit(p)) for p in params],
     :Description => [ModelingToolkit.getdescription(p) for p in params]
 )
 ```
@@ -96,7 +101,7 @@ Key equations:
 vars_ld = unknowns(ld)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(v, escape = false)) for v in vars_ld],
-    :Units => [string(ModelingToolkit.get_unit(v)) for v in vars_ld],
+    :Units => [dimension(ModelingToolkit.get_unit(v)) for v in vars_ld],
     :Description => [ModelingToolkit.getdescription(v) for v in vars_ld]
 )
 ```
@@ -108,7 +113,7 @@ params_ld = parameters(ld)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(p, escape = false)) for p in params_ld],
     :Default => [ModelingToolkit.getdefault(p) for p in params_ld],
-    :Units => [string(ModelingToolkit.get_unit(p)) for p in params_ld],
+    :Units => [dimension(ModelingToolkit.get_unit(p)) for p in params_ld],
     :Description => [ModelingToolkit.getdescription(p) for p in params_ld]
 )
 ```
@@ -148,7 +153,7 @@ Key equations:
 vars_nl = unknowns(nl)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(v, escape = false)) for v in vars_nl],
-    :Units => [string(ModelingToolkit.get_unit(v)) for v in vars_nl],
+    :Units => [dimension(ModelingToolkit.get_unit(v)) for v in vars_nl],
     :Description => [ModelingToolkit.getdescription(v) for v in vars_nl]
 )
 ```
@@ -160,7 +165,7 @@ params_nl = parameters(nl)
 DataFrame(
     :Name => [string(Symbolics.tosymbol(p, escape = false)) for p in params_nl],
     :Default => [ModelingToolkit.getdefault(p) for p in params_nl],
-    :Units => [string(ModelingToolkit.get_unit(p)) for p in params_nl],
+    :Units => [dimension(ModelingToolkit.get_unit(p)) for p in params_nl],
     :Description => [ModelingToolkit.getdescription(p) for p in params_nl]
 )
 ```
