@@ -10,7 +10,9 @@ To demonstrate how it works, let's first set up our environment:
 ```@example adv
 using EnvironmentalTransport
 using EarthSciMLBase, EarthSciData
-using ModelingToolkit, DifferentialEquations
+using ModelingToolkit, OrdinaryDiffEqDefault
+using OrdinaryDiffEqTsit5: Tsit5
+using OrdinaryDiffEqSSPRK: SSPRK22
 using ProgressLogging
 using ModelingToolkit: t, D
 using DynamicQuantities

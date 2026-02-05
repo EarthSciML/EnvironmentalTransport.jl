@@ -5,7 +5,9 @@ using EarthSciMLBase, EarthSciData, EnvironmentalTransport
 using ModelingToolkit
 using ModelingToolkit: t
 using DynamicQuantities
-using DifferentialEquations
+using OrdinaryDiffEqDefault
+using OrdinaryDiffEqTsit5: Tsit5
+using SciMLBase: EnsembleProblem, remake
 using Plots
 using Dates
 
