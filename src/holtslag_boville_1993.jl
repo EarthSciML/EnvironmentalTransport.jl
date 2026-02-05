@@ -304,10 +304,13 @@ sys = mtkcompile(nl)
         w_star(t),
         [description = "Convective velocity scale (Eq. A12)", unit = u"m/s"]
         φₕ(t),
-        [description = "Dimensionless temperature gradient (Eq. A3/A6) (dimensionless)",
+        [description = "Dimensionless temperature gradient at surface layer top (Eq. A3/A6) (dimensionless)",
             unit = u"1"]
         φₘ(t),
-        [description = "Dimensionless wind shear (Eq. A2/A6) (dimensionless)",
+        [description = "Dimensionless wind shear at surface layer top (Eq. A2/A6) (dimensionless)",
+            unit = u"1"]
+        φₕ_local(t),
+        [description = "Dimensionless temperature gradient at local height z (Eq. A3/A6) (dimensionless)",
             unit = u"1"]
         wₘ(t),
         [description = "Velocity scale for momentum (Eq. A11)", unit = u"m/s"]
@@ -354,7 +357,7 @@ sys = mtkcompile(nl)
                 1 / (1 - 15 * ζ_ε)^(1 / 4),
                 1.0)),
 
-        # Eq. A3/A5/A6: Dimensionless temperature gradient
+        # Eq. A3/A5/A6: Dimensionless temperature gradient at surface layer top (for Pr, Eq. A13)
         # Stable (L > 0): φₕ = 1 + 5z/L for 0 ≤ z/L ≤ 1 (Eq. A3)
         #                 φₕ = 5 + z/L for z/L > 1 (Eq. A5)
         # Unstable (L < 0): φₕ = (1 - 15z/L)^(-1/2) (Eq. A6)
@@ -362,6 +365,13 @@ sys = mtkcompile(nl)
             ifelse(ζ_ε <= 1, 1 + 5 * ζ_ε, 5 + ζ_ε),
             ifelse(L < zero_length,
                 1 / sqrt(1 - 15 * ζ_ε),
+                1.0)),
+
+        # Eq. A3/A5/A6: Dimensionless temperature gradient at local height z (for wₜ in surface layer, Eq. A1)
+        φₕ_local ~ ifelse(L > zero_length,
+            ifelse(ζ <= 1, 1 + 5 * ζ, 5 + ζ),
+            ifelse(L < zero_length,
+                1 / sqrt(1 - 15 * ζ),
                 1.0)),
 
         # Eq. A11: Momentum velocity scale (outer layer)
@@ -375,10 +385,10 @@ sys = mtkcompile(nl)
         Pr ~ φₕ / φₘ + a_coeff * κ * ε_sl * (w_star / wₘ),
 
         # Eq. A1/A10: Scalar velocity scale
-        # Surface layer (z/h ≤ ε): wₜ = u*/φₕ (Eq. A1)
+        # Surface layer (z/h ≤ ε): wₜ = u*/φₕ(z/L) (Eq. A1)
         # Outer layer (z/h > ε): wₜ = wₘ/Pr (Eq. A10)
         wₜ ~ ifelse(η <= ε_sl,
-            u_star / φₕ,
+            u_star / φₕ_local,
             wₘ / Pr),
 
         # Eq. 3.9: Eddy diffusivity profile

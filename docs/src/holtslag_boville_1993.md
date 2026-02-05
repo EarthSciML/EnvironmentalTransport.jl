@@ -131,6 +131,7 @@ Key equations:
 | 3.8      | Nonlocal flux: ``\overline{w'C'} = -K_c(\partial C/\partial z - \gamma_c)``              |
 | 3.9      | Eddy diffusivity profile: ``K_c = \kappa w_t z (1 - z/h)^2``                             |
 | 3.10     | Nonlocal transport: ``\gamma_c = a w_* (\overline{w'C'})_0 / (w_m^2 h)``                 |
+| A1       | Surface layer eddy diffusivity: ``K = \kappa u_* z / \phi_h(z/L)``                       |
 | A2/A4    | Dimensionless wind shear: ``\phi_m`` (stable/unstable)                                   |
 | A3/A5    | Dimensionless temperature gradient: ``\phi_h`` (stable/unstable)                          |
 | A6       | Unstable profiles: ``\phi_m = (1-15z/L)^{-1/4}``, ``\phi_h = (1-15z/L)^{-1/2}``         |
@@ -184,8 +185,6 @@ Ri_values = Float64[]
 
 for Δθv in Δθv_values
     prob = ODEProblem(sys_sf,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             sys_sf.θᵥ₀ => 300.0,
             sys_sf.θᵥ₁ => 300.0 + Δθv,
@@ -195,7 +194,8 @@ for Δθv in Δθv_values
             sys_sf.v₁ => 0.0,
             sys_sf.z₁ => 10.0,
             sys_sf.z₀ₘ => 0.1
-        ))
+        ),
+        (0.0, 1.0))
     sol = solve(prob)
     push!(fM_values, sol[sys_sf.fₘ][end])
     push!(fH_values, sol[sys_sf.fₕ][end])
@@ -220,8 +220,6 @@ heights = 50.0:50.0:950.0
 Kc_values = Float64[]
 for z in heights
     prob = ODEProblem(sys_nl,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             sys_nl.z => z,
             sys_nl.h => h,
@@ -230,7 +228,8 @@ for z in heights
             sys_nl.wC₀ => 1e-5,
             sys_nl.θᵥ₀ => 300.0,
             sys_nl.L => -100.0
-        ))
+        ),
+        (0.0, 1.0))
     sol = solve(prob)
     push!(Kc_values, sol[sys_nl.Kc][end])
 end
@@ -258,8 +257,6 @@ for h in h_values
     w_star_vals = Float64[]
     for wθ in heat_fluxes
         prob = ODEProblem(sys_nl,
-            Dict(),
-            (0.0, 1.0),
             Dict(
                 sys_nl.z => 500.0,
                 sys_nl.h => h,
@@ -268,7 +265,8 @@ for h in h_values
                 sys_nl.wC₀ => 1e-5,
                 sys_nl.θᵥ₀ => 300.0,
                 sys_nl.L => -100.0
-            ))
+            ),
+            (0.0, 1.0))
         sol = solve(prob)
         push!(w_star_vals, sol[sys_nl.w_star][end])
     end
@@ -289,29 +287,27 @@ Kc_unstable = Float64[]
 for z in heights_local
     # Stable conditions
     prob_s = ODEProblem(sys_ld,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             sys_ld.z => z,
             sys_ld.θᵥ => 300.0,
             sys_ld.∂θᵥ_∂z => 0.005,
             sys_ld.∂u_∂z => 0.01,
             sys_ld.∂v_∂z => 0.0
-        ))
+        ),
+        (0.0, 1.0))
     sol_s = solve(prob_s)
     push!(Kc_stable, sol_s[sys_ld.Kc][end])
 
     # Unstable conditions
     prob_u = ODEProblem(sys_ld,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             sys_ld.z => z,
             sys_ld.θᵥ => 300.0,
             sys_ld.∂θᵥ_∂z => -0.005,
             sys_ld.∂u_∂z => 0.01,
             sys_ld.∂v_∂z => 0.0
-        ))
+        ),
+        (0.0, 1.0))
     sol_u = solve(prob_u)
     push!(Kc_unstable, sol_u[sys_ld.Kc][end])
 end

@@ -70,12 +70,13 @@ end
     @test nl isa ModelingToolkit.System
 
     eqs=equations(nl)
-    @test length(eqs) == 11
+    @test length(eqs) == 12
 
     var_names=Symbol.(unknowns(nl))
     @test Symbol("w_star(t)") in var_names
     @test Symbol("φₕ(t)") in var_names
     @test Symbol("φₘ(t)") in var_names
+    @test Symbol("φₕ_local(t)") in var_names
     @test Symbol("wₘ(t)") in var_names
     @test Symbol("Pr(t)") in var_names
     @test Symbol("wₜ(t)") in var_names
@@ -105,8 +106,6 @@ end
     csys=mtkcompile(sf)
 
     prob=ODEProblem(csys,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             csys.θᵥ₀=>300.0,
             csys.θᵥ₁=>300.0,
@@ -116,7 +115,8 @@ end
             csys.v₁=>0.0,
             csys.z₁=>10.0,
             csys.z₀ₘ=>0.1
-        ))
+        ),
+        (0.0, 1.0))
     sol=solve(prob)
 
     # Ri₀ should be zero for neutral
@@ -144,8 +144,6 @@ end
     csys=mtkcompile(sf)
 
     prob=ODEProblem(csys,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             csys.θᵥ₀=>290.0,
             csys.θᵥ₁=>295.0,
@@ -155,7 +153,8 @@ end
             csys.v₁=>0.0,
             csys.z₁=>10.0,
             csys.z₀ₘ=>0.1
-        ))
+        ),
+        (0.0, 1.0))
     sol=solve(prob)
 
     # Ri₀ > 0 for stable
@@ -180,8 +179,6 @@ end
     csys=mtkcompile(sf)
 
     prob=ODEProblem(csys,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             csys.θᵥ₀=>305.0,
             csys.θᵥ₁=>300.0,
@@ -191,7 +188,8 @@ end
             csys.v₁=>0.0,
             csys.z₁=>10.0,
             csys.z₀ₘ=>0.1
-        ))
+        ),
+        (0.0, 1.0))
     sol=solve(prob)
 
     # Ri₀ < 0 for unstable
@@ -214,8 +212,6 @@ end
     csys=mtkcompile(sf)
 
     prob=ODEProblem(csys,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             csys.θᵥ₀=>300.0,
             csys.θᵥ₁=>300.0,
@@ -225,7 +221,8 @@ end
             csys.v₁=>3.0,
             csys.z₁=>10.0,
             csys.z₀ₘ=>0.1
-        ))
+        ),
+        (0.0, 1.0))
     sol=solve(prob)
 
     # wu₀ should be negative (opposing positive u₁)
@@ -244,29 +241,27 @@ end
 
     # At z = 1000 m: λc = 30 + 270·exp(0) = 300 m (paper states λc ≈ 300 m for z ≤ 1 km)
     prob=ODEProblem(csys,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             csys.z=>1000.0,
             csys.θᵥ=>300.0,
             csys.∂θᵥ_∂z=>0.003,
             csys.∂u_∂z=>0.01,
             csys.∂v_∂z=>0.0
-        ))
+        ),
+        (0.0, 1.0))
     sol=solve(prob)
     @test isapprox(sol[csys.λc][end], 300.0, rtol = 0.01)
 
     # At z = 5000 m: λc = 30 + 270·exp(-4) ≈ 34.9 m (approaches 30 m)
     prob2=ODEProblem(csys,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             csys.z=>5000.0,
             csys.θᵥ=>300.0,
             csys.∂θᵥ_∂z=>0.003,
             csys.∂u_∂z=>0.01,
             csys.∂v_∂z=>0.0
-        ))
+        ),
+        (0.0, 1.0))
     sol2=solve(prob2)
     λc_expected=30+270*exp(-4)
     @test isapprox(sol2[csys.λc][end], λc_expected, rtol = 0.01)
@@ -279,15 +274,14 @@ end
     # At z = 1000 m with λc ≈ 300: lc = 1/(1/(0.4*1000) + 1/300) ≈ 1/(0.0025 + 0.00333)
     # = 1/0.00583 ≈ 171.4 m. Paper states lc reaches max ~290 m near z = 1 km.
     prob=ODEProblem(csys,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             csys.z=>1000.0,
             csys.θᵥ=>300.0,
             csys.∂θᵥ_∂z=>0.003,
             csys.∂u_∂z=>0.01,
             csys.∂v_∂z=>0.0
-        ))
+        ),
+        (0.0, 1.0))
     sol=solve(prob)
 
     κ=0.4
@@ -303,15 +297,14 @@ end
 
     # Stable: positive ∂θᵥ/∂z gives positive Ri, Fc < 1
     prob_stable=ODEProblem(csys,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             csys.z=>500.0,
             csys.θᵥ=>300.0,
             csys.∂θᵥ_∂z=>0.01,
             csys.∂u_∂z=>0.01,
             csys.∂v_∂z=>0.0
-        ))
+        ),
+        (0.0, 1.0))
     sol_stable=solve(prob_stable)
     @test sol_stable[csys.Ri][end] > 0
     @test sol_stable[csys.Fc][end] < 1.0
@@ -320,15 +313,14 @@ end
 
     # Unstable: negative ∂θᵥ/∂z gives negative Ri, Fc > 1 (Eq. 3.7)
     prob_unstable=ODEProblem(csys,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             csys.z=>500.0,
             csys.θᵥ=>300.0,
             csys.∂θᵥ_∂z=>-0.01,
             csys.∂u_∂z=>0.01,
             csys.∂v_∂z=>0.0
-        ))
+        ),
+        (0.0, 1.0))
     sol_unstable=solve(prob_unstable)
     @test sol_unstable[csys.Ri][end] < 0
     @test sol_unstable[csys.Fc][end] > 1.0
@@ -348,8 +340,6 @@ end
     # Typical unstable conditions: wθᵥ₀ = 0.1 K·m/s, h = 1000 m
     # w* = ((9.81/300)*0.1*1000)^(1/3) = (3.27)^(1/3) ≈ 1.485 m/s
     prob=ODEProblem(csys,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             csys.z=>500.0,
             csys.h=>1000.0,
@@ -358,7 +348,8 @@ end
             csys.wC₀=>1e-5,
             csys.θᵥ₀=>300.0,
             csys.L=>-100.0
-        ))
+        ),
+        (0.0, 1.0))
     sol=solve(prob)
 
     w_star_expected=((9.81/300.0)*0.1*1000.0)^(1/3)
@@ -371,8 +362,6 @@ end
     csys=mtkcompile(nl)
 
     prob=ODEProblem(csys,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             csys.z=>500.0,
             csys.h=>1000.0,
@@ -381,7 +370,8 @@ end
             csys.wC₀=>1e-5,
             csys.θᵥ₀=>300.0,
             csys.L=>-100.0
-        ))
+        ),
+        (0.0, 1.0))
     sol=solve(prob)
 
     # Eq. A11: wₘ = (u*³ + c₁·w*³)^(1/3)
@@ -404,8 +394,6 @@ end
 
     # Near the surface
     prob_low=ODEProblem(csys,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             csys.z=>50.0,
             csys.h=>h,
@@ -414,13 +402,12 @@ end
             csys.wC₀=>1e-5,
             csys.θᵥ₀=>300.0,
             csys.L=>-100.0
-        ))
+        ),
+        (0.0, 1.0))
     sol_low=solve(prob_low)
 
     # Mid-height (z ≈ h/3)
     prob_mid=ODEProblem(csys,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             csys.z=>333.0,
             csys.h=>h,
@@ -429,13 +416,12 @@ end
             csys.wC₀=>1e-5,
             csys.θᵥ₀=>300.0,
             csys.L=>-100.0
-        ))
+        ),
+        (0.0, 1.0))
     sol_mid=solve(prob_mid)
 
     # Near the top
     prob_high=ODEProblem(csys,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             csys.z=>900.0,
             csys.h=>h,
@@ -444,7 +430,8 @@ end
             csys.wC₀=>1e-5,
             csys.θᵥ₀=>300.0,
             csys.L=>-100.0
-        ))
+        ),
+        (0.0, 1.0))
     sol_high=solve(prob_high)
 
     # Mid-height should have highest Kc
@@ -469,8 +456,6 @@ end
 
     # Near-neutral conditions: small heat flux, w* ≈ 0, so Pr ≈ φₕ/φₘ ≈ 1
     prob_neutral=ODEProblem(csys,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             csys.z=>500.0,
             csys.h=>1000.0,
@@ -479,7 +464,8 @@ end
             csys.wC₀=>1e-5,
             csys.θᵥ₀=>300.0,
             csys.L=>-10000.0
-        ))
+        ),
+        (0.0, 1.0))
     sol_neutral=solve(prob_neutral)
     # For large negative L, ε = 0.1*1000/(-10000) = -0.01 → φₕ/φₘ ≈ 1
     # w* is very small → second term ≈ 0 → Pr ≈ 1
@@ -490,8 +476,6 @@ end
 
     # Unstable conditions: Pr should include convective contribution
     prob_unstable=ODEProblem(csys,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             csys.z=>500.0,
             csys.h=>1000.0,
@@ -500,7 +484,8 @@ end
             csys.wC₀=>1e-5,
             csys.θᵥ₀=>300.0,
             csys.L=>-100.0
-        ))
+        ),
+        (0.0, 1.0))
     sol_unstable=solve(prob_unstable)
 
     # Verify Prandtl number matches Eq. A13 formula
@@ -519,8 +504,6 @@ end
 
     # Unstable: γc should be positive when wC₀ > 0
     prob_unstable=ODEProblem(csys,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             csys.z=>500.0,
             csys.h=>1000.0,
@@ -529,14 +512,13 @@ end
             csys.wC₀=>1e-4,
             csys.θᵥ₀=>300.0,
             csys.L=>-100.0
-        ))
+        ),
+        (0.0, 1.0))
     sol_unstable=solve(prob_unstable)
     @test sol_unstable[csys.γc][end] > 0
 
     # Stable: γc should be zero
     prob_stable=ODEProblem(csys,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             csys.z=>500.0,
             csys.h=>1000.0,
@@ -545,7 +527,8 @@ end
             csys.wC₀=>1e-4,
             csys.θᵥ₀=>300.0,
             csys.L=>100.0
-        ))
+        ),
+        (0.0, 1.0))
     sol_stable=solve(prob_stable)
     @test isapprox(sol_stable[csys.γc][end], 0.0, atol = 1e-10)
 end
@@ -559,8 +542,6 @@ end
     # At ζ_ε = 1: φₕ = 1 + 5*1.0 = 6.0 (Eq. A3)
     # φₘ = 1 + 5*1.0 = 6.0 (Eq. A2)
     prob=ODEProblem(csys,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             csys.z=>50.0,
             csys.h=>1000.0,
@@ -569,7 +550,8 @@ end
             csys.wC₀=>1e-5,
             csys.θᵥ₀=>300.0,
             csys.L=>100.0
-        ))
+        ),
+        (0.0, 1.0))
     sol=solve(prob)
     @test isapprox(sol[csys.φₕ][end], 6.0, rtol = 0.01)
     @test isapprox(sol[csys.φₘ][end], 6.0, rtol = 0.01)
@@ -578,8 +560,6 @@ end
     # φₕ = 5 + 2.0 = 7.0 (Eq. A5)
     # φₘ = 5 + 2.0 = 7.0 (Eq. A4)
     prob2=ODEProblem(csys,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             csys.z=>50.0,
             csys.h=>1000.0,
@@ -588,7 +568,8 @@ end
             csys.wC₀=>1e-5,
             csys.θᵥ₀=>300.0,
             csys.L=>50.0
-        ))
+        ),
+        (0.0, 1.0))
     sol2=solve(prob2)
     @test isapprox(sol2[csys.φₕ][end], 7.0, rtol = 0.01)
     @test isapprox(sol2[csys.φₘ][end], 7.0, rtol = 0.01)
@@ -597,8 +578,6 @@ end
     # φₕ = (1 - 15*(-1.0))^(-1/2) = (16)^(-1/2) = 0.25 (Eq. A6)
     # φₘ = (1 - 15*(-1.0))^(-1/4) = (16)^(-1/4) = 0.5 (Eq. A6)
     prob3=ODEProblem(csys,
-        Dict(),
-        (0.0, 1.0),
         Dict(
             csys.z=>50.0,
             csys.h=>1000.0,
@@ -607,10 +586,44 @@ end
             csys.wC₀=>1e-5,
             csys.θᵥ₀=>300.0,
             csys.L=>-100.0
-        ))
+        ),
+        (0.0, 1.0))
     sol3=solve(prob3)
     @test isapprox(sol3[csys.φₕ][end], 0.25, rtol = 0.01)
     @test isapprox(sol3[csys.φₘ][end], 0.5, rtol = 0.01)
+end
+
+@testitem "NonlocalABL phi_h_local vs phi_h Eq. A1" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
+    nl=HoltslagBovilleNonlocalABL()
+    csys=mtkcompile(nl)
+
+    # φₕ is evaluated at ζ_ε = εh/L (surface layer top), for use in Prandtl number (Eq. A13)
+    # φₕ_local is evaluated at ζ = z/L (local height), for use in surface layer wₜ (Eq. A1)
+    # When z ≠ εh, they should differ
+
+    # Unstable: L = -200, h = 1000, z = 50
+    # ζ_ε = 0.1*1000/(-200) = -0.5 → φₕ = (1 - 15*(-0.5))^(-1/2) = (8.5)^(-0.5)
+    # ζ = 50/(-200) = -0.25 → φₕ_local = (1 - 15*(-0.25))^(-1/2) = (4.75)^(-0.5)
+    prob=ODEProblem(csys,
+        Dict(
+            csys.z=>50.0,
+            csys.h=>1000.0,
+            csys.u_star=>0.3,
+            csys.wθᵥ₀=>0.1,
+            csys.wC₀=>1e-5,
+            csys.θᵥ₀=>300.0,
+            csys.L=>-200.0
+        ),
+        (0.0, 1.0))
+    sol=solve(prob)
+
+    φₕ_at_ε_expected = 1 / sqrt(1 - 15 * (-0.5))
+    φₕ_local_expected = 1 / sqrt(1 - 15 * (-0.25))
+    @test isapprox(sol[csys.φₕ][end], φₕ_at_ε_expected, rtol = 0.01)
+    @test isapprox(sol[csys.φₕ_local][end], φₕ_local_expected, rtol = 0.01)
+
+    # They should differ because z ≠ εh
+    @test !isapprox(sol[csys.φₕ][end], sol[csys.φₕ_local][end], rtol = 0.01)
 end
 
 @testitem "NonlocalABL constants match paper" setup=[HoltslagBoville1993Setup] tags=[:holtslag] begin
