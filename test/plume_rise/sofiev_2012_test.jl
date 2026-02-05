@@ -1,6 +1,8 @@
 @testitem "Sofiev2012PlumeRise" begin
     using EarthSciMLBase, EarthSciData, EnvironmentalTransport
     using ModelingToolkit
+    using ModelingToolkit: Initial
+    import SciMLBase
     using Dates
     using OrdinaryDiffEqDefault
 

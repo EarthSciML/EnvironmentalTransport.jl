@@ -75,6 +75,7 @@ function advection_op(u_prototype, stencil, v_fs, Δ_fs, Δt, bc_type, alg::MapA
         EarthSciMLBase.map_closure_to_range(kernelII, II, alg)
         nothing
     end
+    return advection
 end
 
 """
@@ -217,7 +218,6 @@ function EarthSciMLBase.get_odefunction(
         coord_args, domain::DomainInfo, u0, p, alg::MapAlgorithm)
     u0 = reshape(u0, :, length.(EarthSciMLBase.grid(EarthSciMLBase.domain(csys)))...)
     v_fs, Δ_fs = get_datafs(op, csys, mtk_sys, coord_args, domain)
-
     # Handle SpeciesConstantBC specially to resolve species names
     bc_type = op.bc_type
     if isa(bc_type, SpeciesConstantBC)
@@ -227,8 +227,7 @@ function EarthSciMLBase.get_odefunction(
         bc_type = (x) -> resolve_species_bc(op.bc_type, x, species_vars)
     end
 
-    scimlop = advection_op(u0, op.stencil, v_fs, Δ_fs, op.Δt, bc_type, alg, p = p)
-    cache_operator(scimlop, u0[:])
+    return advection_op(u0, op.stencil, v_fs, Δ_fs, op.Δt, bc_type, alg, p = p)
 end
 
 # Actual implementation is in EarthSciDataExt.jl.

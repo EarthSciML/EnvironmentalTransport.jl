@@ -4,10 +4,9 @@
 
     using Test
     using EarthSciMLBase, EarthSciData
-    using ModelingToolkit
+    using ModelingToolkit, OrdinaryDiffEqDefault
     using OrdinaryDiffEqTsit5: Tsit5
     using OrdinaryDiffEqSSPRK: SSPRK22
-    using OrdinaryDiffEqDefault
     using ModelingToolkit: t, D
     using Distributions, LinearAlgebra
     using DynamicQuantities

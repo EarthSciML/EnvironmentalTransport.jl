@@ -1,5 +1,4 @@
 @testitem "ZeroGradBC" begin
-    using EnvironmentalTransport: ZeroGradBC
     a = rand(3, 4)
     x = ZeroGradBC()(a)
 
