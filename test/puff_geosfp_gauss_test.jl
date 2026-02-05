@@ -1,6 +1,7 @@
 @testitem "Gaussian Dispersion" begin
     using Dates, Random
     using EarthSciMLBase, EarthSciData, EnvironmentalTransport
+    using Random
     using ModelingToolkit, StochasticDiffEq
     using OrdinaryDiffEqTsit5: Tsit5
 
@@ -75,11 +76,16 @@
             sys.GaussianKC₊Δz => 5000.0,
         ]
 
+        # Set random seed for reproducibility
+        Random.seed!(12345)
         prob = SDEProblem(sys, u0, tspan, p)
         sol = solve(prob, SRIW1(); dt = 60.0)
 
         C_gl_val = sol[sys.GaussianKC₊C_gl][end]
 
-        @test 0.0 < C_gl_val < 1e-6
+        # Test that C_gl is positive (puff is in surface layer) and physically reasonable
+        @test C_gl_val > 0.0
+        # With Δz = 5000m and sigma growing from 1m, C_gl = 1/(2π*σx*σy*Δz) should be small but positive
+        @test C_gl_val < 1e-6  # Upper bound based on physical reasoning
     end
 end
