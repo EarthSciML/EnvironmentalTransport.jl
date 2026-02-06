@@ -21,7 +21,7 @@ ProgressLogging = "33c8b6b6-d38a-422a-b730-caa89a2f386c"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 
 [compat]
-CairoMakie = "0.12, 0.13"
+CairoMakie = "0.12, 0.13, 0.14, 0.15"
 DataFrames = "1"
 OrdinaryDiffEqSSPRK = "1"
 OrdinaryDiffEqTsit5 = "1"
