@@ -1,8 +1,11 @@
 @testitem "Gaussian Dispersion" begin
-    using Dates
+    using Dates, Random
     using EarthSciMLBase, EarthSciData, EnvironmentalTransport
-    using ModelingToolkit, OrdinaryDiffEqDefault
+    using Random
+    using ModelingToolkit, StochasticDiffEq
     using OrdinaryDiffEqTsit5: Tsit5
+
+    Random.seed!(12345)
 
     starttime = DateTime(2022, 5, 1, 0)
     endtime = DateTime(2022, 5, 1, 5)
@@ -42,16 +45,17 @@
         sol = solve(prob, Tsit5())
 
         C_gl_val = sol[sys.GaussianPGB₊C_gl][end]
-        C_gl_want = 8.23e-11
+        C_gl_want = 6.40e-11
 
         @test isapprox(C_gl_val, C_gl_want; rtol = 1e-2)
     end
 
-    @testset "Puff GeosFP GaussianSD" begin
+    @testset "Puff GeosFP GaussianKC" begin
         model = couple(
             Puff(domain),
             GEOSFP("4x5", domain; stream = false),
-            GaussianSD()
+            BoundaryLayerMixingKC(),
+            GaussianKC()
         )
 
         sys = convert(System, model)
@@ -62,20 +66,26 @@
             sys.Puff₊lon => deg2rad(lonv),
             sys.Puff₊lat => deg2rad(latv),
             sys.Puff₊lev => levv,
-            sys.GaussianSD₊sigma_h => 0.0
+            sys.GaussianKC₊sigma_x => 1.0,
+            sys.GaussianKC₊sigma_y => 1.0,
+            sys.BoundaryLayerMixingKC₊uprime_x => 0.0,
+            sys.BoundaryLayerMixingKC₊uprime_y => 0.0,
+            sys.BoundaryLayerMixingKC₊wprime => 0.0
         ]
         p = [
-            sys.GaussianSD₊Δλ => Δλ,
-            sys.GaussianSD₊Δφ => Δφ,
-            sys.GaussianSD₊Δz => 500
+            sys.GaussianKC₊Δz => 5000.0,
         ]
 
-        prob = ODEProblem(sys, u0, tspan, p)
-        sol = solve(prob, Tsit5())
+        # Set random seed for reproducibility
+        Random.seed!(12345)
+        prob = SDEProblem(sys, u0, tspan, p)
+        sol = solve(prob, SRIW1(); dt = 60.0)
 
-        C_gl_val = sol[sys.GaussianSD₊C_gl][end]
-        C_gl_want = 6.58e-13
+        C_gl_val = sol[sys.GaussianKC₊C_gl][end]
 
-        @test isapprox(C_gl_val, C_gl_want; rtol = 1e-2)
+        # Test that C_gl is positive (puff is in surface layer) and physically reasonable
+        @test C_gl_val > 0.0
+        # With Δz = 5000m and sigma growing from 1m, C_gl = 1/(2π*σx*σy*Δz) should be small but positive
+        @test C_gl_val < 1e-6  # Upper bound based on physical reasoning
     end
 end

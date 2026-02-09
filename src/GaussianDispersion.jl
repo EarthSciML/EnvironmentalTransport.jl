@@ -1,6 +1,5 @@
-export GaussianDispersion
 export GaussianPGB
-export GaussianSD
+export GaussianKC
 
 import ModelingToolkit: Differential
 
@@ -8,7 +7,7 @@ struct GaussianPGBCoupler
     sys::Any
 end
 
-struct GaussianSDCoupler
+struct GaussianKCCoupler
     sys::Any
 end
 
@@ -34,9 +33,11 @@ What this does:
     (A_y, A_z, B_y, B_z) and evaluates the analytic expressions for the
     horizontal (sigma_h ≡ sigma_y) and vertical (sigma_z) dispersion parameters as functions
     of the down-wind distance 'x'.
+
   - Hypsometric height: Computes puff height above ground (z_agl) from pressure,
     temperature, and humidity using the hypsometric equation with a virtual temperature
     layer mean.
+
   - Ground-level concentration: Computes the Gaussian ground-level concentration
     at the puff center for one unit of puff mass:
     C_gl = 1 / ((2π)^{3/2} · σ_h² · σ_z) * exp(-z_agl² / (2 σ_z²)).
@@ -61,6 +62,7 @@ mdl = couple(Puff(dom),
              GaussianPGB())
 
 sys  = convert(System, mdl)
+tspan = get_tspan(dom)
 
 u0 = [sys.Puff₊lon => deg2rad(-105),
       sys.Puff₊lat => deg2rad(  38),
@@ -69,7 +71,7 @@ u0 = [sys.Puff₊lon => deg2rad(-105),
 p  = [sys.GaussianPGB₊lon0 => deg2rad(-105),
       sys.GaussianPGB₊lat0 => deg2rad(  38)]
 
-prob = ODEProblem(sys, u0, (datetime2unix(t0), datetime2unix(t1)), p)
+prob = ODEProblem(sys, u0, tspan, p)
 sol = solve(prob, Tsit5();)
 
 sigma_h = sol[sys.GaussianPGB₊sigma_h]
@@ -83,8 +85,6 @@ function GaussianPGB()
         lon0 = 0.0, [unit = u"rad", description = "Source longitude (radians)"]
         lat0 = 0.0, [unit = u"rad", description = "Source latitude  (radians)"]
         R = 6.371e6, [unit = u"m", description = "Earth mean radius"]
-        Rd = 287.05, [unit = u"J/(kg*K)", description = "Dry-air gas constant"]
-        g = 9.80665, [unit = u"m/s^2", description = "Gravitational acceleration"]
 
         # --- Briggs coefficients ------------------------------------------------
         AY_A = 0.22, [description="A_y for stability class A"]
@@ -135,11 +135,6 @@ function GaussianPGB()
         CLDTOT = 0.3, [description = "total cloud fraction"]
         T2M = 293.15, [unit = u"K", description = "2 m air temperature"]
         T10M = 292.65, [unit = u"K", description = "10 m air temperature"]
-        P = 90000.0, [unit = u"Pa", description = "Pressure at puff level"]
-        PS = 101325.0, [unit = u"Pa", description = "Surface pressure"]
-        T = 289.15, [unit = u"K", description = "Air temperature at puff level"]
-        QV = 0.009, [description = "Specific humidity at puff level (kg/kg)"]
-        QV2M = 0.0095, [description = "Specific humidity at 2 m (kg/kg)"]
     end
 
     @variables begin
@@ -238,16 +233,6 @@ function GaussianPGB()
         az * x * (1 + bz * x)^(-0.5))
 
     # ------------------------------------------------------------------
-    # Hypsometric height above ground (m)
-    # z = (Rd * T̄_v / g) * ln(PS / P)
-    # with layer‑mean virtual temperature T̄_v = 0.5*(T_v(level)+T_v(surface))
-    # ------------------------------------------------------------------
-    Tv_lvl = T * (1 + 0.61 * QV)
-    Tv_sfc = T2M * (1 + 0.61 * QV2M)
-    Tv_bar = 0.5 * (Tv_lvl + Tv_sfc)
-    z_expr = (Rd * Tv_bar / g) * log(PS / P)
-
-    # ------------------------------------------------------------------
     # Ground‑level concentration at puff center for unit mass (Gaussian)
     # C = 1 / ((2π)^(3/2) σ_h^2 σ_z) * exp(-z_agl^2/(2 σ_z^2))
     # ------------------------------------------------------------------
@@ -258,7 +243,6 @@ function GaussianPGB()
     # Equation set
     # ------------------------------------------------------------------
     eqs = [
-        z_agl ~ z_expr,
         sigma_h ~ sigma_h_expr,
         sigma_z ~ sigma_z_expr,
         C_gl ~ C_gl_expr
@@ -274,7 +258,7 @@ function GaussianPGB()
             C_gl
         ],
         [
-            lon0, lat0, R, Rd, g,
+            lon0, lat0, R,
             v2, v3, v5, v6,
             solrad_night, solrad_strong, solrad_moder, solrad_slight,
             cloudfrac_clear, inversion_thresh,
@@ -282,7 +266,7 @@ function GaussianPGB()
             AY_A, AY_B, AY_C, AY_D, AY_Ep, AY_F,
             AZ_A, AZ_B, AZ_C, AZ_D, AZ_Ep, AZ_F,
             BZ_A, BZ_B, BZ_C, BZ_D, BZ_Ep, BZ_F,
-            U10M, V10M, SWGDN, CLDTOT, T2M, T10M, P, PS, T, QV, QV2M
+            U10M, V10M, SWGDN, CLDTOT, T2M, T10M
         ];
         name = :GaussianPGB,
         metadata = Dict(CoupleType => GaussianPGBCoupler)
@@ -290,153 +274,100 @@ function GaussianPGB()
 end
 
 """
-GaussianSD()
+GaussianKC()
 
-Returns a `ModelingToolkit.System` that calculates horizontal dispersion (σ_h) from
-velocity deformation (Smagorinsky/Deardorff), and computes hypsometric height (z_agl)
-and ground-level centerline concentration per unit mass. The ground-level concentration is
-only evaluated when the puff is within the ground layer (z_agl ≤ Δz); otherwise it is set to zero.
+Returns a `ModelingToolkit.System` that calculates the time evolution of horizontal puff dispersion
+(sigma_x, sigma_y) based on turbulent velocity fluctuations (σu_x, σu_y).
 
-References (NOAA ARL MetMag report):
-https://www.arl.noaa.gov/documents/reports/MetMag.pdf
+It also computes the ground-level centerline concentration (C_gl) per unit mass assuming a
+top-hat vertical distribution within the lowest layer. The concentration is evaluated
+only when the puff is within the surface layer (z_agl ≤ Δz); otherwise, it is set to zero.
 
-  - Horizontal mixing coefficient: Eq. 12
-  - Standard deviation of the turbulent velocity: Eq. 15
-  - σ_h tendency: Eq. 16
-  - Centerline ground-level concentration: Eq. 18
+Note: Must be coupled with `BoundaryLayerMixingKC`.
 
 Example:
 
 ```
 using Dates, EarthSciMLBase, EarthSciData, EnvironmentalTransport
-using ModelingToolkit, OrdinaryDiffEq
+using ModelingToolkit, StochasticDiffEq
 
 t0 = DateTime(2022, 5, 1)
 t1 = DateTime(2022, 5, 2)
 Δλ      = deg2rad(5.0)
 Δφ      = deg2rad(4.0)
 
-dom = DomainInfo(t0, t1; levrange=1:72,
+dom = DomainInfo(t0, t1;
                     lonrange = deg2rad(-130):Δλ:deg2rad(-60),
-                    latrange = deg2rad(25):Δφ:deg2rad(61))
+                    latrange = deg2rad(25):Δφ:deg2rad(61)),
+                    levrange=1:72
 
 mdl = couple(Puff(dom),
+             BoundaryLayerMixingKC(),
              GEOSFP("4x5", dom; stream=false),
-             GaussianSD())
+             GaussianKC())
 
 sys  = convert(System, mdl)
+tspan = get_tspan(dom)
 
 u0 = [sys.Puff₊lon => deg2rad(-105),
       sys.Puff₊lat => deg2rad(  38),
       sys.Puff₊lev => 2,
-      sys.GaussianSD₊sigma_h => 0.0]
+      sys.GaussianKC₊sigma_x => 0.00001,
+      sys.GaussianKC₊sigma_y => 0.00001,
+      sys.BoundaryLayerMixingKC₊wprime => 0.0,
+      sys.BoundaryLayerMixingKC₊uprime_x => 0.0,
+      sys.BoundaryLayerMixingKC₊uprime_y => 0.0]
 
-p = [
-        sys.GaussianSD₊Δλ => Δλ,
-        sys.GaussianSD₊Δφ => Δφ]
+p = [sys.GaussianKC₊Δz => 100.0]
 
-prob = ODEProblem(sys, u0, (datetime2unix(t0), datetime2unix(t1)), p)
-sol = solve(prob, Tsit5();)
+prob = SDEProblem(sys, u0, tspan, p)
+sol = solve(prob, SRIW1(); dt=60.0)
 
-sigma_h = sol[sys.GaussianSD₊sigma_h]
-C_gl    = sol[sys.GaussianSD₊C_gl]
+sigma_x = sol[sys.GaussianKC₊sigma_x]
+sigma_y = sol[sys.GaussianKC₊sigma_y]
+C_gl    = sol[sys.GaussianKC₊C_gl]
 
 ```
 """
-function GaussianSD()
+function GaussianKC()
     @parameters begin
-        Rd = 287.05, [unit = u"J/(kg*K)", description = "Dry-air gas constant"]
-        g = 9.80665, [unit = u"m/s^2", description = "Gravitational acceleration"]
-
-        R_earth = 6.371e6, [unit = u"m", description = "Earth mean radius"]
-        c_smag = 0.14, [description = "Smagorinsky constant c"]
-        Δλ = deg2rad(5.0),
-        [unit = u"rad", description = "Longitude grid size (5° for GEOS-FP 4x5)"]
-        Δφ = deg2rad(4.0),
-        [unit = u"rad", description = "Latitude grid size (4° for GEOS-FP 4x5)"]
-        TLv = 10800.0, [unit = u"s", description = "Horizontal Lagrangian time scale"]
-        Δz = 50.0, [unit = u"m", description = "Grid-cell height. (m)"]
+        Δz = 50.0, [unit = u"m", description = "Grid-cell height"]
         C_zero = 0.0, [unit = u"m^-3", description = "Zero concentration"]
-
-        P = 90000.0, [unit = u"Pa", description = "Pressure at puff level"]
-        PS = 101325.0, [unit = u"Pa", description = "Surface pressure"]
-        T = 289.15, [unit = u"K", description = "Air temperature at puff level"]
-        T2M = 293.15, [unit = u"K", description = "2 m air temperature"]
-        QV = 0.009, [description = "Specific humidity at puff level (kg/kg)"]
-        QV2M = 0.0095, [description = "Specific humidity at 2 m (kg/kg)"]
-
-        UE = 0.0, [unit=u"m/s", description="U at +½ lon"]
-        UW = 0.0, [unit=u"m/s", description="U at −½ lon"]
-        UN = 0.0, [unit=u"m/s", description="U at +½ lat"]
-        US = 0.0, [unit=u"m/s", description="U at −½ lat"]
-
-        VE = 0.0, [unit=u"m/s", description="V at +½ lon"]
-        VW = 0.0, [unit=u"m/s", description="V at −½ lon"]
-        VN = 0.0, [unit=u"m/s", description="V at +½ lat"]
-        VS = 0.0, [unit=u"m/s", description="V at −½ lat"]
     end
 
     @variables begin
-        lat(t), [unit = u"rad", description = "latitude", input=true]
-        sigma_h(t), [unit = u"m", description = "horizontal dispersion coefficient"]
-        σu(t), [unit = u"m/s", description = "Turbulent horizontal velocity std. dev"]
-        z_agl(t), [unit = u"m", description = "Height AGL from hypsometric equation"]
+        σu_x(t),
+        [
+            unit = u"m/s", description = "Turbulent horizontal velocity std. dev in x", input = true]
+        σu_y(t),
+        [
+            unit = u"m/s", description = "Turbulent horizontal velocity std. dev in y", input = true]
+        sigma_x(t), [unit = u"m", description = "Horizontal dispersion std dev in x"]
+        sigma_y(t), [unit = u"m", description = "Horizontal dispersion std dev in y"]
+        z_agl(t), [unit = u"m", description = "Height AGL"]
         C_gl(t),
         [unit = u"m^-3",
             description = "Ground-level concentration at puff center for unit mass (Gaussian)"]
     end
 
     Dt = Differential(t)
+    Dt_sigma_x_expr = sqrt(2) * σu_x
+    Dt_sigma_y_expr = sqrt(2) * σu_y
 
-    # ------------------------------------------------------------------
-    # Hypsometric height above ground (m)
-    # z = (Rd * T̄_v / g) * ln(PS / P)
-    # with layer‑mean virtual temperature T̄_v = 0.5*(T_v(level)+T_v(surface))
-    # ------------------------------------------------------------------
-    Tv_lvl = T * (1 + 0.61 * QV)
-    Tv_sfc = T2M * (1 + 0.61 * QV2M)
-    Tv_bar = 0.5 * (Tv_lvl + Tv_sfc)
-
-    # --- Grid metrics & Smagorinsky filter length ---
-    Δx = R_earth * cos(lat) * Δλ
-    Δy = R_earth * Δφ
-    X = sqrt(Δx * Δy)
-
-    # --- Horizontal velocity gradients (centered finite differences) ---
-    dUdx = (UE - UW) / Δx
-    dUdy = (UN - US) / Δy
-    dVdx = (VE - VW) / Δx
-    dVdy = (VN - VS) / Δy
-
-    # --- Eddy diffusivity (Smagorinsky) — NOAA ARL MetMag Eq. 12 ---
-    Kh = (c_smag * X)^2 / sqrt(2) * sqrt((dVdx + dUdy)^2 + (dUdx - dVdy)^2)
-
-    # --- Turbulent velocity std. dev. — comparable to MetMag Eq. 15 ---
-    σu_expr = sqrt(Kh / TLv)
-
-    # --- σ_h tendency — MetMag Eq. 16 ---
-    Dt_sigma_h_expr = sqrt(2) * σu
-
-    # --- Hypsometric height
-    z_agl_expr = (Rd * Tv_bar / g) * log(PS / P)
-
-    # Ground-centerline concentration — MetMag Eq. 18 ---
-    C_expr = 1 / (2 * π * sigma_h^2 * Δz)
+    # # Ground-centerline concentration
+    C_expr = 1 / (2 * π * sigma_x * sigma_y * Δz)
 
     eqs = [
-        σu ~ σu_expr,
-        Dt(sigma_h) ~ Dt_sigma_h_expr,
-        z_agl ~ z_agl_expr,
+        Dt(sigma_x) ~ Dt_sigma_x_expr,
+        Dt(sigma_y) ~ Dt_sigma_y_expr,
         C_gl ~ ifelse(z_agl <= Δz, C_expr, C_zero)
     ]
 
     System(
         eqs, t,
-        [lat, sigma_h, σu, z_agl, C_gl],
-        [Rd, g, R_earth, c_smag, Δλ, Δφ, TLv, Δz, C_zero,
-            P, PS, T, T2M, QV, QV2M,
-            UE, UW, UN, US, VE, VW, VN, VS];
-        name = :GaussianSD,
-        metadata = Dict(CoupleType => GaussianSDCoupler)
+        [σu_x, σu_y, sigma_x, sigma_y, z_agl, C_gl],
+        [Δz, C_zero];
+        name = :GaussianKC,
+        metadata = Dict(CoupleType => GaussianKCCoupler)
     )
 end

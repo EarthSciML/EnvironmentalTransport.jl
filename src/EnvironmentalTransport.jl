@@ -2,12 +2,11 @@ module EnvironmentalTransport
 
 using DocStringExtensions
 using LinearAlgebra
-using StaticArrays
-using SciMLBase: NullParameters
-using ModelingToolkit: t, D, get_unit, getdefault, System, @variables, @parameters, @named,
-                       @constants, Equation, unknowns, ParentScope, get_defaults, @unpack,
-                       @component
-using SciMLBase: terminate!
+using ModelingToolkit: t, D, get_unit, getdefault, System, @brownians, @variables,
+                       @parameters, @named, @component,
+                       @constants, Equation, unknowns, ParentScope, get_defaults, @unpack
+using SciMLBase: terminate!, NullParameters
+using StaticArrays: SVector
 using DynamicQuantities: @u_str
 using EarthSciMLBase
 import RuntimeGeneratedFunctions
@@ -21,5 +20,6 @@ include("PBL_mixing.jl")
 include("puff.jl")
 include("plume_rise/sofiev_2012.jl")
 include("GaussianDispersion.jl")
+include("BoundaryLayerMixingKC.jl")
 
 end
