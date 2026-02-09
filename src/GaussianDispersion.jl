@@ -33,9 +33,11 @@ What this does:
     (A_y, A_z, B_y, B_z) and evaluates the analytic expressions for the
     horizontal (sigma_h ≡ sigma_y) and vertical (sigma_z) dispersion parameters as functions
     of the down-wind distance 'x'.
+
   - Hypsometric height: Computes puff height above ground (z_agl) from pressure,
     temperature, and humidity using the hypsometric equation with a virtual temperature
     layer mean.
+
   - Ground-level concentration: Computes the Gaussian ground-level concentration
     at the puff center for one unit of puff mass:
     C_gl = 1 / ((2π)^{3/2} · σ_h² · σ_z) * exp(-z_agl² / (2 σ_z²)).
