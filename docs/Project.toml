@@ -16,8 +16,6 @@ SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 
 [compat]
-CairoMakie = "0.12, 0.13, 0.14, 0.15"
-DataFrames = "1"
 DifferentialEquations = "7"
 Distributions = "0.25"
 Documenter = "1"
