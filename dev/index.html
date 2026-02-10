@@ -12,6 +12,8 @@ Pkg.add(&quot;EnvironmentalTransport&quot;)</code></pre><h2 id="Feature-Summary"
   [85f8d34a] NCDatasets v0.14.11
   [91a5bcdd] Plots v1.41.5
   [33c8b6b6] ProgressLogging v0.1.6
+  [0bca4576] SciMLBase v2.138.0
+⌅ [0c5d862f] Symbolics v6.58.0
   [ade2ca70] Dates v1.11.0
   [37e2e46d] LinearAlgebra v1.12.0
 Info Packages marked with ⌅ have new versions available but compatibility constraints restrict them from upgrading. To see why use `status --outdated`</code></pre></details><details><summary>and using this machine and Julia version.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Julia Version 1.12.4
@@ -20,9 +22,9 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz
+  CPU: 4 × AMD EPYC 7763 64-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-18.1.7 (ORCJIT, icelake-server)
+  LLVM: libLLVM-18.1.7 (ORCJIT, znver3)
   GC: Built with stock GC
 Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)
 Environment:
@@ -69,7 +71,7 @@ Environment:
   [5ae59095] Colors v0.13.1
 ⌅ [861a8166] Combinatorics v1.0.2
   [1fbeeb36] CommonDataModel v0.4.2
-⌅ [a80b9123] CommonMark v0.9.1
+  [a80b9123] CommonMark v0.10.3
   [38540f10] CommonSolve v0.2.6
   [bbf7d656] CommonSubexpressions v0.3.1
   [f70d9fcc] CommonWorldInvalidations v1.0.0
@@ -158,7 +160,7 @@ Environment:
   [692b3bcd] JLLWrappers v1.7.1
   [682c06a0] JSON v1.4.0
   [ae98c720] Jieko v0.2.1
-  [98e50ef6] JuliaFormatter v2.2.1
+  [98e50ef6] JuliaFormatter v2.3.0
 ⌅ [70703baa] JuliaSyntax v0.4.10
   [ccbc3e58] JumpProcesses v9.21.2
   [ba0b0d4f] Krylov v0.10.5
@@ -267,7 +269,7 @@ Environment:
   [7e49a35a] RuntimeGeneratedFunctions v0.5.17
   [9dfe8606] SCCNonlinearSolve v1.9.0
   [94e857df] SIMDTypes v0.1.0
-  [0bca4576] SciMLBase v2.137.0
+  [0bca4576] SciMLBase v2.138.0
   [19f34311] SciMLJacobianOperators v0.1.12
   [a6db7da4] SciMLLogging v1.8.0
   [c0aeaf25] SciMLOperators v1.15.1
@@ -287,7 +289,7 @@ Environment:
   [171d559e] SplittablesBase v0.1.15
   [860ef19b] StableRNGs v1.0.4
   [aedffcd0] Static v1.3.1
-  [0d7ed370] StaticArrayInterface v1.8.0
+  [0d7ed370] StaticArrayInterface v1.9.0
   [90137ffa] StaticArrays v1.9.16
   [1e83bf80] StaticArraysCore v1.4.4
   [10745b16] Statistics v1.11.1
@@ -479,4 +481,4 @@ Environment:
   [3f19e933] p7zip_jll v17.7.0+0
 Info Packages marked with ⌅ have new versions available but compatibility constraints restrict them from upgrading. To see why use `status --outdated -m`</code></pre></details>You can also download the 
 <a href="<p>https://github.com/EarthSciML/EnvironmentalTransport.jl/tree/gh-pages/v0.6.2/assets/Manifest.toml</p>">manifest</a> file and the
-<a href="<p>https://github.com/EarthSciML/EnvironmentalTransport.jl/tree/gh-pages/v0.6.2/assets/Project.toml</p>">project</a> file.</article><nav class="docs-footer"><a class="docs-footer-nextpage" href="advection/">Advection »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Saturday 7 February 2026 05:02">Saturday 7 February 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+<a href="<p>https://github.com/EarthSciML/EnvironmentalTransport.jl/tree/gh-pages/v0.6.2/assets/Project.toml</p>">project</a> file.</article><nav class="docs-footer"><a class="docs-footer-nextpage" href="advection/">Advection »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Tuesday 10 February 2026 02:17">Tuesday 10 February 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
