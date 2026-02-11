@@ -28,8 +28,10 @@
 
     @test length(equations(sys)) == 3
     @test occursin("PS", string(observed(sys))) # Check that we're using the GEOSFP pressure data.
-    @test issetequal([Symbol("Puff₊lon(t)"), Symbol("Puff₊lat(t)"), Symbol("Puff₊lev(t)")],
-        Symbol.(unknowns(sys)))
+    @test issetequal(
+        [Symbol("Puff₊lon(t)"), Symbol("Puff₊lat(t)"), Symbol("Puff₊lev(t)")],
+        Symbol.(unknowns(sys))
+    )
     @test length(parameters(sys)) == 80
     @test length(observed(sys)) == 86
 
