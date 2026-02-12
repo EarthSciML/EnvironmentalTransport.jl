@@ -34,20 +34,20 @@
         u0 = [
             sys.Puff₊lon => deg2rad(lonv),
             sys.Puff₊lat => deg2rad(latv),
-            sys.Puff₊lev => levv
+            sys.Puff₊lev => levv,
         ]
         p = [
             sys.GaussianPGB₊lon0 => deg2rad(lonv),
-            sys.GaussianPGB₊lat0 => deg2rad(latv)
+            sys.GaussianPGB₊lat0 => deg2rad(latv),
         ]
 
         prob = ODEProblem(sys, u0, tspan, p)
         sol = solve(prob, Tsit5())
 
         C_gl_val = sol[sys.GaussianPGB₊C_gl][end]
-        C_gl_want = 6.40e-11
+        C_gl_want = 6.4e-11
 
-        @test isapprox(C_gl_val, C_gl_want; rtol = 1e-2)
+        @test isapprox(C_gl_val, C_gl_want; rtol = 1.0e-2)
     end
 
     @testset "Puff GeosFP GaussianKC" begin
@@ -70,7 +70,7 @@
             sys.GaussianKC₊sigma_y => 1.0,
             sys.BoundaryLayerMixingKC₊uprime_x => 0.0,
             sys.BoundaryLayerMixingKC₊uprime_y => 0.0,
-            sys.BoundaryLayerMixingKC₊wprime => 0.0
+            sys.BoundaryLayerMixingKC₊wprime => 0.0,
         ]
         p = [
             sys.GaussianKC₊Δz => 5000.0,
@@ -86,6 +86,6 @@
         # Test that C_gl is positive (puff is in surface layer) and physically reasonable
         @test C_gl_val > 0.0
         # With Δz = 5000m and sigma growing from 1m, C_gl = 1/(2π*σx*σy*Δz) should be small but positive
-        @test C_gl_val < 1e-6  # Upper bound based on physical reasoning
+        @test C_gl_val < 1.0e-6  # Upper bound based on physical reasoning
     end
 end

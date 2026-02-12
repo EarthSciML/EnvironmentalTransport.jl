@@ -3,11 +3,11 @@ module EarthSciDataExt
 using DocStringExtensions
 import EarthSciMLBase
 using EarthSciMLBase: param_to_var, ConnectorSystem, CoupledSystem, get_coupletype,
-                      operator_compose
+    operator_compose
 using EarthSciData: GEOSFPCoupler, WRFCoupler, Ap, Bp
 using EnvironmentalTransport: PuffCoupler, GaussianPGBCoupler, GaussianKCCoupler,
-                              BoundaryLayerMixingKCCoupler, AdvectionOperator,
-                              Sofiev2012PlumeRiseCoupler, PBLMixingCallback
+    BoundaryLayerMixingKCCoupler, AdvectionOperator,
+    Sofiev2012PlumeRiseCoupler, PBLMixingCallback
 using ModelingToolkit: ParentScope, get_defaults, @unpack
 using ModelingToolkit: t
 using ModelingToolkit: @parameters, @variables, @constants
@@ -17,32 +17,39 @@ function EarthSciMLBase.couple2(p::PuffCoupler, g::GEOSFPCoupler)
     p, g = p.sys, g.sys
     p = param_to_var(p, :v_lon, :v_lat, :v_lev, :x_trans, :y_trans, :lev_trans)
     g = param_to_var(g, :lon, :lat, :lev)
-    ConnectorSystem(
-        [g.lon ~ p.lon
-         g.lat ~ p.lat
-         g.lev ~ clamp(p.lev, 1, 72)
-         p.v_lon ~ g.A3dyn₊U
-         p.v_lat ~ g.A3dyn₊V
-         p.v_lev ~ g.A3dyn₊OMEGA
-         p.x_trans ~ 1 / g.δxδlon
-         p.y_trans ~ 1 / g.δyδlat
-         p.lev_trans ~ 1 / g.δPδlev],
+    return ConnectorSystem(
+        [
+            g.lon ~ p.lon
+            g.lat ~ p.lat
+            g.lev ~ clamp(p.lev, 1, 72)
+            p.v_lon ~ g.A3dyn₊U
+            p.v_lat ~ g.A3dyn₊V
+            p.v_lev ~ g.A3dyn₊OMEGA
+            p.x_trans ~ 1 / g.δxδlon
+            p.y_trans ~ 1 / g.δyδlat
+            p.lev_trans ~ 1 / g.δPδlev
+        ],
         p,
-        g)
+        g
+    )
 end
 
 function EarthSciMLBase.couple2(blm::BoundaryLayerMixingKCCoupler, g::GEOSFPCoupler)
     b, m = blm.sys, g.sys
-    b = param_to_var(b, :PBLH, :USTAR, :HFLUX, :EFLUX, :PS, :T2M,
-        :QV2M, :z_agl, :z2lev, :x_trans, :y_trans)
+    b = param_to_var(
+        b, :PBLH, :USTAR, :HFLUX, :EFLUX, :PS, :T2M,
+        :QV2M, :z_agl, :z2lev, :x_trans, :y_trans
+    )
 
     # Compute Z_agl and dZ/dlev via hypsometric equation using connected BLM
     # parameters (b.PS, b.T2M, b.QV2M) and Ap/Bp coefficients.
     # Avoids raw _itp interpolators which are incompatible with SDE compilation.
     @constants _Rd_blm = 287.05 [
-        unit = u"J/(kg*K)", description = "Specific gas constant for dry air"]
+        unit = u"J/(kg*K)", description = "Specific gas constant for dry air",
+    ]
     @constants _g_blm = 9.80665 [
-        unit = u"m/s^2", description = "Gravitational acceleration"]
+        unit = u"m/s^2", description = "Gravitational acceleration",
+    ]
     @constants _Pu_blm = 1.0 [unit = u"Pa", description = "Pressure unit"]
 
     ℓ = ParentScope(m.lev)
@@ -63,7 +70,7 @@ function EarthSciMLBase.couple2(blm::BoundaryLayerMixingKCCoupler, g::GEOSFPCoup
     dPdlev = (P_plus - P_minus) / (2 * Δℓ)
     dZdlev_expr = -(_Rd_blm * Tv_sfc / _g_blm) * dPdlev / Pmid
 
-    ConnectorSystem(
+    return ConnectorSystem(
         [
             b.PBLH ~ m.A1₊PBLH,
             b.USTAR ~ m.A1₊USTAR,
@@ -75,16 +82,17 @@ function EarthSciMLBase.couple2(blm::BoundaryLayerMixingKCCoupler, g::GEOSFPCoup
             b.x_trans ~ 1 / m.δxδlon,
             b.y_trans ~ 1 / m.δyδlat,
             b.z_agl ~ Z_agl_expr,
-            b.z2lev ~ 1 / dZdlev_expr
+            b.z2lev ~ 1 / dZdlev_expr,
         ],
         b,
-        m)
+        m
+    )
 end
 
 function EarthSciMLBase.couple2(p::PuffCoupler, b::BoundaryLayerMixingKCCoupler)
     sys_p = p.sys
     sys_b = b.sys
-    operator_compose(sys_p, sys_b)
+    return operator_compose(sys_p, sys_b)
 end
 
 function EarthSciMLBase.couple2(p::PuffCoupler, w::WRFCoupler)
@@ -95,7 +103,7 @@ function EarthSciMLBase.couple2(p::PuffCoupler, w::WRFCoupler)
     @constants c1 = 1.0 [unit = u"kg/m^2/s^2"]
     @constants c2 = 1.0 [unit = u"m^2/kg*s^2"]
 
-    ConnectorSystem(
+    return ConnectorSystem(
         [
             w.lon ~ p.lon,
             w.lat ~ p.lat,
@@ -105,21 +113,25 @@ function EarthSciMLBase.couple2(p::PuffCoupler, w::WRFCoupler)
             p.v_lev ~ w.W * c1,
             p.x_trans ~ 1 / w.δxδlon,
             p.y_trans ~ 1 / w.δyδlat,
-            p.lev_trans ~ (1 / w.δzδlev) * c2
+            p.lev_trans ~ (1 / w.δzδlev) * c2,
         ],
         p,
-        w)
+        w
+    )
 end
 
 function EarthSciMLBase.get_needed_vars(
-        ::AdvectionOperator, csys, mtk_sys, domain::EarthSciMLBase.DomainInfo)
+        ::AdvectionOperator, csys, mtk_sys, domain::EarthSciMLBase.DomainInfo
+    )
     found = 0
     windvars = []
     for sys in csys.systems
         if EarthSciMLBase.get_coupletype(sys) == GEOSFPCoupler
             found += 1
-            push!(windvars, sys.A3dyn₊U, sys.A3dyn₊V, sys.A3dyn₊OMEGA,
-                sys.δxδlon, sys.δyδlat, sys.δPδlev)
+            push!(
+                windvars, sys.A3dyn₊U, sys.A3dyn₊V, sys.A3dyn₊OMEGA,
+                sys.δxδlon, sys.δyδlat, sys.δPδlev
+            )
         end
     end
     if found == 0
@@ -131,7 +143,8 @@ function EarthSciMLBase.get_needed_vars(
 end
 
 function EarthSciMLBase.get_needed_vars(
-        ::PBLMixingCallback, csys, mtk_sys, domain::EarthSciMLBase.DomainInfo)
+        ::PBLMixingCallback, csys, mtk_sys, domain::EarthSciMLBase.DomainInfo
+    )
     found = 0
     pblvars = []
     for sys in csys.systems
@@ -182,7 +195,7 @@ function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, gfp::GEOSFPCoup
         qv = QV_itp(τ + t, λ, φ, ℓ)                          # [kg/kg] water-vapor mixing ratio at ℓ
         PS = PS_itp(τ + t, λ, φ)                             # [Pa]    surface pressure
         P = Punit * Ap(ℓ + 0.5) + Bp(ℓ + 0.5) * PS          # [Pa]    hybrid mid-level pressure
-        Tv = T * (1 + 0.61*qv)                               # [K]     virtual temperature
+        Tv = T * (1 + 0.61 * qv)                               # [K]     virtual temperature
         Tv * ((p0 * Punit) / P)^κ                            # [K]     virtual potential temperature θv
     end
 
@@ -207,7 +220,7 @@ function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, gfp::GEOSFPCoup
         softclamp(ℓ0 + (H - Z0) / dZdℓ, LMIN, LMAX)
     end
 
-    ConnectorSystem(
+    return ConnectorSystem(
         [
             s12.H_abl ~ ParentScope(gfp.A1₊PBLH_itp)(τ + t, λ, φ),  # [m] atmospheric boundary layer height
             s12.lev_p ~ lev_from_height(s12.H_p),                   # [-]  plume-top level
@@ -223,10 +236,11 @@ function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, gfp::GEOSFPCoup
                 θc = θv_at(lev_ft)                              # [K]
                 N2 = (g / θc) * dθv_dz                          # [s^-2]
                 sqrt(0.5 * (N2 + abs(N2)))                          # [s^-1] ensure N ≥ 0
-            end
+            end,
         ],
         s12,
-        gfp)
+        gfp
+    )
 end
 
 function EarthSciMLBase.couple2(gd::GaussianPGBCoupler, g::GEOSFPCoupler)
@@ -235,9 +249,11 @@ function EarthSciMLBase.couple2(gd::GaussianPGBCoupler, g::GEOSFPCoupler)
 
     # Compute Z_agl from GEOSFP interpolators (hypsometric equation)
     @constants _Rd_pgb = 287.05 [
-        unit = u"J/(kg*K)", description = "Specific gas constant for dry air"]
+        unit = u"J/(kg*K)", description = "Specific gas constant for dry air",
+    ]
     @constants _g_pgb = 9.80665 [
-        unit = u"m/s^2", description = "Gravitational acceleration"]
+        unit = u"m/s^2", description = "Gravitational acceleration",
+    ]
     @constants _Pu_pgb = 1.0 [unit = u"Pa", description = "Pressure unit"]
     τ = ParentScope(m.t_ref)
     λ = ParentScope(m.lon)
@@ -255,27 +271,34 @@ function EarthSciMLBase.couple2(gd::GaussianPGBCoupler, g::GEOSFPCoupler)
     Pmid = _Pu_pgb * Ap(ℓ + 0.5) + Bp(ℓ + 0.5) * PS_v
     Z_agl_expr = (_Rd_pgb * Tv̄ / _g_pgb) * log(PS_v / Pmid)
 
-    ConnectorSystem(
-        [d.lat ~ m.lat
-         d.lon ~ m.lon
-         d.U10M ~ m.A1₊U10M
-         d.V10M ~ m.A1₊V10M
-         d.SWGDN ~ m.A1₊SWGDN
-         d.CLDTOT ~ m.A1₊CLDTOT
-         d.T2M ~ m.A1₊T2M
-         d.T10M ~ m.A1₊T10M
-         d.z_agl ~ Z_agl_expr],
+    return ConnectorSystem(
+        [
+            d.lat ~ m.lat
+            d.lon ~ m.lon
+            d.U10M ~ m.A1₊U10M
+            d.V10M ~ m.A1₊V10M
+            d.SWGDN ~ m.A1₊SWGDN
+            d.CLDTOT ~ m.A1₊CLDTOT
+            d.T2M ~ m.A1₊T2M
+            d.T10M ~ m.A1₊T10M
+            d.z_agl ~ Z_agl_expr
+        ],
         d,
-        m)
+        m
+    )
 end
 
 function EarthSciMLBase.couple2(b::BoundaryLayerMixingKCCoupler, gk::GaussianKCCoupler)
     b, gk = b.sys, gk.sys
 
     # z_agl is provided from BLM (which gets it from GEOSFP via param_to_var)
-    ConnectorSystem([gk.σu_x ~ b.σu
-                     gk.σu_y ~ b.σv
-                     gk.z_agl ~ b.z_agl], b, gk)
+    return ConnectorSystem(
+        [
+            gk.σu_x ~ b.σu
+            gk.σu_y ~ b.σv
+            gk.z_agl ~ b.z_agl
+        ], b, gk
+    )
 end
 
 end

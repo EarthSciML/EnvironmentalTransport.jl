@@ -21,13 +21,15 @@ zerogradbcindex(i::UnitRange, N::Int) = zerogradbcindex.(i, N)
 Base.size(A::ZeroGradBCArray) = size(A.parent)
 Base.checkbounds(::Type{Bool}, ::ZeroGradBCArray, i...) = true
 
-function Base.getindex(A::ZeroGradBCArray{P, T, N},
-        ind::Vararg{Union{Int, UnitRange}, N}) where {P, T, N}
+function Base.getindex(
+        A::ZeroGradBCArray{P, T, N},
+        ind::Vararg{Union{Int, UnitRange}, N}
+    ) where {P, T, N}
     v = A.parent
     i = map(zerogradbcindex, ind, size(A))
     @boundscheck checkbounds(v, i...)
     @inbounds ret = v[i...]
-    ret
+    return ret
 end
 
 """
@@ -53,8 +55,10 @@ end
 Base.size(A::ConstantBCArray) = size(A.parent)
 Base.checkbounds(::Type{Bool}, ::ConstantBCArray, i...) = true
 
-function Base.getindex(A::ConstantBCArray{P, T, N},
-        ind::Vararg{Union{Int, UnitRange}, N}) where {P, T, N}
+function Base.getindex(
+        A::ConstantBCArray{P, T, N},
+        ind::Vararg{Union{Int, UnitRange}, N}
+    ) where {P, T, N}
     v = A.parent
     if checkbounds(Bool, v, ind...)
         @inbounds ret = v[ind...]
@@ -84,15 +88,19 @@ struct SpeciesConstantBCArray{P, T, N} <: BCArray{T, N}
     default_value::T
     function SpeciesConstantBCArray(
             x::AbstractArray{T, N}, values::Dict{
-                Int, T}, default_value::T) where {T, N}
+                Int, T,
+            }, default_value::T
+        ) where {T, N}
         return new{typeof(x), T, N}(x, values, default_value)
     end
 end
 Base.size(A::SpeciesConstantBCArray) = size(A.parent)
 Base.checkbounds(::Type{Bool}, ::SpeciesConstantBCArray, i...) = true
 
-function Base.getindex(A::SpeciesConstantBCArray{P, T, N},
-        ind::Vararg{Union{Int, UnitRange}, N}) where {P, T, N}
+function Base.getindex(
+        A::SpeciesConstantBCArray{P, T, N},
+        ind::Vararg{Union{Int, UnitRange}, N}
+    ) where {P, T, N}
     v = A.parent
     if checkbounds(Bool, v, ind...)
         @inbounds ret = v[ind...]
@@ -129,8 +137,9 @@ struct SpeciesConstantBC
     default_value::AbstractFloat
 
     function SpeciesConstantBC(
-            values::Dict{<:Union{String, Int}, <:AbstractFloat}, default_value::AbstractFloat)
-        new(values, default_value)
+            values::Dict{<:Union{String, Int}, <:AbstractFloat}, default_value::AbstractFloat
+        )
+        return new(values, default_value)
     end
 end
 
