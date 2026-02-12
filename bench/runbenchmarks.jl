@@ -22,12 +22,15 @@ function setup_advection_simulator(lonres, latres, stencil)
     geosfp = GEOSFP("0.25x0.3125_NA", domain)
 
     domain = EarthSciMLBase.add_partial_derivative_func(
-        domain, partialderivatives_δPδlev_geosfp(geosfp))
+        domain, partialderivatives_δPδlev_geosfp(geosfp)
+    )
 
     function emissions()
-        @parameters(lonx=-97.0, [unit=1u"s^-1"],
-            latx=30.0, [unit=1u"s^-1"],
-            levx=1.0, [unit=1u"s^-1"])
+        @parameters(
+            lonx = -97.0, [unit = 1u"s^-1"],
+            latx = 30.0, [unit = 1u"s^-1"],
+            levx = 1.0, [unit = 1u"s^-1"]
+        )
         @variables c(t) = 1.0
         ODESystem([D(c) ~ latx + lonx + levx], t, name = :emissions)
     end

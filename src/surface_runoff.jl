@@ -35,13 +35,12 @@ https://doi.org/10.1016/j.advwatres.2019.103499
 @component function SurfaceRunoff(; name = :SurfaceRunoff)
     @constants begin
         g = 9.81, [description = "Gravitational acceleration", unit = u"m/s^2"]
-        h_ref = 1.0,
-        [description = "Reference flow depth for non-dimensionalization", unit = u"m"]
-        q_ref = 1.0,
-        [description = "Reference flux for non-dimensionalization", unit = u"m^2/s"]
-        n_ref = 1.0,
-        [description = "Reference Manning coefficient for non-dimensionalization",
-            unit = u"m^(-1/3)*s"]
+        h_ref = 1.0, [description = "Reference flow depth for non-dimensionalization", unit = u"m"]
+        q_ref = 1.0, [description = "Reference flux for non-dimensionalization", unit = u"m^2/s"]
+        n_ref = 1.0, [
+            description = "Reference Manning coefficient for non-dimensionalization",
+            unit = u"m^(-1/3)*s"
+        ]
     end
 
     @parameters begin

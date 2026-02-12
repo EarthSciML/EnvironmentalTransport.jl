@@ -7,9 +7,9 @@
     using EnvironmentalTransport
 end
 
-# ============================================================================
+# =============================================================================
 # SurfaceRunoff Component Tests
-# ============================================================================
+# =============================================================================
 
 @testitem "SurfaceRunoff - Structural Verification" setup=[SurfaceRunoffSetup] tags=[:surface_runoff] begin
     sys = SurfaceRunoff()
@@ -206,9 +206,9 @@ end
     end
 end
 
-# ============================================================================
+# =============================================================================
 # HeavisideBoundaryCondition Component Tests
-# ============================================================================
+# =============================================================================
 
 @testitem "HeavisideBoundaryCondition - Structural Verification" setup=[SurfaceRunoffSetup] tags=[:surface_runoff] begin
     hbc = HeavisideBoundaryCondition()
@@ -339,9 +339,9 @@ end
     @test sol_far[chbc.δ_ω][1] < 0.01 * expected_delta_max
 end
 
-# ============================================================================
+# =============================================================================
 # SaintVenantPDE Tests (using MethodOfLines.jl)
-# ============================================================================
+# =============================================================================
 
 @testsnippet SurfaceRunoffPDESetup begin
     using ModelingToolkit
@@ -447,5 +447,5 @@ end
     # Find the P_rate parameter and check its default
     P_idx = findfirst(p -> contains(string(p), "P_rate"), pde.ps)
     @test !isnothing(P_idx)
-    @test defaults[pde.ps[P_idx]] == 1e-4
+    @test defaults[pde.ps[P_idx]] == 1.0e-4
 end
