@@ -71,10 +71,9 @@ https://doi.org/10.1016/j.advwatres.2019.103499
         # Eq. 1b - Momentum conservation (Saint-Venant)
         D(q) ~ -dFdl + g * max(h̃, h̃_0) * (S_0 - S_f),
         # Manning's friction slope: Sf = (n*q)² / h̃^(10/3)
-        # Non-dimensionalize all terms to handle fractional power (10/3):
-        # Sf = ((n/n_ref)*(q/q_ref))^2 / (h̃/h_ref)^(10/3)
-        # This works because (n_ref*q_ref)^2 / h_ref^(10/3) = m^(10/3)/m^(10/3) = 1
-        S_f ~ ((n_mann / n_ref) * (q / q_ref))^2 / (max(h̃, h̃_0) / h_ref)^(10 / 3)
+        # From Wang et al. (2020) Eq. 1, page 2
+        # To handle fractional powers with units, use reference values for non-dimensionalization
+        S_f ~ (n_mann * q)^2 / (max(h̃, h̃_0))^(10 / 3)
     ]
 
     return System(eqs, t; name)
