@@ -32,7 +32,7 @@ function setup_advection_simulator(lonres, latres, stencil)
             levx = 1.0, [unit = 1u"s^-1"]
         )
         @variables c(t) = 1.0
-        ODESystem([D(c) ~ latx + lonx + levx], t, name = :emissions)
+        return ODESystem([D(c) ~ latx + lonx + levx], t, name = :emissions)
     end
 
     emis = emissions()
@@ -56,9 +56,11 @@ for stencil in [upwind1_stencil]
         @info "setting up $lonres x $latres with $stencil"
         op, u, p = setup_advection_simulator(lonres, latres, stencil)
         suite["Advection Simulator"]["in-place"][stencil]["$lonres x $latres (N=$(length(u)))"] = @benchmarkable $(op)(
-            $(u[:]), $(u[:]), $(p), 0.0)
+            $(u[:]), $(u[:]), $(p), 0.0
+        )
         suite["Advection Simulator"]["out-of-place"][stencil]["$lonres x $latres (N=$(length(u)))"] = @benchmarkable $(op)(
-            $(u[:]), $(p), 0.0)
+            $(u[:]), $(p), 0.0
+        )
     end
 end
 

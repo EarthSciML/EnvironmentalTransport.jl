@@ -11,7 +11,7 @@ end
 # SurfaceRunoff Component Tests
 # =============================================================================
 
-@testitem "SurfaceRunoff - Structural Verification" setup=[SurfaceRunoffSetup] tags=[:surface_runoff] begin
+@testitem "SurfaceRunoff - Structural Verification" setup = [SurfaceRunoffSetup] tags = [:surface_runoff] begin
     sys = SurfaceRunoff()
 
     # Verify equation count: mass conservation + momentum conservation + friction slope
@@ -34,7 +34,7 @@ end
     @test Symbol("dFdl(t)") in param_names       # spatial derivative of momentum flux
 end
 
-@testitem "SurfaceRunoff - Compilation" setup=[SurfaceRunoffSetup] tags=[:surface_runoff] begin
+@testitem "SurfaceRunoff - Compilation" setup = [SurfaceRunoffSetup] tags = [:surface_runoff] begin
     sys = SurfaceRunoff()
     csys = mtkcompile(sys)
 
@@ -45,41 +45,43 @@ end
     @test length(unknowns(csys)) == 2
 end
 
-@testitem "SurfaceRunoff - Mass Conservation (no spatial flux)" setup=[SurfaceRunoffSetup] tags=[:surface_runoff] begin
+@testitem "SurfaceRunoff - Mass Conservation (no spatial flux)" setup = [SurfaceRunoffSetup] tags = [:surface_runoff] begin
     # Test: with dqdl=0, dFdl=0, the mass equation reduces to dh̃/dt = P - I
     # For P > I, h̃ should increase linearly
     sys = SurfaceRunoff()
     csys = mtkcompile(sys)
 
-    P_val = 1e-6  # m/s (~3.6 mm/hr)
+    P_val = 1.0e-6  # m/s (~3.6 mm/hr)
     I_val = 0.0
 
-    prob = ODEProblem(csys,
+    prob = ODEProblem(
+        csys,
         merge(
-            Dict(csys.h̃ => 1e-5, csys.q => 0.0),
+            Dict(csys.h̃ => 1.0e-5, csys.q => 0.0),
             Dict(
                 csys.P => P_val,
                 csys.I_infil => I_val,
                 csys.S_0 => 0.0,       # flat surface to minimize momentum effects
                 csys.n_mann => 1.0,     # high friction to damp momentum
-                csys.h̃_0 => 1e-5,
+                csys.h̃_0 => 1.0e-5,
                 csys.dqdl => 0.0,
                 csys.dFdl => 0.0
             )
         ),
-        (0.0, 10.0))
+        (0.0, 10.0)
+    )
 
     sol = solve(prob)
     @test sol.retcode == SciMLBase.ReturnCode.Success
 
     # h̃ should increase linearly: h̃(t) = h̃_0 + (P - I)*t
     for i in eachindex(sol.t)
-        expected_h = 1e-5 + P_val * sol.t[i]
+        expected_h = 1.0e-5 + P_val * sol.t[i]
         @test isapprox(sol[csys.h̃][i], expected_h, rtol = 0.01)
     end
 end
 
-@testitem "SurfaceRunoff - Friction Slope Steady State" setup=[SurfaceRunoffSetup] tags=[:surface_runoff] begin
+@testitem "SurfaceRunoff - Friction Slope Steady State" setup = [SurfaceRunoffSetup] tags = [:surface_runoff] begin
     # At steady state with S_0 = S_f, dq/dt = 0 (ignoring spatial terms)
     # Manning's equation: S_f = (n*q)^2 / h^(10/3)
     # At equilibrium S_0 = S_f => q_eq = sqrt(S_0) * h^(5/3) / n
@@ -96,7 +98,8 @@ end
     q_eq = sqrt(S_0_val) * h_val^(5 / 3) / n_val
 
     # Start near equilibrium
-    prob = ODEProblem(csys,
+    prob = ODEProblem(
+        csys,
         merge(
             Dict(csys.h̃ => h_val, csys.q => q_eq),
             Dict(
@@ -104,38 +107,41 @@ end
                 csys.I_infil => 0.0,
                 csys.S_0 => S_0_val,
                 csys.n_mann => n_val,
-                csys.h̃_0 => 1e-7,
+                csys.h̃_0 => 1.0e-7,
                 csys.dqdl => 0.0,
                 csys.dFdl => 0.0
             )
         ),
-        (0.0, 0.01))
+        (0.0, 0.01)
+    )
 
     sol = solve(prob)
 
     # At equilibrium, S_f should equal S_0
     S_f_val = sol[csys.S_f][1]
-    @test isapprox(S_f_val, S_0_val, rtol = 1e-6)
+    @test isapprox(S_f_val, S_0_val, rtol = 1.0e-6)
 end
 
-@testitem "SurfaceRunoff - Qualitative: Precipitation increases water depth" setup=[SurfaceRunoffSetup] tags=[:surface_runoff] begin
+@testitem "SurfaceRunoff - Qualitative: Precipitation increases water depth" setup = [SurfaceRunoffSetup] tags = [:surface_runoff] begin
     sys = SurfaceRunoff()
     csys = mtkcompile(sys)
 
-    prob = ODEProblem(csys,
+    prob = ODEProblem(
+        csys,
         merge(
-            Dict(csys.h̃ => 1e-4, csys.q => 0.0),
+            Dict(csys.h̃ => 1.0e-4, csys.q => 0.0),
             Dict(
-                csys.P => 2e-6,         # rainfall
-                csys.I_infil => 1e-6,   # infiltration < rainfall
+                csys.P => 2.0e-6,         # rainfall
+                csys.I_infil => 1.0e-6,   # infiltration < rainfall
                 csys.S_0 => 0.0,        # flat surface
                 csys.n_mann => 1.0,
-                csys.h̃_0 => 1e-5,
+                csys.h̃_0 => 1.0e-5,
                 csys.dqdl => 0.0,
                 csys.dFdl => 0.0
             )
         ),
-        (0.0, 10.0))
+        (0.0, 10.0)
+    )
 
     sol = solve(prob)
     @test sol.retcode == SciMLBase.ReturnCode.Success
@@ -144,24 +150,26 @@ end
     @test sol[csys.h̃][end] > sol[csys.h̃][1]
 end
 
-@testitem "SurfaceRunoff - Qualitative: Infiltration decreases water depth" setup=[SurfaceRunoffSetup] tags=[:surface_runoff] begin
+@testitem "SurfaceRunoff - Qualitative: Infiltration decreases water depth" setup = [SurfaceRunoffSetup] tags = [:surface_runoff] begin
     sys = SurfaceRunoff()
     csys = mtkcompile(sys)
 
-    prob = ODEProblem(csys,
+    prob = ODEProblem(
+        csys,
         merge(
             Dict(csys.h̃ => 0.01, csys.q => 0.0),
             Dict(
                 csys.P => 0.0,           # no rainfall
-                csys.I_infil => 1e-6,    # infiltration drains water
+                csys.I_infil => 1.0e-6,    # infiltration drains water
                 csys.S_0 => 0.0,         # flat surface
                 csys.n_mann => 1.0,
-                csys.h̃_0 => 1e-5,
+                csys.h̃_0 => 1.0e-5,
                 csys.dqdl => 0.0,
                 csys.dFdl => 0.0
             )
         ),
-        (0.0, 100.0))
+        (0.0, 100.0)
+    )
 
     sol = solve(prob)
     @test sol.retcode == SciMLBase.ReturnCode.Success
@@ -170,22 +178,23 @@ end
     @test sol[csys.h̃][end] < sol[csys.h̃][1]
 end
 
-@testitem "SurfaceRunoff - Manning friction slope formula" setup=[SurfaceRunoffSetup] tags=[:surface_runoff] begin
+@testitem "SurfaceRunoff - Manning friction slope formula" setup = [SurfaceRunoffSetup] tags = [:surface_runoff] begin
     # Verify the friction slope formula against analytical values
     # S_f = (n*q)^2 / h^(10/3)
     sys = SurfaceRunoff()
     csys = mtkcompile(sys)
 
     test_cases = [
-        (h = 0.01, q = 1e-4, n = 0.03),
-        (h = 0.05, q = 1e-3, n = 0.01),
-        (h = 0.1, q = 5e-3, n = 0.05)
+        (h = 0.01, q = 1.0e-4, n = 0.03),
+        (h = 0.05, q = 1.0e-3, n = 0.01),
+        (h = 0.1, q = 5.0e-3, n = 0.05),
     ]
 
     for tc in test_cases
         expected_Sf = (tc.n * tc.q)^2 / tc.h^(10 / 3)
 
-        prob = ODEProblem(csys,
+        prob = ODEProblem(
+            csys,
             merge(
                 Dict(csys.h̃ => tc.h, csys.q => tc.q),
                 Dict(
@@ -193,16 +202,17 @@ end
                     csys.I_infil => 0.0,
                     csys.S_0 => 0.01,
                     csys.n_mann => tc.n,
-                    csys.h̃_0 => 1e-7,
+                    csys.h̃_0 => 1.0e-7,
                     csys.dqdl => 0.0,
                     csys.dFdl => 0.0
                 )
             ),
-            (0.0, 0.001))
+            (0.0, 0.001)
+        )
 
         sol = solve(prob)
         S_f_computed = sol[csys.S_f][1]
-        @test isapprox(S_f_computed, expected_Sf, rtol = 1e-6)
+        @test isapprox(S_f_computed, expected_Sf, rtol = 1.0e-6)
     end
 end
 
@@ -210,7 +220,7 @@ end
 # HeavisideBoundaryCondition Component Tests
 # =============================================================================
 
-@testitem "HeavisideBoundaryCondition - Structural Verification" setup=[SurfaceRunoffSetup] tags=[:surface_runoff] begin
+@testitem "HeavisideBoundaryCondition - Structural Verification" setup = [SurfaceRunoffSetup] tags = [:surface_runoff] begin
     hbc = HeavisideBoundaryCondition()
 
     # Verify equation count: η_ω + δ_ω + boundary condition ODE
@@ -229,7 +239,7 @@ end
     @test Symbol("I_infil(t)") in param_names
 end
 
-@testitem "HeavisideBoundaryCondition - Compilation" setup=[SurfaceRunoffSetup] tags=[:surface_runoff] begin
+@testitem "HeavisideBoundaryCondition - Compilation" setup = [SurfaceRunoffSetup] tags = [:surface_runoff] begin
     hbc = HeavisideBoundaryCondition()
     chbc = mtkcompile(hbc)
 
@@ -238,70 +248,80 @@ end
     @test Symbol("h(t)") in Symbol.(unknowns(chbc))
 end
 
-@testitem "HeavisideBoundaryCondition - Smoothed Heaviside properties" setup=[SurfaceRunoffSetup] tags=[:surface_runoff] begin
+@testitem "HeavisideBoundaryCondition - Smoothed Heaviside properties" setup = [SurfaceRunoffSetup] tags = [:surface_runoff] begin
     hbc = HeavisideBoundaryCondition()
     chbc = mtkcompile(hbc)
 
     # Test η_ω values at specific h values
     # η_ω(h=0) should be exactly 0.5
-    prob = ODEProblem(chbc,
+    prob = ODEProblem(
+        chbc,
         merge(
             Dict(chbc.h => 0.0),
-            Dict(chbc.P => 1e-6, chbc.I_infil => 0.0, chbc.ω => 1e-4)
+            Dict(chbc.P => 1.0e-6, chbc.I_infil => 0.0, chbc.ω => 1.0e-4)
         ),
-        (0.0, 0.001))
+        (0.0, 0.001)
+    )
     sol = solve(prob)
-    @test isapprox(sol[chbc.η_ω][1], 0.5, atol = 1e-10)
+    @test isapprox(sol[chbc.η_ω][1], 0.5, atol = 1.0e-10)
 
     # η_ω(h >> ω) should approach 1.0
-    prob_pos = ODEProblem(chbc,
+    prob_pos = ODEProblem(
+        chbc,
         merge(
             Dict(chbc.h => 1.0),
-            Dict(chbc.P => 0.0, chbc.I_infil => 0.0, chbc.ω => 1e-4)
+            Dict(chbc.P => 0.0, chbc.I_infil => 0.0, chbc.ω => 1.0e-4)
         ),
-        (0.0, 0.001))
+        (0.0, 0.001)
+    )
     sol_pos = solve(prob_pos)
-    @test isapprox(sol_pos[chbc.η_ω][1], 1.0, atol = 1e-3)
+    @test isapprox(sol_pos[chbc.η_ω][1], 1.0, atol = 1.0e-3)
 
     # η_ω(h << -ω) should approach 0.0
-    prob_neg = ODEProblem(chbc,
+    prob_neg = ODEProblem(
+        chbc,
         merge(
             Dict(chbc.h => -1.0),
-            Dict(chbc.P => 0.0, chbc.I_infil => 0.0, chbc.ω => 1e-4)
+            Dict(chbc.P => 0.0, chbc.I_infil => 0.0, chbc.ω => 1.0e-4)
         ),
-        (0.0, 0.001))
+        (0.0, 0.001)
+    )
     sol_neg = solve(prob_neg)
-    @test isapprox(sol_neg[chbc.η_ω][1], 0.0, atol = 1e-3)
+    @test isapprox(sol_neg[chbc.η_ω][1], 0.0, atol = 1.0e-3)
 end
 
-@testitem "HeavisideBoundaryCondition - Net positive flux increases head" setup=[SurfaceRunoffSetup] tags=[:surface_runoff] begin
+@testitem "HeavisideBoundaryCondition - Net positive flux increases head" setup = [SurfaceRunoffSetup] tags = [:surface_runoff] begin
     hbc = HeavisideBoundaryCondition()
     chbc = mtkcompile(hbc)
 
     # With P > I and h > 0 (ponding state), head should increase
-    prob = ODEProblem(chbc,
+    prob = ODEProblem(
+        chbc,
         merge(
             Dict(chbc.h => 0.01),
-            Dict(chbc.P => 2e-6, chbc.I_infil => 1e-6, chbc.ω => 1e-4)
+            Dict(chbc.P => 2.0e-6, chbc.I_infil => 1.0e-6, chbc.ω => 1.0e-4)
         ),
-        (0.0, 100.0))
+        (0.0, 100.0)
+    )
     sol = solve(prob)
     @test sol.retcode == SciMLBase.ReturnCode.Success
     @test sol[chbc.h][end] > sol[chbc.h][1]
 end
 
-@testitem "HeavisideBoundaryCondition - Transition from unsaturated to saturated" setup=[SurfaceRunoffSetup] tags=[:surface_runoff] begin
+@testitem "HeavisideBoundaryCondition - Transition from unsaturated to saturated" setup = [SurfaceRunoffSetup] tags = [:surface_runoff] begin
     # Start with h < 0 (unsaturated), apply precipitation.
     # Head should increase and eventually become positive (ponding).
     hbc = HeavisideBoundaryCondition()
     chbc = mtkcompile(hbc)
 
-    prob = ODEProblem(chbc,
+    prob = ODEProblem(
+        chbc,
         merge(
             Dict(chbc.h => -0.05),
-            Dict(chbc.P => 1e-5, chbc.I_infil => 0.0, chbc.ω => 1e-3)
+            Dict(chbc.P => 1.0e-5, chbc.I_infil => 0.0, chbc.ω => 1.0e-3)
         ),
-        (0.0, 10000.0))
+        (0.0, 10000.0)
+    )
     sol = solve(prob)
     @test sol.retcode == SciMLBase.ReturnCode.Success
 
@@ -310,49 +330,44 @@ end
     @test sol[chbc.h][end] > 0
 end
 
-@testitem "HeavisideBoundaryCondition - Smoothed delta function" setup=[SurfaceRunoffSetup] tags=[:surface_runoff] begin
+@testitem "HeavisideBoundaryCondition - Smoothed delta function" setup = [SurfaceRunoffSetup] tags = [:surface_runoff] begin
     # δ_ω should be maximum at h=0 and decrease away from h=0
     hbc = HeavisideBoundaryCondition()
     chbc = mtkcompile(hbc)
 
-    ω_val = 1e-3
+    ω_val = 1.0e-3
 
     # δ_ω at h=0 should be 1/(π*ω)
-    prob_zero = ODEProblem(chbc,
+    prob_zero = ODEProblem(
+        chbc,
         merge(
             Dict(chbc.h => 0.0),
             Dict(chbc.P => 0.0, chbc.I_infil => 0.0, chbc.ω => ω_val)
         ),
-        (0.0, 0.001))
+        (0.0, 0.001)
+    )
     sol_zero = solve(prob_zero)
     expected_delta_max = 1.0 / (π * ω_val)
-    @test isapprox(sol_zero[chbc.δ_ω][1], expected_delta_max, rtol = 1e-6)
+    @test isapprox(sol_zero[chbc.δ_ω][1], expected_delta_max, rtol = 1.0e-6)
 
     # δ_ω at h >> ω should approach 0
-    prob_far = ODEProblem(chbc,
+    prob_far = ODEProblem(
+        chbc,
         merge(
             Dict(chbc.h => 1.0),
             Dict(chbc.P => 0.0, chbc.I_infil => 0.0, chbc.ω => ω_val)
         ),
-        (0.0, 0.001))
+        (0.0, 0.001)
+    )
     sol_far = solve(prob_far)
     @test sol_far[chbc.δ_ω][1] < 0.01 * expected_delta_max
 end
 
 # =============================================================================
-# SaintVenantPDE Tests (using MethodOfLines.jl)
+# SaintVenantPDE Tests
 # =============================================================================
 
-@testsnippet SurfaceRunoffPDESetup begin
-    using ModelingToolkit
-    using ModelingToolkit: t, D
-    using DomainSets
-    using MethodOfLines
-    using OrdinaryDiffEqDefault
-    using EnvironmentalTransport
-end
-
-@testitem "SaintVenantPDE - Structural verification" setup=[SurfaceRunoffPDESetup] tags=[:surface_runoff_pde] begin
+@testitem "SaintVenantPDE - Structural verification" setup = [SurfaceRunoffSetup] tags = [:surface_runoff] begin
     # Verify that SaintVenantPDE creates a well-formed PDESystem
     pde = SaintVenantPDE(0.5, 60.0)
 
@@ -369,77 +384,16 @@ end
     @test length(pde.ivs) == 2
 end
 
-@testitem "SaintVenantPDE - Discretization with MethodOfLines" setup=[SurfaceRunoffPDESetup] tags=[:surface_runoff_pde] begin
-    # Test that the SaintVenantPDE can be discretized with MethodOfLines
-    pde = SaintVenantPDE(0.5, 60.0)
-    l = pde.ivs[2]
-    dl = 0.1
-    disc = MOLFiniteDifference([l => dl], t, approx_order = 2)
-    prob = discretize(pde, disc)
-
-    @test prob isa ODEProblem
-    @test length(prob.u0) > 0
-    @test prob.tspan == (0.0, 60.0)
-
-    # With dl=0.1 on [0, 0.5], we get 4 interior points per variable.
-    # 2 original variables (h_tilde, q_flux) × 4 interior = 8 minimum unknowns
-    @test length(prob.u0) >= 8
-end
-
-@testitem "SaintVenantPDE - Solution runs" setup=[SurfaceRunoffPDESetup] tags=[:surface_runoff_pde] begin
-    # Test that the full Saint-Venant PDE can be solved
-    pde = SaintVenantPDE(0.5, 60.0;
-        P_val = 70.0 / 1000 / 3600,
-        S_0_val = 0.01,
-        n_manning_val = 0.03,
-        h_init_val = 1e-3,
-        q_init_val = 0.0)
-
-    l = pde.ivs[2]
-    dl = 0.1
-    disc = MOLFiniteDifference([l => dl], t, approx_order = 2)
-    prob = discretize(pde, disc)
-
-    sol = solve(prob)
-    @test sol.retcode == SciMLBase.ReturnCode.Success
-    @test length(sol.t) > 1
-end
-
-@testitem "SaintVenantPDE - Boundary values preserved" setup=[SurfaceRunoffPDESetup] tags=[:surface_runoff_pde] begin
-    # Verify that boundary conditions are correctly applied by checking
-    # that the discretized initial conditions match the expected values.
-    h_init = 5e-3
-
-    pde = SaintVenantPDE(0.5, 60.0;
-        P_val = 70.0 / 1000 / 3600,
-        S_0_val = 0.01,
-        n_manning_val = 0.03,
-        h_init_val = h_init,
-        q_init_val = 0.0)
-
-    l = pde.ivs[2]
-    dl = 0.1
-    disc = MOLFiniteDifference([l => dl], t, approx_order = 2)
-    prob = discretize(pde, disc)
-
-    h_tilde = pde.dvs[1]
-    h_vals_init = prob.u0
-
-    # All initial values should be non-negative (water depth cannot be negative)
-    @test all(h_vals_init .>= 0)
-
-    # The problem should have the correct time span
-    @test prob.tspan == (0.0, 60.0)
-end
-
-@testitem "SaintVenantPDE - Custom parameters" setup=[SurfaceRunoffPDESetup] tags=[:surface_runoff_pde] begin
+@testitem "SaintVenantPDE - Custom parameters" setup = [SurfaceRunoffSetup] tags = [:surface_runoff] begin
     # Verify that custom parameters are correctly applied
-    pde = SaintVenantPDE(1.0, 120.0;
-        P_val = 1e-4,
-        I_val = 5e-5,
+    pde = SaintVenantPDE(
+        1.0, 120.0;
+        P_val = 1.0e-4,
+        I_val = 5.0e-5,
         S_0_val = 0.02,
         n_manning_val = 0.05,
-        h_init_val = 5e-3)
+        h_init_val = 5.0e-3,
+    )
 
     # Verify the defaults were set correctly
     defaults = pde.defaults

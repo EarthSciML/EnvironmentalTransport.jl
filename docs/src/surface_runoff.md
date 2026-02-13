@@ -271,75 +271,14 @@ end
 p5
 ```
 
-### PDE Spatial Solution with MethodOfLines.jl
-
-The full Saint-Venant equations (Eq. 1 from Wang et al., 2020) can be solved
-as a PDE system using [MethodOfLines.jl](https://github.com/SciML/MethodOfLines.jl)
-for spatial discretization via the method of lines (finite differences).
-
-The `SaintVenantPDE` function creates a `PDESystem` with proper SI units
-that can be directly discretized with MethodOfLines.jl. All variables and
-parameters carry SI unit annotations, and unit consistency is verified
-during system construction.
-
-!!! note
-    This example requires the MethodOfLines.jl fork with unit-handling fixes from
-    [ctessum-claude/MethodOfLines.jl](https://github.com/ctessum-claude/MethodOfLines.jl/tree/fix-units-discretization).
-
-```@example surface_runoff
-using ModelingToolkit: t
-using DomainSets
-using MethodOfLines
-
-# Create the Saint-Venant PDE system with 70 mm/hr rainfall on a 0.5 m domain
-pde = SaintVenantPDE(0.5, 60.0;
-    P_val = 70.0 / 1000 / 3600,  # 70 mm/hr in m/s
-    S_0_val = 0.01,
-    n_manning_val = 0.03,
-    h_init_val = 1e-3,
-    q_init_val = 0.0)
-
-# Discretize using method of lines (finite differences)
-l = pde.ivs[2]
-dl = 0.1
-discretization = MOLFiniteDifference([l => dl], t, approx_order = 2)
-prob = discretize(pde, discretization)
-
-# Solve the discretized ODE system
-sol = solve(prob)
-
-h_tilde = pde.dvs[1]
-q_flux = pde.dvs[2]
-disc_l = sol[l]
-h_vals = sol[h_tilde]
-
-# Plot spatial profiles of water depth at different times
-p6 = plot(xlabel="Distance along slope l (m)",
-          ylabel="Flow depth h̃ (m)",
-          title="Saint-Venant PDE: Water Depth Evolution (Eq. 1)",
-          legend=:topleft)
-
-for (i, ti) in enumerate(sol.t)
-    label_str = "t = $(round(ti, digits=1)) s"
-    plot!(p6, disc_l, h_vals[i, :], label=label_str, linewidth=2)
-end
-
-p6
-```
-
-```@example surface_runoff
-println("ODEProblem created with $(length(prob.u0)) unknowns")
-println("Time span: $(prob.tspan)")
-println("Solution time steps: $(length(sol.t))")
-```
-
 ## Limitations
 
 The current implementation provides:
 - **Single-node ODE components** (`SurfaceRunoff`, `HeavisideBoundaryCondition`)
   suitable for coupling with the EarthSciML framework
-- **PDE spatial solution** (`SaintVenantPDE`) via MethodOfLines.jl discretization
-  of the Saint-Venant equations (Eq. 1) with full SI unit support
+- **PDE formulation** (`SaintVenantPDE`) that creates a `PDESystem` for the
+  Saint-Venant equations (Eq. 1) with full SI unit support. Spatial discretization
+  with MethodOfLines.jl is pending upstream unit-handling fixes.
 
 The following features from Wang et al. (2020) are not yet implemented:
 - Richards equation for subsurface flow (Eq. 2) — requires a separate subsurface

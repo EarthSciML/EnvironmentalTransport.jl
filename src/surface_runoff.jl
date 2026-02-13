@@ -38,9 +38,9 @@ https://doi.org/10.1016/j.advwatres.2019.103499
         h_ref = 1.0, [description = "Reference flow depth for non-dimensionalization", unit = u"m"]
         q_ref = 1.0, [description = "Reference flux for non-dimensionalization", unit = u"m^2/s"]
         n_ref = 1.0, [
-            description = "Reference Manning coefficient for non-dimensionalization",
-            unit = u"m^(-1/3)*s"
-        ]
+                description = "Reference Manning coefficient for non-dimensionalization",
+                unit = u"m^(-1/3)*s",
+            ]
     end
 
     @parameters begin
@@ -48,20 +48,22 @@ https://doi.org/10.1016/j.advwatres.2019.103499
         I_infil(t), [description = "Infiltration flux density (Eq. 1)", unit = u"m/s"]
         S_0, [description = "Surface slope (dimensionless)", unit = u"1"]
         n_mann, [description = "Manning roughness coefficient", unit = u"m^(-1/3)*s"]
-        h̃_0 = 1e-5,
-        [description = "Minimum flow depth to prevent singularity (Eq. 1)", unit = u"m"]
+        h̃_0 = 1.0e-5,
+            [description = "Minimum flow depth to prevent singularity (Eq. 1)", unit = u"m"]
         dqdl(t) = 0.0,
-        [description = "Spatial derivative of runoff flux ∂q/∂l (Eq. 1)", unit = u"m/s"]
+            [description = "Spatial derivative of runoff flux ∂q/∂l (Eq. 1)", unit = u"m/s"]
         dFdl(t) = 0.0,
-        [description = "Spatial derivative of momentum flux ∂/∂l(q²/h̃ + g·h̃²/2) (Eq. 1)",
-            unit = u"m^2/s^2"]
+            [
+                description = "Spatial derivative of momentum flux ∂/∂l(q²/h̃ + g·h̃²/2) (Eq. 1)",
+                unit = u"m^2/s^2",
+            ]
     end
 
     @variables begin
         h̃(t), [description = "Flow depth / ponded water height (Eq. 1)", unit = u"m"]
         q(t), [description = "Surface runoff flux per unit width (Eq. 1)", unit = u"m^2/s"]
         S_f(t),
-        [description = "Friction slope from Manning's equation (Eq. 1)", unit = u"1"]
+            [description = "Friction slope from Manning's equation (Eq. 1)", unit = u"1"]
     end
 
     eqs = [
@@ -71,8 +73,8 @@ https://doi.org/10.1016/j.advwatres.2019.103499
         D(q) ~ -dFdl + g * max(h̃, h̃_0) * (S_0 - S_f),
         # Manning's friction slope: Sf = (n*q)² / h̃^(10/3)
         # From Wang et al. (2020) Eq. 1, page 2
-        # To handle fractional powers with units, use reference values for non-dimensionalization
-        S_f ~ (n_mann * q)^2 / (max(h̃, h̃_0))^(10 / 3)
+        # Non-dimensionalize fractional powers to handle units properly
+        S_f ~ ((n_mann * q) / (n_ref * q_ref))^2 / (max(h̃, h̃_0) / h_ref)^(10 / 3),
     ]
 
     return System(eqs, t; name)
@@ -112,16 +114,18 @@ fractional exponents: ``S_f = ((n/n_{ref})(q/q_{ref}))^2 / (\\tilde{h}/h_{ref})^
 water movement. *Advances in Water Resources*, 137, 103499.
 https://doi.org/10.1016/j.advwatres.2019.103499
 """
-function SaintVenantPDE(L_domain, T_end;
-    P_val = 70.0 / 1000 / 3600,
-    I_val = 0.0,
-    S_0_val = 0.01,
-    n_manning_val = 0.03,
-    g_val = 9.81,
-    h_min_val = 1e-5,
-    h_init_val = 1e-3,
-    q_init_val = 0.0,
-    name = :SaintVenantPDE)
+function SaintVenantPDE(
+        L_domain, T_end;
+        P_val = 70.0 / 1000 / 3600,
+        I_val = 0.0,
+        S_0_val = 0.01,
+        n_manning_val = 0.03,
+        g_val = 9.81,
+        h_min_val = 1.0e-5,
+        h_init_val = 1.0e-3,
+        q_init_val = 0.0,
+        name = :SaintVenantPDE
+    )
 
     @parameters l [unit = u"m"]
     @variables h_tilde(..) [unit = u"m", description = "Flow depth / ponded water height (Eq. 1)"]
@@ -152,12 +156,14 @@ function SaintVenantPDE(L_domain, T_end;
     eq2 = D(q_flux(t, l)) ~
         -Dl(F_mom(t, l)) +
         g_grav * max(h_tilde(t, l), h_min) *
-        (S_0_slope - ((n_mann / n_ref) * (q_flux(t, l) / q_ref))^2 /
-         (max(h_tilde(t, l), h_min) / h_ref)^(10 / 3))
+        (
+        S_0_slope - ((n_mann / n_ref) * (q_flux(t, l) / q_ref))^2 /
+            (max(h_tilde(t, l), h_min) / h_ref)^(10 / 3)
+    )
 
     # Auxiliary equation for momentum flux (part of Eq. 1b)
     eq3 = F_mom(t, l) ~ q_flux(t, l)^2 / max(h_tilde(t, l), h_min) +
-                         g_grav * h_tilde(t, l)^2 / 2
+        g_grav * h_tilde(t, l)^2 / 2
 
     # Boundary and initial conditions
     F_bc = q_bc^2 / max(h_bc, h_min) + g_grav * h_bc^2 / 2
@@ -184,9 +190,11 @@ function SaintVenantPDE(L_domain, T_end;
 
     all_params = [P_rate, I_rate, S_0_slope, n_mann, g_grav, h_min, h_bc, q_bc, n_ref, q_ref, h_ref]
 
-    return PDESystem([eq1, eq2, eq3], bcs, domains, [t, l],
+    return PDESystem(
+        [eq1, eq2, eq3], bcs, domains, [t, l],
         [h_tilde(t, l), q_flux(t, l), F_mom(t, l)], all_params;
-        defaults = defaults_dict, name = name)
+        defaults = defaults_dict, name = name
+    )
 end
 
 """
@@ -228,9 +236,10 @@ https://doi.org/10.1016/j.advwatres.2019.103499
     end
 
     @parameters begin
-        ω = 1e-4,
-        [
-            description = "Smoothing parameter for Heaviside approximation (Eq. 5)", unit = u"m"]
+        ω = 1.0e-4,
+            [
+                description = "Smoothing parameter for Heaviside approximation (Eq. 5)", unit = u"m",
+            ]
         P(t), [description = "Precipitation/irrigation flux density (Eq. 3)", unit = u"m/s"]
         I_infil(t), [description = "Infiltration flux density (Eq. 3)", unit = u"m/s"]
     end
@@ -238,8 +247,9 @@ https://doi.org/10.1016/j.advwatres.2019.103499
     @variables begin
         h(t), [description = "Soil water pressure head at surface (Eq. 3)", unit = u"m"]
         η_ω(t),
-        [
-            description = "Smoothed Heaviside step function (Eq. 5) (dimensionless)", unit = u"1"]
+            [
+                description = "Smoothed Heaviside step function (Eq. 5) (dimensionless)", unit = u"1",
+            ]
         δ_ω(t), [description = "Smoothed Dirac delta function (Eq. 5)", unit = u"1/m"]
     end
 
@@ -252,7 +262,7 @@ https://doi.org/10.1016/j.advwatres.2019.103499
         # ∂(η(h)·h)/∂t = (P - I)
         # Using product rule: η'(h)·h·dh/dt + η(h)·dh/dt = P - I
         # So: (δ_ω·h + η_ω)·dh/dt = P - I
-        D(h) ~ (P - I_infil) / (δ_ω * h + η_ω)
+        D(h) ~ (P - I_infil) / (δ_ω * h + η_ω),
     ]
 
     return System(eqs, t; name)
