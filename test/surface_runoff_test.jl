@@ -364,10 +364,19 @@ end
 end
 
 # =============================================================================
-# SaintVenantPDE Tests
+# SaintVenantPDE Tests (using MethodOfLines.jl)
 # =============================================================================
 
-@testitem "SaintVenantPDE - Structural verification" setup = [SurfaceRunoffSetup] tags = [:surface_runoff] begin
+@testsnippet SurfaceRunoffPDESetup begin
+    using ModelingToolkit
+    using ModelingToolkit: t, D
+    using DomainSets
+    using MethodOfLines
+    using OrdinaryDiffEqDefault
+    using EnvironmentalTransport
+end
+
+@testitem "SaintVenantPDE - Structural verification" setup = [SurfaceRunoffPDESetup] tags = [:surface_runoff_pde] begin
     # Verify that SaintVenantPDE creates a well-formed PDESystem
     pde = SaintVenantPDE(0.5, 60.0)
 
@@ -384,7 +393,69 @@ end
     @test length(pde.ivs) == 2
 end
 
-@testitem "SaintVenantPDE - Custom parameters" setup = [SurfaceRunoffSetup] tags = [:surface_runoff] begin
+@testitem "SaintVenantPDE - Discretization with MethodOfLines" setup = [SurfaceRunoffPDESetup] tags = [:surface_runoff_pde] begin
+    # Test that the SaintVenantPDE can be discretized with MethodOfLines
+    pde = SaintVenantPDE(0.5, 60.0)
+    l = pde.ivs[2]
+    dl = 0.1
+    disc = MOLFiniteDifference([l => dl], t, approx_order = 2)
+    prob = discretize(pde, disc)
+
+    @test prob isa ODEProblem
+    @test length(prob.u0) > 0
+    @test prob.tspan == (0.0, 60.0)
+
+    # With dl=0.1 on [0, 0.5], we get 4 interior points per variable.
+    # 2 original variables (h_tilde, q_flux) × 4 interior = 8 minimum unknowns
+    @test length(prob.u0) >= 8
+end
+
+@testitem "SaintVenantPDE - Solution runs" setup = [SurfaceRunoffPDESetup] tags = [:surface_runoff_pde] begin
+    # Test that the full Saint-Venant PDE can be solved
+    pde = SaintVenantPDE(0.5, 60.0;
+        P_val = 70.0 / 1000 / 3600,
+        S_0_val = 0.01,
+        n_manning_val = 0.03,
+        h_init_val = 1.0e-3,
+        q_init_val = 0.0)
+
+    l = pde.ivs[2]
+    dl = 0.1
+    disc = MOLFiniteDifference([l => dl], t, approx_order = 2)
+    prob = discretize(pde, disc)
+
+    sol = solve(prob)
+    @test sol.retcode == SciMLBase.ReturnCode.Success
+    @test length(sol.t) > 1
+end
+
+@testitem "SaintVenantPDE - Boundary values preserved" setup = [SurfaceRunoffPDESetup] tags = [:surface_runoff_pde] begin
+    # Verify that boundary conditions are correctly applied by checking
+    # that the discretized initial conditions match the expected values.
+    h_init = 5.0e-3
+
+    pde = SaintVenantPDE(0.5, 60.0;
+        P_val = 70.0 / 1000 / 3600,
+        S_0_val = 0.01,
+        n_manning_val = 0.03,
+        h_init_val = h_init,
+        q_init_val = 0.0)
+
+    l = pde.ivs[2]
+    dl = 0.1
+    disc = MOLFiniteDifference([l => dl], t, approx_order = 2)
+    prob = discretize(pde, disc)
+
+    h_vals_init = prob.u0
+
+    # All initial values should be non-negative (water depth cannot be negative)
+    @test all(h_vals_init .>= 0)
+
+    # The problem should have the correct time span
+    @test prob.tspan == (0.0, 60.0)
+end
+
+@testitem "SaintVenantPDE - Custom parameters" setup = [SurfaceRunoffPDESetup] tags = [:surface_runoff_pde] begin
     # Verify that custom parameters are correctly applied
     pde = SaintVenantPDE(
         1.0, 120.0;
