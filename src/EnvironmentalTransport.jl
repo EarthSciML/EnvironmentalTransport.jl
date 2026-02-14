@@ -2,15 +2,16 @@ module EnvironmentalTransport
 
 using DocStringExtensions
 using LinearAlgebra
-using StaticArrays
-using SciMLBase: NullParameters
+using StaticArrays: SVector
+using SciMLBase: NullParameters, terminate!
 using DiffEqCallbacks: PeriodicCallback, DiscreteCallback
-using ModelingToolkit: t, D, get_unit, getdefault, System, @variables, @parameters, @named,
-                       @constants, get_variables, substitute, Equation,
-                       build_explicit_observed_function, setp, unknowns, ParentScope,
-                       get_defaults, @unpack, @component
-using SciMLBase: terminate!
+using ModelingToolkit: t, D, get_unit, getdefault, System, PDESystem, Differential,
+    @brownians, @variables, @parameters, @named, @component,
+    @constants, get_variables, substitute, Equation,
+    build_explicit_observed_function, setp, unknowns, ParentScope,
+    get_defaults, @unpack
 using DynamicQuantities: @u_str
+using DomainSets: Interval
 using EarthSciMLBase
 import RuntimeGeneratedFunctions
 
@@ -23,10 +24,7 @@ include("PBL_mixing.jl")
 include("puff.jl")
 include("plume_rise/sofiev_2012.jl")
 include("GaussianDispersion.jl")
-include("general_circulation.jl")
-include("global_cycles.jl")
-include("seinfeld_pandis_ch1.jl")
-include("local_scale_meteorology.jl")
-include("atmospheric_diffusion.jl")
+include("BoundaryLayerMixingKC.jl")
+include("surface_runoff.jl")
 
 end

@@ -28,27 +28,34 @@
     end
 
     function Emissions(μ_lon, μ_lat, σ)
-        @parameters(lon=0.0, [unit=u"rad"],
-            lat=0.0, [unit=u"rad"],
-            lev=1.0)
-        @variables c(t)=0.0 [unit = u"kg"]
-        @constants v_emis=50.0 [unit = u"kg/s"]
-        @constants t_unit=1.0 [unit = u"s"] # Needed so that arguments to `pdf` are unitless.
-        @constants t_ref=starttime [unit = u"s"]
+        @parameters(
+            lon = 0.0, [unit = u"rad"],
+            lat = 0.0, [unit = u"rad"],
+            lev = 1.0
+        )
+        @variables c(t) = 0.0 [unit = u"kg"]
+        @constants v_emis = 50.0 [unit = u"kg/s"]
+        @constants t_unit = 1.0 [unit = u"s"] # Needed so that arguments to `pdf` are unitless.
+        @constants t_ref = starttime [unit = u"s"]
         dist = MvNormal(
-            [starttime, μ_lon, μ_lat, 1], Diagonal(map(abs2, [3600.0, σ, σ, 1])))
-        ODESystem([D(c) ~ pdf(dist, [(t + t_ref) / t_unit, lon, lat, lev]) * v_emis],
-            t, name = :Test₊emissions, metadata = Dict(CoupleType => EmissionsCoupler))
+            [starttime, μ_lon, μ_lat, 1], Diagonal(map(abs2, [3600.0, σ, σ, 1]))
+        )
+        ODESystem(
+            [D(c) ~ pdf(dist, [(t + t_ref) / t_unit, lon, lat, lev]) * v_emis],
+            t, name = :Test₊emissions, metadata = Dict(CoupleType => EmissionsCoupler)
+        )
     end
 
     function EarthSciMLBase.couple2(e::EmissionsCoupler, g::EarthSciData.GEOSFPCoupler)
         e, g = e.sys, g.sys
         e = param_to_var(e, :lon, :lat, :lev)
-        ConnectorSystem([
+        ConnectorSystem(
+            [
                 e.lat ~ g.lat,
                 e.lon ~ g.lon,
-                e.lev ~ g.lev
-            ], e, g)
+                e.lev ~ g.lev,
+            ], e, g
+        )
     end
 
     emis = Emissions(deg2rad(-122.6), deg2rad(45.5), 0.1)

@@ -29,7 +29,7 @@ function Puff(di::DomainInfo; buffer_cells = 1, name = :Puff)
         v = EarthSciMLBase.add_metadata(only(@variables $n(t) = getdefault(p)), p)
         push!(coords, v)
     end
-    @assert length(coords)==3 "DomainInfo must have 3 coordinates for puff model but currently has $(length(coords)): $coords"
+    @assert length(coords) == 3 "DomainInfo must have 3 coordinates for puff model but currently has $(length(coords)): $coords"
 
     lev_idx = only(findall(v -> string(Symbol(v)) in ["lev(t)", "z(t)"], coords))
     lon_idx = only(findall(v -> string(Symbol(v)) in ["lon(t)", "x(t)"], coords))
@@ -37,12 +37,18 @@ function Puff(di::DomainInfo; buffer_cells = 1, name = :Puff)
     endpts = EarthSciMLBase.endpoints(di)
 
     # Get transforms for e.g. longitude to meters.
-    @parameters x_trans=1 [unit = get_unit(coords[lon_idx]) / 1u"m",
-        description = "x-coordinate to meters transform"]
-    @parameters y_trans=1 [unit = get_unit(coords[lat_idx]) / 1u"m",
-        description = "y-coordinate to meters transform"]
-    @parameters lev_trans=1 [unit = get_unit(coords[lev_idx]) / 1u"Pa",
-        description = "level to pressure transform"]
+    @parameters x_trans = 1 [
+        unit = get_unit(coords[lon_idx]) / 1u"m",
+        description = "x-coordinate to meters transform",
+    ]
+    @parameters y_trans = 1 [
+        unit = get_unit(coords[lat_idx]) / 1u"m",
+        description = "y-coordinate to meters transform",
+    ]
+    @parameters lev_trans = 1 [
+        unit = get_unit(coords[lev_idx]) / 1u"Pa",
+        description = "level to pressure transform",
+    ]
     trans = [lev_trans, lev_trans, lev_trans]
     trans[lon_idx] = x_trans
     trans[lat_idx] = y_trans
@@ -52,24 +58,28 @@ function Puff(di::DomainInfo; buffer_cells = 1, name = :Puff)
     for i in eachindex(coords)
         v_sym = Symbol("v_$(Symbol(pv[i]))")
         vu = get_unit(coords[i]) / get_unit(trans[i]) / get_unit(t)
-        v = only(@parameters $(v_sym)=0 [unit = vu description = "$(Symbol(pv[i])) speed"])
+        v = only(@parameters $(v_sym) = 0 [unit = vu description = "$(Symbol(pv[i])) speed"])
         push!(vs, v)
     end
     eqs = D.(coords) .~ vs .* trans
 
     # Boundary condition at the ground and model top.
     uc = get_unit(coords[lev_idx])
-    @constants(offset=0.05, [unit=uc, description="Offset for boundary conditions"],
-        glo=endpts[lev_idx][begin], [unit=uc, description="lower bound"],
-        ghi=endpts[lev_idx][end], [unit=uc, description="upper bound"],
-        v_zero=0, [unit=get_unit(eqs[lev_idx].rhs)],)
+    @constants(
+        offset = 0.05, [unit = uc, description = "Offset for boundary conditions"],
+        glo = endpts[lev_idx][begin], [unit = uc, description = "lower bound"],
+        ghi = endpts[lev_idx][end], [unit = uc, description = "upper bound"],
+        v_zero = 0, [unit = get_unit(eqs[lev_idx].rhs)],
+    )
     @variables v_vertical(t) [unit = get_unit(eqs[lev_idx].rhs)]
     push!(eqs, v_vertical ~ eqs[lev_idx].rhs)
     eqs[lev_idx] = let
         eq = eqs[lev_idx]
         c = coords[lev_idx]
-        eq.lhs ~ ifelse(c - offset < glo, max(v_zero, v_vertical),
-            ifelse(c + offset > ghi, min(v_zero, v_vertical), v_vertical))
+        eq.lhs ~ ifelse(
+            c - offset < glo, max(v_zero, v_vertical),
+            ifelse(c + offset > ghi, min(v_zero, v_vertical), v_vertical)
+        )
     end
     lower_bound = coords[lev_idx] ~ endpts[lev_idx][begin]
     upper_bound = coords[lev_idx] ~ endpts[lev_idx][end]
@@ -77,14 +87,16 @@ function Puff(di::DomainInfo; buffer_cells = 1, name = :Puff)
     # Stop simulation if we reach the lateral boundaries.
     function stop!(modified, observed, ctx, integrator)
         terminate!(integrator)
-        NamedTuple()
+        return NamedTuple()
     end
     wb = coords[lon_idx] ~ endpts[lon_idx][begin] + di.grid_spacing[lon_idx] * buffer_cells
     eb = coords[lon_idx] ~ endpts[lon_idx][end] - di.grid_spacing[lon_idx] * buffer_cells
     sb = coords[lat_idx] ~ endpts[lat_idx][begin] + di.grid_spacing[lat_idx] * buffer_cells
     nb = coords[lat_idx] ~ endpts[lat_idx][end] - di.grid_spacing[lat_idx] * buffer_cells
     lateral_boundary = [wb, eb, sb, nb] => (f = stop!,)
-    System(eqs, EarthSciMLBase.ivar(di); name = name,
+    return System(
+        eqs, EarthSciMLBase.ivar(di); name = name,
         metadata = Dict(CoupleType => PuffCoupler),
-        continuous_events = [vertical_boundary, lateral_boundary])
+        continuous_events = [vertical_boundary, lateral_boundary]
+    )
 end

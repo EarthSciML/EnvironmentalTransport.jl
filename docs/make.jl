@@ -1,8 +1,10 @@
 using EnvironmentalTransport
 using Documenter
 
-DocMeta.setdocmeta!(EnvironmentalTransport, :DocTestSetup,
-    :(using EnvironmentalTransport); recursive = true)
+DocMeta.setdocmeta!(
+    EnvironmentalTransport, :DocTestSetup,
+    :(using EnvironmentalTransport); recursive = true
+)
 
 makedocs(;
     modules = [EnvironmentalTransport],
@@ -20,13 +22,9 @@ makedocs(;
         "Home" => "index.md",
         "Advection" => "advection.md",
         "Puff Model" => "puff.md",
-        "General Circulation" => "general_circulation.md",
-        "Global Cycles" => "global_cycles.md",
-        "Atmospheric Fundamentals" => "seinfeld_pandis_ch1.md",
-        "Local Scale Meteorology" => "local_scale_meteorology.md",
-        "Atmospheric Diffusion" => "atmospheric_diffusion.md",
+        "Surface Runoff" => "surface_runoff.md",
         "API" => "api.md",
-        "🔗 Benchmarks" => "benchmarks.md"
+        "🔗 Benchmarks" => "benchmarks.md",
     ]
 )
 

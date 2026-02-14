@@ -17,7 +17,7 @@
     Δ_fs = ((i, j, k, p, t) -> Δz, (i, j, k, p, t) -> Δz, (i, j, k, p, t) -> Δz)
 end
 
-@testitem "4d advection op" setup=[AdvectionSetup] begin
+@testitem "4d advection op" setup = [AdvectionSetup] begin
     adv_op = advection_op(c, upwind1_stencil, v_fs, Δ_fs, Δt, ZeroGradBC(), MapBroadcast())
 
     result_oop = adv_op(c[:], NullParameters(), 0.0)

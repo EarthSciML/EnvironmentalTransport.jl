@@ -52,10 +52,14 @@ end
     ad = air_mass_from_pressure(pedge, area_m2)
     # Use exact values from GEOS-Chem reference test for first 2 columns
     tc = zeros(nz, nspec)
-    tc[:, 1] = [9.788397646421418e-10, 3.8194425771985734e-11, 5.139643503128196e-10,
-        7.920951982452883e-10, 3.6657542451709716e-10]
-    tc[:, 2] = [6.610569640583867e-10, 1.903820236452969e-13, 5.432899816585908e-10,
-        4.720893983058938e-10, 9.800751203546894e-10]
+    tc[:, 1] = [
+        9.788397646421418e-10, 3.8194425771985734e-11, 5.139643503128196e-10,
+        7.920951982452883e-10, 3.6657542451709716e-10,
+    ]
+    tc[:, 2] = [
+        6.610569640583867e-10, 1.903820236452969e-13, 5.432899816585908e-10,
+        4.720893983058938e-10, 9.800751203546894e-10,
+    ]
     pblh_m = 1200.0  # PBL height [m]
     imix, fpbl = compute_imix_fpbl(pedge, pblh_m)
 
@@ -73,7 +77,7 @@ end
     for n in 1:nspec
         mass_before = sum(ad .* tc_before[:, n])
         mass_after = sum(ad .* tc[:, n])
-        @test mass_after ≈ mass_before rtol=1e-10
+        @test mass_after ≈ mass_before rtol = 1.0e-10
     end
 end
 
@@ -90,10 +94,14 @@ end
     ad = air_mass_from_pressure(pedge, area_m2)
     # Use exact values from GEOS-Chem reference test for first 2 columns
     tc = zeros(nz, nspec)
-    tc[:, 1] = [9.788397646421418e-10, 3.8194425771985734e-11, 5.139643503128196e-10,
-        7.920951982452883e-10, 3.6657542451709716e-10]
-    tc[:, 2] = [6.610569640583867e-10, 1.903820236452969e-13, 5.432899816585908e-10,
-        4.720893983058938e-10, 9.800751203546894e-10]
+    tc[:, 1] = [
+        9.788397646421418e-10, 3.8194425771985734e-11, 5.139643503128196e-10,
+        7.920951982452883e-10, 3.6657542451709716e-10,
+    ]
+    tc[:, 2] = [
+        6.610569640583867e-10, 1.903820236452969e-13, 5.432899816585908e-10,
+        4.720893983058938e-10, 9.800751203546894e-10,
+    ]
     pblh_m = 300.0  # PBL height [m]
     imix, fpbl = compute_imix_fpbl(pedge, pblh_m)
 
@@ -113,7 +121,7 @@ end
     for n in 1:nspec
         mass_before = sum(ad .* tc_before[:, n])
         mass_after = sum(ad .* tc[:, n])
-        @test mass_after ≈ mass_before rtol=1e-10
+        @test mass_after ≈ mass_before rtol = 1.0e-10
     end
 end
 

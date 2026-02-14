@@ -174,13 +174,13 @@ of the ϕ vector (i.e. dϕ/dt).
 """
 function upwind1_stencil(ϕ, U, Δt, Δz; p = nothing)
     sz = sign(Δz) # Handle negative grid spacing
-    ul₊ = sz*max(sz*U[1], zero(eltype(U)))
-    ul₋ = sz*min(sz*U[1], zero(eltype(U)))
-    ur₊ = sz*max(sz*U[2], zero(eltype(U)))
-    ur₋ = sz*min(sz*U[2], zero(eltype(U)))
-    flux₊ = (ϕ[1]*ul₊ - ϕ[2]*ur₊) / Δz
-    flux₋ = (ϕ[2]*ul₋ - ϕ[3]*ur₋) / Δz
-    flux₊ + flux₋
+    ul₊ = sz * max(sz * U[1], zero(eltype(U)))
+    ul₋ = sz * min(sz * U[1], zero(eltype(U)))
+    ur₊ = sz * max(sz * U[2], zero(eltype(U)))
+    ur₋ = sz * min(sz * U[2], zero(eltype(U)))
+    flux₊ = (ϕ[1] * ul₊ - ϕ[2] * ur₊) / Δz
+    flux₋ = (ϕ[2] * ul₋ - ϕ[3] * ur₋) / Δz
+    return flux₊ + flux₋
 end
 
 """
