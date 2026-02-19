@@ -29,9 +29,9 @@ The following are key simulation parameters used to define the puff model and th
 
 start: Defines the time when the event starts.
 simulationlength: Duration of the simulation (24 hours in this case).
-ec_0: Initial mass of elemental carbon in each puff.
 puff_release_interval: The time interval between each puff release (in seconds).
 puff_release_per_interval: The number of puffs released per time interval.
+ec_0: Initial mass of elemental carbon released in each interval.
 
 ```@example puff_gauss-kc
 start = DateTime(2019, 06, 15, 0, 0, 0)
@@ -119,7 +119,7 @@ function prob_func(prob, i, repeat)
         sys.Puff₊lon => rlon,
         sys.Puff₊lat => rlat,
         sys.Puff₊lev => rlev,
-        sys.ElementalCarbon₊EC => ec_0
+        sys.ElementalCarbon₊EC => ec_0 / puff_release_per_interval
     ]
 
     p = [
