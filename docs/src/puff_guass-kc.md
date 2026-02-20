@@ -198,7 +198,7 @@ gif(anim, "puff_animation.gif", fps = 5)
 Next we plot the **Ground-Level Centerline Concentration** for all simulated puffs. This represents the concentration of the pollutant at the surface (per unit mass) at the center of each puff derived from the Gaussian puff equations.
 
 ```@example puff_gauss-kc
-p_conc = plot(
+p_conc_0 = plot(
     title = "Ground-level centerline concentration",
     xlabel = "Time",
     ylabel = "Concentration (1/m³)",
@@ -210,12 +210,86 @@ for (i, sol) in enumerate(esol)
     time_vals = [start + Second(round(Int, t)) for t in sol.t]
     c_gl_vals = sol[sys.GaussianKC₊C_gl]
     
-    plot!(p_conc, time_vals, c_gl_vals, 
+    plot!(p_conc_0, time_vals, c_gl_vals, 
           label = "Puff $i", lw = 2, alpha = 0.8)
 end
 
-p_conc
+p_conc_0
 ```
+
+## Concentration at a Receptor Point
+
+In this section, we compute the concentration at a receptor location (e.g., lon = -120°, lat = 46.5°) by summing the contribution from all simulated puffs at each time step. For each puff, we evaluate an elliptical Gaussian kernel using the puff’s horizontal spreads (σx, σy), its center position (lon, lat), and its ground-level centerline concentration (C_gl) per unit mass. Finally, we plot concentration versus time.
+
+```@example puff_gauss-kc
+receptor_lon_deg = -120.0
+receptor_lat_deg = 46.5
+λr = deg2rad(receptor_lon_deg)
+φr = deg2rad(receptor_lat_deg)
+
+R_earth = 6.371e6 # Earth radius (m) for local tangent-plane distance approximation
+
+# dx ~ east-west distance, dy ~ north-south distance
+dxdy_m(lon_puff, lat_puff, lon_rec, lat_rec) = begin
+    dx = R_earth * cos(0.5*(lat_puff + lat_rec)) * (lon_rec - lon_puff)
+    dy = R_earth * (lat_rec - lat_puff)
+    dx, dy
+end
+
+# Build a time grid for plotting (e.g., every 1 hour)
+sim_end_time = start + Hour(simulationlength)
+tgrid_unix = collect(datetime2unix(start):3600.0:datetime2unix(sim_end_time))
+tgrid = tgrid_unix .- t_ref
+time_dt = unix2datetime.(tgrid_unix)
+
+C_rec = zeros(length(tgrid)) # Total concentration at receptor
+
+for (k, tsec) in enumerate(tgrid)
+    csum = 0.0
+    for sol in esol
+        if isempty(sol) || tsec < sol.t[1] || tsec > sol.t[end]
+            continue
+        end
+
+        # Puff center location
+        lonp = sol(tsec, idxs = sys.Puff₊lon)
+        latp = sol(tsec, idxs = sys.Puff₊lat)
+
+        # GaussianKC horizontal dispersion std dev
+        sx = sol(tsec, idxs = sys.GaussianKC₊sigma_x)
+        sy = sol(tsec, idxs = sys.GaussianKC₊sigma_y)
+
+        # Centerline ground-level concentration per unit mass (1/m^3)
+        Cgl = sol(tsec, idxs = sys.GaussianKC₊C_gl)
+
+        # Mass of elemental carbon in the Puffs
+        m = sol(tsec, idxs = sys.ElementalCarbon₊EC)
+
+        dx, dy = dxdy_m(lonp, latp, λr, φr)
+        kernel = exp(-0.5 * ((dx / sx)^2 + (dy / sy)^2))
+
+        csum += m * Cgl * kernel
+    end
+    C_rec[k] = csum
+end
+
+# Convert to µg/m^3
+C_rec_ugm3 = C_rec .* 1e9
+
+p_conc = plot(
+    time_dt, C_rec_ugm3;
+    title  = "Concentration at receptor (lon=$(receptor_lon_deg), lat=$(receptor_lat_deg))",
+    xlabel = "Time",
+    ylabel = "Concentration (µg/m³)",
+    lw = 2,
+    legend = false,
+    xrotation = 45
+)
+
+p_conc
+
+```
+
 
 
 
