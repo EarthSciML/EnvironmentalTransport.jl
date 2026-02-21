@@ -41,7 +41,7 @@ function emissions(μ_lon, μ_lat, σ)
     @constants t_unit = 1.0 [unit=u"s"] # Needed so that arguments to `pdf` are unitless.
     dist = MvNormal([datetime2unix(starttime), μ_lon, μ_lat, 1],
         Diagonal(map(abs2, [3600.0*24*3, σ, σ, 1])))
-    ODESystem([D(c) ~ pdf(dist, [t/t_unit, lon, lat, lev]) * v_emis],
+    System([D(c) ~ pdf(dist, [t/t_unit, lon, lat, lev]) * v_emis],
         t, name = :emissions, metadata = Dict(CoupleType => EmissionsCoupler))
 end
 function EarthSciMLBase.couple2(e::EmissionsCoupler, g::EarthSciData.GEOSFPCoupler)
