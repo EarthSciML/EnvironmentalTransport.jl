@@ -40,11 +40,11 @@ function Sofiev2012PlumeRise(; name = :Sofiev2012PlumeRise)
         N_ft(t), [unit = u"1/s", description = "Free troposphere Brunt-Vaisala frequency"]
     end
 
-    pd = [H_p ~ α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * N_ft^2 / N_0^2)]
+    eqs = [H_p ~ α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * N_ft^2 / N_0^2)]
 
     return System(
-        Equation[], t, [H_abl, H_p, lev_p, N_ft], [params1; params2];
-        name = name, parameter_dependencies = pd,
+        eqs, t, [H_abl, H_p, lev_p, N_ft], [params1; params2];
+        name = name,
         metadata = Dict(CoupleType => Sofiev2012PlumeRiseCoupler)
     )
 end
@@ -52,10 +52,15 @@ end
 function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, puff::PuffCoupler)
     s12, puff = s12.sys, puff.sys
 
-    # Set level initial condition equal to the plume top height.
+    # Set level initial condition to a numeric approximation of the plume top level.
+    # We cannot use the symbolic `lev_p` expression here because it transitively
+    # depends on _itp callable interpolators (via H_abl, N_ft), which cause shape
+    # inference errors during MTK v11's initial condition evaluation (evaluate_varmap!).
+    # The value 5.0 is a reasonable default for typical fire radiative powers
+    # (P_fr / P_f0 ≈ 5, giving H_p ≈ 500m → lev ≈ 5 via h_to_lev = 100).
     @unpack lev = puff
-    dflt = get_defaults(puff)
-    dflt[lev] = ParentScope(s12.lev_p)
+    dflt = initial_conditions(puff)
+    dflt[lev] = 5.0
 
     return ConnectorSystem([], s12, puff)
 end

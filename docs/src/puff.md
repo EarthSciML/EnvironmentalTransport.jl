@@ -35,9 +35,8 @@ puff = Puff(domain)
 
 model = couple(puff, geosfp)
 const sys = convert(System, model)
-u0 = ModelingToolkit.get_defaults(sys)
 tspan = EarthSciMLBase.get_tspan(domain)
-prob=ODEProblem(sys, u0, tspan)
+prob = ODEProblem(sys, [], tspan)
 sol = solve(prob, Tsit5()) # Solve once to make sure data is loaded.
 
 function prob_func(prob, i, repeat)

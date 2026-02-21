@@ -40,7 +40,7 @@
         dist = MvNormal(
             [starttime, μ_lon, μ_lat, 1], Diagonal(map(abs2, [3600.0, σ, σ, 1]))
         )
-        ODESystem(
+        System(
             [D(c) ~ pdf(dist, [(t + t_ref) / t_unit, lon, lat, lev]) * v_emis],
             t, name = :Test₊emissions, metadata = Dict(CoupleType => EmissionsCoupler)
         )

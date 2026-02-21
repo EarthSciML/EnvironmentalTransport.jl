@@ -1,4 +1,5 @@
 @testsnippet PuffSetup begin
+    using EnvironmentalTransport
     using EarthSciMLBase
     using ModelingToolkit
     using ModelingToolkit: t

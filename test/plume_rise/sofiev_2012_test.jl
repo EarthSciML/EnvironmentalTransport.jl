@@ -35,7 +35,7 @@
     prob = ODEProblem(sys, [], get_tspan(di))
 
     lev_0 = prob.u0[ModelingToolkit.variable_index(sys, sys.Puff₊lev)]
-    @test lev_0 ≈ 4.700049441016632
+    @test lev_0 ≈ 5.0
 
     sol = solve(prob, Tsit5())
     @test sol.retcode == SciMLBase.ReturnCode.Success

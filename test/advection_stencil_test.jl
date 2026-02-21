@@ -1,4 +1,5 @@
 @testsnippet StencilSetup begin
+    using EnvironmentalTransport
     c = [0.0, 1, 2, 3, 4, 5]
     v = [10.0, 8, 6, 4, 2, 0, 1]
     Δt = 0.05
@@ -30,6 +31,7 @@ end
 # end
 
 @testsnippet StencilSetup2 begin
+    using EnvironmentalTransport
     c = [6.0, 6, 5, 5, 6, 6]
     v = [2.0, 2, 2, 2, 2, 2, 2]
     Δt = 0.05
@@ -81,6 +83,7 @@ end
 end
 
 @testitem "Known solution" begin
+    using EnvironmentalTransport
     for (dir, u0) in [("up", collect(1.0:10.0)), ("down", collect(10.0:-1:1))]
         @testset "$dir" begin
             v = 1.0
@@ -112,6 +115,7 @@ end
 end
 
 @testitem "Mass Conservation" begin
+    using EnvironmentalTransport
     u0_opts = [("up", 1.0:10.0), ("down", 10.0:-1:1), ("rand", rand(10))]
     for stencil in [upwind1_stencil] #, upwind2_stencil, l94_stencil, ppm_stencil]
         @testset "$(nameof(stencil))" begin

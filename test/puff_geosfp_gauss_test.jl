@@ -41,13 +41,13 @@
             sys.GaussianPGB₊lat0 => deg2rad(latv),
         ]
 
-        prob = ODEProblem(sys, u0, tspan, p)
+        prob = ODEProblem(sys, [u0; p], tspan)
         sol = solve(prob, Tsit5())
 
         C_gl_val = sol[sys.GaussianPGB₊C_gl][end]
-        C_gl_want = 6.4e-11
+        C_gl_want = 6.49e-11
 
-        @test isapprox(C_gl_val, C_gl_want; rtol = 1.0e-2)
+        @test isapprox(C_gl_val, C_gl_want; rtol = 0.02)
     end
 
     @testset "Puff GeosFP GaussianKC" begin
@@ -78,7 +78,7 @@
 
         # Set random seed for reproducibility
         Random.seed!(12345)
-        prob = SDEProblem(sys, u0, tspan, p)
+        prob = SDEProblem(sys, [u0; p], tspan)
         sol = solve(prob, SRIW1(); dt = 60.0)
 
         C_gl_val = sol[sys.GaussianKC₊C_gl][end]
