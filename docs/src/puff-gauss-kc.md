@@ -290,6 +290,55 @@ p_conc
 
 ```
 
+## Animated Spatial Heatmap
+
+Here we compute concentration on a 2D longitude–latitude grid at each time step using the same Gaussian kernel method as the single-receptor calculation above, then animate the result as a heatmap.
+
+```@example puff_gauss-kc
+# Define spatial grid
+lon_range = range(-122.0, -118.0; length=50)
+lat_range = range(45.5, 48.0; length=50)
+
+anim_heatmap = @animate for (k, tsec) in enumerate(tgrid)
+    C_grid = zeros(length(lat_range), length(lon_range))
+
+    for (j, lon_deg) in enumerate(lon_range)
+        for (i, lat_deg) in enumerate(lat_range)
+            λ_rec = deg2rad(lon_deg)
+            φ_rec = deg2rad(lat_deg)
+            csum = 0.0
+            for sol in esol
+                if isempty(sol) || tsec < sol.t[1] || tsec > sol.t[end]
+                    continue
+                end
+                lonp = sol(tsec, idxs = sys.Puff₊lon)
+                latp = sol(tsec, idxs = sys.Puff₊lat)
+                sx   = sol(tsec, idxs = sys.GaussianKC₊sigma_x)
+                sy   = sol(tsec, idxs = sys.GaussianKC₊sigma_y)
+                Cgl  = sol(tsec, idxs = sys.GaussianKC₊C_gl)
+                m    = sol(tsec, idxs = sys.ElementalCarbon₊EC)
+
+                dx, dy = dxdy_m(lonp, latp, λ_rec, φ_rec)
+                kernel = exp(-0.5 * ((dx / sx)^2 + (dy / sy)^2))
+                csum += m * Cgl * kernel
+            end
+            C_grid[i, j] = csum * 1e9  # µg/m³
+        end
+    end
+
+    heatmap(
+        collect(lon_range), collect(lat_range), C_grid;
+        title  = "Concentration at $(time_dt[k])",
+        xlabel = "Longitude (°)",
+        ylabel = "Latitude (°)",
+        colorbar_title = "Concentration (µg/m³)",
+        clims  = (0, maximum(C_rec_ugm3)),
+        color  = :inferno
+    )
+end
+
+gif(anim_heatmap, "puff_heatmap.gif", fps = 3)
+```
 
 
 
