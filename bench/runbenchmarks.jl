@@ -32,7 +32,7 @@ function setup_advection_simulator(lonres, latres, stencil)
             levx = 1.0, [unit = 1u"s^-1"]
         )
         @variables c(t) = 1.0
-        return ODESystem([D(c) ~ latx + lonx + levx], t, name = :emissions)
+        return System([D(c) ~ latx + lonx + levx], t, name = :emissions)
     end
 
     emis = emissions()

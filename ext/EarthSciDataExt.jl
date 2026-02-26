@@ -8,10 +8,27 @@ using EarthSciData: GEOSFPCoupler, WRFCoupler, Ap, Bp
 using EnvironmentalTransport: PuffCoupler, GaussianPGBCoupler, GaussianKCCoupler,
     BoundaryLayerMixingKCCoupler, AdvectionOperator,
     Sofiev2012PlumeRiseCoupler, PBLMixingCallback
-using ModelingToolkit: ParentScope, get_defaults, @unpack
+using ModelingToolkit: ParentScope, initial_conditions, @unpack
 using ModelingToolkit: t
 using ModelingToolkit: @parameters, @variables, @constants
 using DynamicQuantities: @u_str
+
+# Helper to apply ParentScope to callable symbolic variables (CallAndWrap{T}).
+# In MTK v11, ParentScope only accepts Num/BasicSymbolic/Arr{Num}, not CallAndWrap.
+# We handle CallAndWrap by extracting the inner BasicSymbolic, applying ParentScope,
+# and reconstructing the CallAndWrap.
+function _parent_scope(x)
+    try
+        return ParentScope(x)
+    catch e
+        if e isa Union{MethodError, ArgumentError}
+            inner = getfield(x, :f)
+            scoped = ParentScope(inner)
+            return typeof(x)(scoped)
+        end
+        rethrow()
+    end
+end
 
 function EarthSciMLBase.couple2(p::PuffCoupler, g::GEOSFPCoupler)
     p, g = p.sys, g.sys
@@ -177,11 +194,11 @@ function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, gfp::GEOSFPCoup
     λ = ParentScope(gfp.lon)                  # [rad]  long
     φ = ParentScope(gfp.lat)                  # [rad]  lat
 
-    T_itp = ParentScope(gfp.I3₊T_itp)      # [K]       temperature
-    QV_itp = ParentScope(gfp.I3₊QV_itp)     # [kg/kg]   water vapor mixing ratio
-    PS_itp = ParentScope(gfp.I3₊PS_itp)     # [Pa]      surface pressure
-    T2M_itp = ParentScope(gfp.A1₊T2M_itp)    # [K]       2-m temperature
-    QV2M_itp = ParentScope(gfp.A1₊QV2M_itp)   # [kg/kg]   2-m water vapor mixing ratio
+    T_itp = _parent_scope(gfp.I3₊T_itp)      # [K]       temperature
+    QV_itp = _parent_scope(gfp.I3₊QV_itp)     # [kg/kg]   water vapor mixing ratio
+    PS_itp = _parent_scope(gfp.I3₊PS_itp)     # [Pa]      surface pressure
+    T2M_itp = _parent_scope(gfp.A1₊T2M_itp)    # [K]       2-m temperature
+    QV2M_itp = _parent_scope(gfp.A1₊QV2M_itp)   # [kg/kg]   2-m water vapor mixing ratio
 
     Rd = s12.Rd                            # [J/(kg*K)] dry-air gas constant
     g = s12.g                             # [m s^-2]   gravitational acceleration
@@ -222,7 +239,7 @@ function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, gfp::GEOSFPCoup
 
     return ConnectorSystem(
         [
-            s12.H_abl ~ ParentScope(gfp.A1₊PBLH_itp)(τ + t, λ, φ),  # [m] atmospheric boundary layer height
+            s12.H_abl ~ _parent_scope(gfp.A1₊PBLH_itp)(τ + t, λ, φ),  # [m] atmospheric boundary layer height
             s12.lev_p ~ lev_from_height(s12.H_p),                   # [-]  plume-top level
 
             # Free-troposphere buoyancy frequency N(t): probe near 2 × PBL height
@@ -259,11 +276,11 @@ function EarthSciMLBase.couple2(gd::GaussianPGBCoupler, g::GEOSFPCoupler)
     λ = ParentScope(m.lon)
     φ = ParentScope(m.lat)
     ℓ = ParentScope(m.lev)
-    T_itp = ParentScope(m.I3₊T_itp)
-    QV_itp = ParentScope(m.I3₊QV_itp)
-    PS_itp = ParentScope(m.I3₊PS_itp)
-    T2M_itp = ParentScope(m.A1₊T2M_itp)
-    QV2M_itp = ParentScope(m.A1₊QV2M_itp)
+    T_itp = _parent_scope(m.I3₊T_itp)
+    QV_itp = _parent_scope(m.I3₊QV_itp)
+    PS_itp = _parent_scope(m.I3₊PS_itp)
+    T2M_itp = _parent_scope(m.A1₊T2M_itp)
+    QV2M_itp = _parent_scope(m.A1₊QV2M_itp)
     Tv = T_itp(τ + t, λ, φ, ℓ) * (1 + 0.61 * QV_itp(τ + t, λ, φ, ℓ))
     Tv2 = T2M_itp(τ + t, λ, φ) * (1 + 0.61 * QV2M_itp(τ + t, λ, φ))
     Tv̄ = 0.5 * (Tv + Tv2)

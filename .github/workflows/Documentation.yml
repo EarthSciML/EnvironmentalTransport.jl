@@ -32,11 +32,6 @@ jobs:
       - name: "Install Dependencies"
         run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
 
-      - name: "Install MethodOfLines fork with unit fixes"
-        run: |
-          git clone --branch fix-units-discretization https://github.com/ctessum-claude/MethodOfLines.jl.git /tmp/MethodOfLines.jl
-          julia --project=docs/ -e 'using Pkg; Pkg.develop(path="/tmp/MethodOfLines.jl")'
-
       - name: "Build and Deploy Documentation"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

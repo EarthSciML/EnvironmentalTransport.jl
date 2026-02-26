@@ -32,12 +32,11 @@
         [Symbol("Puff₊lon(t)"), Symbol("Puff₊lat(t)"), Symbol("Puff₊lev(t)")],
         Symbol.(unknowns(sys))
     )
-    @test length(parameters(sys)) == 80
-    @test length(observed(sys)) == 86
+    @test length(parameters(sys)) == 82
+    @test length(observed(sys)) == 91
 
-    u0 = ModelingToolkit.get_defaults(sys)
     tspan = EarthSciMLBase.get_tspan(di)
-    prob = ODEProblem(sys, u0, tspan)
+    prob = ODEProblem(sys, [], tspan)
     sol = solve(prob, Tsit5())
     @test sol.retcode == SciMLBase.ReturnCode.Terminated
 end

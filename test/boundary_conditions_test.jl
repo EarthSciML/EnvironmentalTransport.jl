@@ -1,4 +1,5 @@
 @testitem "ZeroGradBC" begin
+    using EnvironmentalTransport
     a = rand(3, 4)
     x = ZeroGradBC()(a)
 
@@ -12,6 +13,7 @@
 end
 
 @testitem "ConstantBC" begin
+    using EnvironmentalTransport
     v = 16.0
     a = rand(3, 4)
     x = ConstantBC(v)(a)
@@ -76,8 +78,8 @@ end
             domain
         )
 
-        # Convert to ODESystem to get species variables
-        sys = convert(ODESystem, model)
+        # Convert to System to get species variables
+        sys = convert(System, model)
         species_vars = unknowns(sys)
 
         # Set up species-specific boundary conditions using names

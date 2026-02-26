@@ -28,9 +28,9 @@ using EarthSciMLBase: SolverStrangThreads, PositiveDomain
     )
     @test model isa CoupledSystem
 
-    # Test that the system can be converted to ODESystem
-    sys = convert(ODESystem, model; simplify = true)
-    @test sys isa ODESystem
+    # Test that the system can be converted to System
+    sys = convert(System, model; simplify = true)
+    @test sys isa System
 
     # Test that we can create an ODEProblem
     st_strang = SolverStrangThreads(Rosenbrock23(), 300; callback = PositiveDomain(save = false))
