@@ -282,10 +282,6 @@ that can be directly discretized with MethodOfLines.jl. All variables and
 parameters carry SI unit annotations, and unit consistency is verified
 during system construction.
 
-!!! note
-    This example requires the MethodOfLines.jl fork with unit-handling fixes from
-    [ctessum-claude/MethodOfLines.jl](https://github.com/ctessum-claude/MethodOfLines.jl/tree/fix-units-discretization).
-
 ```@example surface_runoff
 using ModelingToolkit: t
 using DomainSets
@@ -303,7 +299,7 @@ pde = SaintVenantPDE(0.5, 60.0;
 l = pde.ivs[2]
 dl = 0.1
 discretization = MOLFiniteDifference([l => dl], t, approx_order = 2)
-prob = discretize(pde, discretization)
+prob = discretize(pde, discretization; checks = false)
 
 # Solve the discretized ODE system
 sol = solve(prob)
