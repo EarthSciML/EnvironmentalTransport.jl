@@ -44,11 +44,6 @@ jobs:
 
       - uses: julia-actions/julia-buildpkg@v1
 
-      - name: "Install MethodOfLines fork with unit fixes"
-        run: |
-          git clone --branch fix-units-discretization https://github.com/ctessum-claude/MethodOfLines.jl.git /tmp/MethodOfLines.jl
-          julia --project -e 'using Pkg; Pkg.develop(path="/tmp/MethodOfLines.jl")'
-
       - name: "Run tests"
         uses: julia-actions/julia-runtest@v1
         with:
