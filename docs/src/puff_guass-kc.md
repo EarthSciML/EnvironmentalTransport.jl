@@ -121,11 +121,14 @@ function prob_func(prob, i, repeat)
         sys.Puff₊lat => rlat,
         sys.Puff₊lev => rlev,
         sys.ElementalCarbon₊EC => ec_0 / puff_release_per_interval,
+    ]
+
+    p = [
         sys.GaussianKC₊Δz => 100,
     ]
 
     ts = (tspan[1] + floor((i-1) / puff_release_per_interval) * puff_release_interval, tspan[2])
-    remake(prob; u0 = u0, tspan = ts)
+    remake(prob; u0 = u0, p = p, tspan = ts)
 end
 
 ```
