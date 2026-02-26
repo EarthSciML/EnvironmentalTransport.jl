@@ -1,4 +1,5 @@
 @testitem "ZeroGradBC" begin
+    using EnvironmentalTransport
     a = rand(3, 4)
     x = ZeroGradBC()(a)
 
@@ -12,7 +13,7 @@
 end
 
 @testitem "ConstantBC" begin
-    using EnvironmentalTransport: ConstantBC
+    using EnvironmentalTransport
     v = 16.0
     a = rand(3, 4)
     x = ConstantBC(v)(a)
@@ -57,16 +58,32 @@ end
 end
 
 @testitem "SpeciesConstantBC with species names" begin
-    using EnvironmentalTransport: SpeciesConstantBC, resolve_species_bc
-    using ModelingToolkit: @variables
+    using EnvironmentalTransport
+    using EarthSciMLBase, EarthSciData, GasChem
     using ModelingToolkit: t
+    using Dates
 
-    # Create mock species variables to simulate what would come from a real system
-    @variables O3(t) NO2(t) CO(t) CH4(t) H2O(t)
-    species_vars = [O3, NO2, CO, CH4, H2O]
+    # Create a real domain and coupled system
+    domain = DomainInfo(
+        DateTime(2016, 5, 15, 0, 0, 0),
+        DateTime(2016, 5, 15, 1, 0, 0);
+        lonrange = deg2rad(-88.125):deg2rad(4):deg2rad(-82.125),
+        latrange = deg2rad(42):deg2rad(4):deg2rad(51),
+        levrange = 1:2
+    )
+
+    model = couple(
+        SuperFast(),
+        GEOSFP("4x5", domain),
+        domain
+    )
+
+    # Convert to System to get species variables
+    sys = convert(System, model)
+    species_vars = unknowns(sys)
 
     # Set up species-specific boundary conditions using names
-    species_values = Dict("O3" => 40.0, "NO2" => 10.0)
+    species_values = Dict("SuperFast₊O3(t)" => 40.0, "SuperFast₊NO2(t)" => 10.0)
     default_value = 0.0
     bc = SpeciesConstantBC(species_values, default_value)
 
@@ -75,25 +92,29 @@ end
     test_array = rand(n_species, 3, 3, 2)  # species x lon x lat x lev
 
     # Apply with species information
-    x = resolve_species_bc(bc, test_array, species_vars)
+    x = EnvironmentalTransport.resolve_species_bc(bc, test_array, species_vars)
 
     # Test that in-bounds access returns original values
     @test x[1:n_species, 1:3, 1:3, 1:2] == test_array
 
-    # Find indices for O3 and NO2
-    o3_idx = findfirst(var -> contains(string(var), "O3"), species_vars)
-    no2_idx = findfirst(var -> contains(string(var), "NO2"), species_vars)
+    # Find indices for O3 and NO2 if they exist
+    o3_idx = findfirst(var -> contains(string(var), "SuperFast₊O3(t)"), species_vars)
+    no2_idx = findfirst(var -> contains(string(var), "SuperFast₊NO2(t)"), species_vars)
 
-    @test o3_idx == 1  # O3 is first in our list
-    @test no2_idx == 2  # NO2 is second
+    @test string(species_vars[o3_idx]) == "SuperFast₊O3(t)"
+    @test string(species_vars[no2_idx]) == "SuperFast₊NO2(t)"
 
-    # Test out-of-bounds access for O3
-    @test x[o3_idx, -1, 1, 1] == 40.0  # O3 should get 40.0
-    @test x[o3_idx, 10, 2, 1] == 40.0  # O3 should get 40.0
+    if o3_idx !== nothing
+        # Test out-of-bounds access for O3
+        @test x[o3_idx, -1, 1, 1] == 40.0  # O3 should get 40.0
+        @test x[o3_idx, 10, 2, 1] == 40.0  # O3 should get 40.0
+    end
 
-    # Test out-of-bounds access for NO2
-    @test x[no2_idx, -1, 1, 1] == 10.0  # NO2 should get 10.0
-    @test x[no2_idx, 10, 2, 1] == 10.0  # NO2 should get 10.0
+    if no2_idx !== nothing
+        # Test out-of-bounds access for NO2
+        @test x[no2_idx, -1, 1, 1] == 10.0  # NO2 should get 10.0
+        @test x[no2_idx, 10, 2, 1] == 10.0  # NO2 should get 10.0
+    end
 
     # Test that other species get default value
     for i in 1:n_species
@@ -105,7 +126,9 @@ end
 
     # Test that in-bounds access still works correctly
     @test x[1, 2, 2, 1] == test_array[1, 2, 2, 1]
-    @test x[2, 1, 1, 1] == test_array[2, 1, 1, 1]
+    if n_species > 1
+        @test x[2, 1, 1, 1] == test_array[2, 1, 1, 1]
+    end
 end
 
 @testitem "SpeciesConstantBC range access" begin

@@ -213,12 +213,12 @@ function get_datafs(op, csys, mtk_sys, coord_args, domain)
     v_fs = []
     for i in 1:3
         v = vars[i]
-        data_f = obs_function(mtk_sys, coord_args, v, EarthSciMLBase.dtype(domain))
+        data_f = obs_function(mtk_sys, coord_args, v, eltype(domain))
         push!(v_fs, get_vf(domain, pvarstrs[i], data_f))
     end
     Δ_fs = []
     for (i, v) in enumerate(vars[4:6])
-        data_f = obs_function(mtk_sys, coord_args, v, EarthSciMLBase.dtype(domain))
+        data_f = obs_function(mtk_sys, coord_args, v, eltype(domain))
         push!(Δ_fs, get_Δ(domain, data_f, i))
     end
     return v_fs, Δ_fs

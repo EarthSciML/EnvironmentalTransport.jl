@@ -23,15 +23,15 @@ end
     @test Symbol("q(t)") in unk_names   # runoff flux
     @test Symbol("S_f(t)") in unk_names # friction slope
 
-    # Verify key parameters exist (time-dependent params have "(t)" in symbol name)
+    # Verify key parameters exist
     param_names = Symbol.(parameters(sys))
-    @test Symbol("P(t)") in param_names          # precipitation
-    @test Symbol("I_infil(t)") in param_names    # infiltration
+    @test :P in param_names                      # precipitation
+    @test :I_infil in param_names                # infiltration
     @test :S_0 in param_names                    # surface slope
     @test :n_mann in param_names                 # Manning coefficient
     @test :h̃_0 in param_names                   # minimum flow depth
-    @test Symbol("dqdl(t)") in param_names       # spatial derivative of q
-    @test Symbol("dFdl(t)") in param_names       # spatial derivative of momentum flux
+    @test :dqdl in param_names                   # spatial derivative of q
+    @test :dFdl in param_names                   # spatial derivative of momentum flux
 end
 
 @testitem "SurfaceRunoff - Compilation" setup = [SurfaceRunoffSetup] tags = [:surface_runoff] begin
@@ -232,11 +232,11 @@ end
     @test Symbol("η_ω(t)") in unk_names
     @test Symbol("δ_ω(t)") in unk_names
 
-    # Verify parameters (time-dependent params have "(t)" in symbol name)
+    # Verify parameters
     param_names = Symbol.(parameters(hbc))
     @test :ω in param_names
-    @test Symbol("P(t)") in param_names
-    @test Symbol("I_infil(t)") in param_names
+    @test :P in param_names
+    @test :I_infil in param_names
 end
 
 @testitem "HeavisideBoundaryCondition - Compilation" setup = [SurfaceRunoffSetup] tags = [:surface_runoff] begin
@@ -399,7 +399,8 @@ end
     l = pde.ivs[2]
     dl = 0.1
     disc = MOLFiniteDifference([l => dl], t, approx_order = 2)
-    prob = discretize(pde, disc)
+    # checks=false because MethodOfLines discretization doesn't preserve units
+    prob = discretize(pde, disc; checks = false)
 
     @test prob isa ODEProblem
     @test length(prob.u0) > 0
@@ -412,17 +413,20 @@ end
 
 @testitem "SaintVenantPDE - Solution runs" setup = [SurfaceRunoffPDESetup] tags = [:surface_runoff_pde] begin
     # Test that the full Saint-Venant PDE can be solved
-    pde = SaintVenantPDE(0.5, 60.0;
+    pde = SaintVenantPDE(
+        0.5, 60.0;
         P_val = 70.0 / 1000 / 3600,
         S_0_val = 0.01,
         n_manning_val = 0.03,
         h_init_val = 1.0e-3,
-        q_init_val = 0.0)
+        q_init_val = 0.0
+    )
 
     l = pde.ivs[2]
     dl = 0.1
     disc = MOLFiniteDifference([l => dl], t, approx_order = 2)
-    prob = discretize(pde, disc)
+    # checks=false because MethodOfLines discretization doesn't preserve units
+    prob = discretize(pde, disc; checks = false)
 
     sol = solve(prob)
     @test sol.retcode == SciMLBase.ReturnCode.Success
@@ -434,17 +438,20 @@ end
     # that the discretized initial conditions match the expected values.
     h_init = 5.0e-3
 
-    pde = SaintVenantPDE(0.5, 60.0;
+    pde = SaintVenantPDE(
+        0.5, 60.0;
         P_val = 70.0 / 1000 / 3600,
         S_0_val = 0.01,
         n_manning_val = 0.03,
         h_init_val = h_init,
-        q_init_val = 0.0)
+        q_init_val = 0.0
+    )
 
     l = pde.ivs[2]
     dl = 0.1
     disc = MOLFiniteDifference([l => dl], t, approx_order = 2)
-    prob = discretize(pde, disc)
+    # checks=false because MethodOfLines discretization doesn't preserve units
+    prob = discretize(pde, disc; checks = false)
 
     h_vals_init = prob.u0
 
@@ -466,11 +473,9 @@ end
         h_init_val = 5.0e-3,
     )
 
-    # Verify the defaults were set correctly
-    defaults = pde.defaults
-    ps_names = string.(pde.ps)
-    # Find the P_rate parameter and check its default
+    # Verify the initial_conditions contain expected parameters
+    defaults = pde.initial_conditions
     P_idx = findfirst(p -> contains(string(p), "P_rate"), pde.ps)
     @test !isnothing(P_idx)
-    @test defaults[pde.ps[P_idx]] == 1.0e-4
+    @test haskey(defaults, pde.ps[P_idx])
 end

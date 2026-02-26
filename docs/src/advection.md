@@ -31,7 +31,7 @@ We'll make the emissions start at the beginning of the simulation and then taper
 using EarthSciMLBase: CoupleType
 
 starttime = DateTime(2022, 5, 1)
-endtime = DateTime(2022, 5, 10)
+endtime = DateTime(2022, 5, 2)
 
 struct EmissionsCoupler
     sys
@@ -46,7 +46,7 @@ function emissions(μ_lon, μ_lat, σ)
     @constants t_ref = datetime2unix(starttime) [unit=u"s"]
     dist = MvNormal([datetime2unix(starttime), μ_lon, μ_lat, 1],
         Diagonal(map(abs2, [3600.0*24*3, σ, σ, 1])))
-    ODESystem([D(c) ~ pdf(dist, [(t + t_ref)/t_unit, lon, lat, lev]) * v_emis],
+    System([D(c) ~ pdf(dist, [t/t_unit, lon, lat, lev]) * v_emis],
         t, name = :emissions, metadata = Dict(CoupleType => EmissionsCoupler))
 end
 function EarthSciMLBase.couple2(e::EmissionsCoupler, g::EarthSciData.GEOSFPCoupler)

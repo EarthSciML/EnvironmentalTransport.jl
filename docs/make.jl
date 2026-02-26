@@ -22,6 +22,7 @@ makedocs(;
         "Home" => "index.md",
         "Advection" => "advection.md",
         "Puff Model" => "puff.md",
+        "Puff GaussianKC Model" => "puff_guass-kc.md",
         "Surface Runoff" => "surface_runoff.md",
         "API" => "api.md",
         "🔗 Benchmarks" => "benchmarks.md",

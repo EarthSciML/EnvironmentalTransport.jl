@@ -40,11 +40,11 @@ function Sofiev2012PlumeRise(; name = :Sofiev2012PlumeRise)
         N_ft(t), [unit = u"1/s", description = "Free troposphere Brunt-Vaisala frequency"]
     end
 
-    pd = [H_p ~ α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * N_ft^2 / N_0^2)]
+    eqs = [H_p ~ α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * N_ft^2 / N_0^2)]
 
     return System(
-        Equation[], t, [H_abl, H_p, lev_p, N_ft], [params1; params2];
-        name = name, parameter_dependencies = pd,
+        eqs, t, [H_abl, H_p, lev_p, N_ft], [params1; params2];
+        name = name,
         metadata = Dict(CoupleType => Sofiev2012PlumeRiseCoupler)
     )
 end
@@ -52,10 +52,18 @@ end
 function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, puff::PuffCoupler)
     s12, puff = s12.sys, puff.sys
 
-    # Set level initial condition equal to the plume top height.
+    # Set a numeric guess for the puff level initial condition.
+    # The symbolic expression ParentScope(s12.lev_p) cannot be used here because
+    # it transitively depends on _itp callable interpolators whose Unknown(2) shape
+    # is incompatible with MTK v11's evaluate_varmap! during initial condition
+    # evaluation.  Instead, callers should pass initialization_eqs to ODEProblem
+    # to compute the actual initial level from s12.lev_p, e.g.:
+    #   ODEProblem(sys, [sys.Puff₊lev => missing], tspan;
+    #       initialization_eqs = [sys.Puff₊lev ~ sys.Sofiev2012PlumeRise₊lev_p],
+    #       guesses = [sys.Puff₊lev => 5.0])
     @unpack lev = puff
-    dflt = get_defaults(puff)
-    dflt[lev] = ParentScope(s12.lev_p)
+    dflt = initial_conditions(puff)
+    dflt[lev] = 5.0
 
     return ConnectorSystem([], s12, puff)
 end

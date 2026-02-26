@@ -18,24 +18,19 @@ jobs:
     name: "Build and Deploy Documentation"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: "Setup Julia"
         uses: julia-actions/setup-julia@v2
         with:
           version: "1"
 
-      - uses: julia-actions/cache@v1
+      - uses: julia-actions/cache@v2
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"
 
       - name: "Install Dependencies"
         run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
-
-      - name: "Install MethodOfLines fork with unit fixes"
-        run: |
-          git clone --branch fix-units-discretization https://github.com/ctessum-claude/MethodOfLines.jl.git /tmp/MethodOfLines.jl
-          julia --project=docs/ -e 'using Pkg; Pkg.develop(path="/tmp/MethodOfLines.jl")'
 
       - name: "Build and Deploy Documentation"
         env:

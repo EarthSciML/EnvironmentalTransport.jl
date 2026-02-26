@@ -7,9 +7,7 @@ using SciMLBase: NullParameters, terminate!
 using DiffEqCallbacks: PeriodicCallback, DiscreteCallback
 using ModelingToolkit: t, D, get_unit, getdefault, System, PDESystem, Differential,
     @brownians, @variables, @parameters, @named, @component,
-    @constants, get_variables, substitute, Equation,
-    build_explicit_observed_function, setp, unknowns, ParentScope,
-    get_defaults, @unpack
+    @constants, Equation, unknowns, ParentScope, initial_conditions, @unpack
 using DynamicQuantities: @u_str
 using DomainSets: Interval
 using EarthSciMLBase

@@ -31,7 +31,11 @@
     )
     sys = convert(System, model)
 
-    prob = ODEProblem(sys, [], get_tspan(di))
+    prob = ODEProblem(
+        sys, [sys.Puff₊lev => missing], get_tspan(di);
+        initialization_eqs = [sys.Puff₊lev ~ sys.Sofiev2012PlumeRise₊lev_p],
+        guesses = [sys.Puff₊lev => 5.0]
+    )
 
     lev_0 = prob.u0[ModelingToolkit.variable_index(sys, sys.Puff₊lev)]
     @test lev_0 ≈ 4.700049441016632
