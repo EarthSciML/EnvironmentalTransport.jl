@@ -30,6 +30,7 @@ DomainSets = "0.7.15"
 DynamicQuantities = "1"
 EarthSciData = "0.15"
 EarthSciMLBase = "0.25"
+MethodOfLines = "0.11"
 ModelingToolkit = "11"
 NonlinearSolve = "4"
 OrdinaryDiffEq = "6.108.0"
@@ -48,6 +49,7 @@ Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 DomainSets = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
 EarthSciData = "a293c155-435f-439d-9c11-a083b6b47337"
+MethodOfLines = "94925ecb-adb7-4558-8ed8-f975c56a0bf4"
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 OrdinaryDiffEqDefault = "50262376-6c5a-4cf5-baba-aaf4f84d72d7"
@@ -59,4 +61,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [targets]
-test = ["Dates", "Distributions", "DomainSets", "EarthSciData", "NonlinearSolve", "OrdinaryDiffEq", "OrdinaryDiffEqDefault", "OrdinaryDiffEqSSPRK", "OrdinaryDiffEqTsit5", "Random", "StochasticDiffEq", "Test", "TestItemRunner"]
+test = ["Dates", "Distributions", "DomainSets", "EarthSciData", "MethodOfLines", "NonlinearSolve", "OrdinaryDiffEq", "OrdinaryDiffEqDefault", "OrdinaryDiffEqSSPRK", "OrdinaryDiffEqTsit5", "Random", "StochasticDiffEq", "Test", "TestItemRunner"]
