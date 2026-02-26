@@ -27,7 +27,7 @@ We'll make the emissions start at the beginning of the simulation and then taper
 
 ```@example adv
 starttime = DateTime(2022, 5, 1)
-endtime = DateTime(2022, 5, 10)
+endtime = DateTime(2022, 5, 2)
 
 struct EmissionsCoupler
     sys
