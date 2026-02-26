@@ -10,7 +10,7 @@ using Plots
 using Random
 using EarthSciMLBase, EarthSciData, EnvironmentalTransport
 using Aerosol
-using ModelingToolkit, DiffEqBase, StochasticDiffEq
+using ModelingToolkit, StochasticDiffEq
 using ModelingToolkit: t
 using EnvironmentalTransport: GaussianKC, PuffCoupler, GaussianKCCoupler, BoundaryLayerMixingKC, BoundaryLayerMixingKCCoupler
 nothing #hide
@@ -81,7 +81,7 @@ model = couple(
     GaussianKC()
 )
 
-sys = convert(System, model)
+const sys = convert(System, model)
 equations(sys)[1:5]
 ```
 
@@ -92,12 +92,13 @@ In this step, we solve the model once to ensure that all necessary data is prope
 ```@example puff_gauss-kc
 tspan = get_tspan(domain)
 
-u0 = ModelingToolkit.get_defaults(sys)
-u0[sys.GaussianKC₊sigma_x] = 0.00001
-u0[sys.GaussianKC₊sigma_y] = 0.00001
-u0[sys.BoundaryLayerMixingKC₊wprime] = 0.0
-u0[sys.BoundaryLayerMixingKC₊uprime_x] = 0.0
-u0[sys.BoundaryLayerMixingKC₊uprime_y] = 0.0
+u0 = [
+    sys.GaussianKC₊sigma_x => 0.00001,
+    sys.GaussianKC₊sigma_y => 0.00001,
+    sys.BoundaryLayerMixingKC₊wprime => 0.0,
+    sys.BoundaryLayerMixingKC₊uprime_x => 0.0,
+    sys.BoundaryLayerMixingKC₊uprime_y => 0.0,
+]
 
 prob = SDEProblem(sys, u0, tspan)
 
@@ -119,15 +120,12 @@ function prob_func(prob, i, repeat)
         sys.Puff₊lon => rlon,
         sys.Puff₊lat => rlat,
         sys.Puff₊lev => rlev,
-        sys.ElementalCarbon₊EC => ec_0 / puff_release_per_interval
-    ]
-
-    p = [
+        sys.ElementalCarbon₊EC => ec_0 / puff_release_per_interval,
         sys.GaussianKC₊Δz => 100,
     ]
-    
+
     ts = (tspan[1] + floor((i-1) / puff_release_per_interval) * puff_release_interval, tspan[2])
-    remake(prob; u0 = u0, tspan = ts, p = p)
+    remake(prob; u0 = u0, tspan = ts)
 end
 
 ```

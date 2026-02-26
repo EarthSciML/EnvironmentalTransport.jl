@@ -31,7 +31,7 @@ domain = DomainInfo(
 
 geosfp = GEOSFP("4x5", domain; stream = false)
 
-puff = Puff(domain)
+puff = Puff(domain; buffer_cells=2)
 
 model = couple(puff, geosfp)
 const sys = convert(System, model)

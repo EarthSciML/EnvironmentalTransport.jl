@@ -1,4 +1,5 @@
 [deps]
+Aerosol = "8510b696-cc45-4a64-84d0-47f429ca1505"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
@@ -19,6 +20,7 @@ SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 
 [compat]
+Aerosol = "0.4"
 DataFrames = "1"
 DifferentialEquations = "7"
 Distributions = "0.25"
