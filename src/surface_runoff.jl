@@ -44,15 +44,15 @@ https://doi.org/10.1016/j.advwatres.2019.103499
     end
 
     @parameters begin
-        P(t), [description = "Precipitation/irrigation flux density (Eq. 1)", unit = u"m/s"]
-        I_infil(t), [description = "Infiltration flux density (Eq. 1)", unit = u"m/s"]
         S_0, [description = "Surface slope (dimensionless)", unit = u"1"]
         n_mann, [description = "Manning roughness coefficient", unit = u"m^(-1/3)*s"]
         h̃_0 = 1.0e-5,
             [description = "Minimum flow depth to prevent singularity (Eq. 1)", unit = u"m"]
-        dqdl(t) = 0.0,
+        P, [description = "Precipitation/irrigation flux density (Eq. 1)", unit = u"m/s"]
+        I_infil, [description = "Infiltration flux density (Eq. 1)", unit = u"m/s"]
+        dqdl = 0.0,
             [description = "Spatial derivative of runoff flux ∂q/∂l (Eq. 1)", unit = u"m/s"]
-        dFdl(t) = 0.0,
+        dFdl = 0.0,
             [
                 description = "Spatial derivative of momentum flux ∂/∂l(q²/h̃ + g·h̃²/2) (Eq. 1)",
                 unit = u"m^2/s^2",
@@ -193,7 +193,7 @@ function SaintVenantPDE(
     return PDESystem(
         [eq1, eq2, eq3], bcs, domains, [t, l],
         [h_tilde(t, l), q_flux(t, l), F_mom(t, l)], all_params;
-        defaults = defaults_dict, name = name
+        initial_conditions = defaults_dict, name = name
     )
 end
 
@@ -240,8 +240,8 @@ https://doi.org/10.1016/j.advwatres.2019.103499
             [
                 description = "Smoothing parameter for Heaviside approximation (Eq. 5)", unit = u"m",
             ]
-        P(t), [description = "Precipitation/irrigation flux density (Eq. 3)", unit = u"m/s"]
-        I_infil(t), [description = "Infiltration flux density (Eq. 3)", unit = u"m/s"]
+        P, [description = "Precipitation/irrigation flux density (Eq. 3)", unit = u"m/s"]
+        I_infil, [description = "Infiltration flux density (Eq. 3)", unit = u"m/s"]
     end
 
     @variables begin
