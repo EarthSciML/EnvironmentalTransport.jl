@@ -19,7 +19,7 @@ function setup_advection_simulator(lonres, latres, stencil)
         levrange = 1:1:3
     )
 
-    geosfp = GEOSFP("0.25x0.3125_NA", domain)
+    geosfp = GEOSFP("4x5", domain)
 
     domain = EarthSciMLBase.add_partial_derivative_func(
         domain, partialderivatives_δPδlev_geosfp(geosfp)
@@ -52,7 +52,7 @@ suite["Advection Simulator"]["out-of-place"] = BenchmarkGroup()
 for stencil in [upwind1_stencil]
     suite["Advection Simulator"]["in-place"][stencil] = BenchmarkGroup()
     suite["Advection Simulator"]["out-of-place"][stencil] = BenchmarkGroup()
-    for (lonres, latres) in ((0.625, 0.5), (0.3125, 0.25))
+    for (lonres, latres) in ((5.0, 4.0),)
         @info "setting up $lonres x $latres with $stencil"
         op, u, p = setup_advection_simulator(lonres, latres, stencil)
         suite["Advection Simulator"]["in-place"][stencil]["$lonres x $latres (N=$(length(u)))"] = @benchmarkable $(op)(
