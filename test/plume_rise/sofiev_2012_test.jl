@@ -5,7 +5,6 @@
     import SciMLBase
     using Dates
     using OrdinaryDiffEqDefault
-    using OrdinaryDiffEqTsit5: Tsit5
 
     starttime = DateTime(2022, 5, 1)
     endtime = DateTime(2022, 5, 1, 0, 1)
@@ -32,13 +31,15 @@
     )
     sys = convert(System, model)
 
-    prob = ODEProblem(sys, [sys.Puff₊lev => missing], get_tspan(di);
+    prob = ODEProblem(
+        sys, [sys.Puff₊lev => missing], get_tspan(di);
         initialization_eqs = [sys.Puff₊lev ~ sys.Sofiev2012PlumeRise₊lev_p],
-        guesses = [sys.Puff₊lev => 5.0])
+        guesses = [sys.Puff₊lev => 5.0]
+    )
 
     lev_0 = prob.u0[ModelingToolkit.variable_index(sys, sys.Puff₊lev)]
     @test lev_0 ≈ 4.700049441016632
 
-    sol = solve(prob, Tsit5())
+    sol = solve(prob)
     @test sol.retcode == SciMLBase.ReturnCode.Success
 end

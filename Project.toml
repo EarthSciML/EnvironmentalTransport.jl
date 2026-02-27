@@ -44,11 +44,17 @@ StochasticDiffEq = "6.74"
 TestItemRunner = "1.1.0"
 julia = "1.10"
 
+[sources]
+Catalyst = {url = "https://github.com/SciML/Catalyst.jl.git", rev = "master"}
+GasChem = {url = "https://github.com/EarthSciML/GasChem.jl.git", rev = "main"}
+
 [extras]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 DomainSets = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
+Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
 EarthSciData = "a293c155-435f-439d-9c11-a083b6b47337"
+GasChem = "58070593-4751-4c87-a5d1-63807d11d76c"
 MethodOfLines = "94925ecb-adb7-4558-8ed8-f975c56a0bf4"
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
@@ -57,8 +63,9 @@ OrdinaryDiffEqSSPRK = "669c94d9-1f4b-4b64-b377-1aa079aa2388"
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StochasticDiffEq = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
+Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [targets]
-test = ["Dates", "Distributions", "DomainSets", "EarthSciData", "MethodOfLines", "NonlinearSolve", "OrdinaryDiffEq", "OrdinaryDiffEqDefault", "OrdinaryDiffEqSSPRK", "OrdinaryDiffEqTsit5", "Random", "StochasticDiffEq", "Test", "TestItemRunner"]
+test = ["Catalyst", "Dates", "Distributions", "DomainSets", "EarthSciData", "GasChem", "MethodOfLines", "NonlinearSolve", "OrdinaryDiffEq", "OrdinaryDiffEqDefault", "OrdinaryDiffEqSSPRK", "OrdinaryDiffEqTsit5", "Random", "StochasticDiffEq", "Symbolics", "Test", "TestItemRunner"]

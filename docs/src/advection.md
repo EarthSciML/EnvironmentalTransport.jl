@@ -10,7 +10,9 @@ To demonstrate how it works, let's first set up our environment:
 ```@example adv
 using EnvironmentalTransport
 using EarthSciMLBase, EarthSciData
-using ModelingToolkit, DifferentialEquations
+using ModelingToolkit, OrdinaryDiffEqDefault
+using OrdinaryDiffEqTsit5: Tsit5
+using OrdinaryDiffEqSSPRK: SSPRK22
 using ProgressLogging
 using ModelingToolkit: t, D
 using DynamicQuantities
@@ -26,6 +28,8 @@ Next, let's set up an emissions scenario to advect.
 We'll make the emissions start at the beginning of the simulation and then taper off:
 
 ```@example adv
+using EarthSciMLBase: CoupleType
+
 starttime = DateTime(2022, 5, 1)
 endtime = DateTime(2022, 5, 2)
 
@@ -39,6 +43,7 @@ function emissions(μ_lon, μ_lat, σ)
     @variables c(t) = 0.0 [unit=u"kg"]
     @constants v_emis = 50.0 [unit=u"kg/s"]
     @constants t_unit = 1.0 [unit=u"s"] # Needed so that arguments to `pdf` are unitless.
+    @constants t_ref = datetime2unix(starttime) [unit=u"s"]
     dist = MvNormal([datetime2unix(starttime), μ_lon, μ_lat, 1],
         Diagonal(map(abs2, [3600.0*24*3, σ, σ, 1])))
     System([D(c) ~ pdf(dist, [t/t_unit, lon, lat, lev]) * v_emis],
