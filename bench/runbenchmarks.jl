@@ -19,7 +19,7 @@ function setup_advection_simulator(lonres, latres, stencil)
         levrange = 1:1:3
     )
 
-    geosfp = GEOSFP("0.25x0.3125_NA", domain)
+    geosfp = GEOSFP("4x5", domain)
 
     domain = EarthSciMLBase.add_partial_derivative_func(
         domain, partialderivatives_δPδlev_geosfp(geosfp)
