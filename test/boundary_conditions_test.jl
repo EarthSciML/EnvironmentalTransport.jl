@@ -60,7 +60,7 @@ end
 @testitem "SpeciesConstantBC with species names" begin
     using EnvironmentalTransport
     using EarthSciMLBase, EarthSciData, GasChem
-    using ModelingToolkit: t
+    using ModelingToolkit: t, System, unknowns
     using Dates
 
     # Create a real domain and coupled system

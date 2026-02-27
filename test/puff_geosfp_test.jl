@@ -1,4 +1,5 @@
 @testitem "Puff GEOSFP" begin
+    using EnvironmentalTransport
     using EarthSciMLBase
     using EarthSciData
     using ModelingToolkit
@@ -36,6 +37,6 @@
 
     tspan = EarthSciMLBase.get_tspan(di)
     prob = ODEProblem(sys, [], tspan)
-    sol = solve(prob, Tsit5())
+    sol = solve(prob)
     @test sol.retcode == SciMLBase.ReturnCode.Terminated
 end
