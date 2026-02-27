@@ -52,7 +52,7 @@ suite["Advection Simulator"]["out-of-place"] = BenchmarkGroup()
 for stencil in [upwind1_stencil]
     suite["Advection Simulator"]["in-place"][stencil] = BenchmarkGroup()
     suite["Advection Simulator"]["out-of-place"][stencil] = BenchmarkGroup()
-    for (lonres, latres) in ((5.0, 4.0),)
+    for (lonres, latres) in ((0.625, 0.5), (0.3125, 0.25))
         @info "setting up $lonres x $latres with $stencil"
         op, u, p = setup_advection_simulator(lonres, latres, stencil)
         suite["Advection Simulator"]["in-place"][stencil]["$lonres x $latres (N=$(length(u)))"] = @benchmarkable $(op)(
