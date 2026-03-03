@@ -24,6 +24,7 @@ makedocs(;
         "Puff Model" => "puff.md",
         "Puff GaussianKC Model" => "puff_guass-kc.md",
         "Surface Runoff" => "surface_runoff.md",
+        "Soil Vapor Transfer" => "vapor_transfer.md",
         "API" => "api.md",
         "🔗 Benchmarks" => "benchmarks.md",
     ]
