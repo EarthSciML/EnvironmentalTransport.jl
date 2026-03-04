@@ -341,5 +341,68 @@ end
 gif(anim_heatmap, "puff_heatmap.gif", fps = 3)
 ```
 
+## Cumulative Exposure
+
+Using the same spatial grid and Gaussian kernel method from the previous step, we now evaluate cumulative exposure. By integrating the grid concentrations over time (multiplying by the time step duration), we calculate the total exposure and visualize it below.
+
+```@example puff_gauss-kc
+
+exposure_grid = zeros(length(lon_range), length(lat_range))
+
+t_steps = length(tgrid)
+for k in 1:(t_steps - 1)
+    dt_h = (tgrid[k+1] - tgrid[k]) / 3600.0
+    t_mid = (tgrid[k] + tgrid[k+1]) / 2.0
+    for sol in esol
+        if isempty(sol) || tgrid[k] < sol.t[1] || tgrid[k] > sol.t[end]
+            continue
+        end
+
+        lonp = sol(t_mid, idxs = sys.Puff₊lon)
+        latp = sol(t_mid, idxs = sys.Puff₊lat)
+        sx = sol(t_mid, idxs = sys.GaussianKC₊sigma_x)
+        sy = sol(t_mid, idxs = sys.GaussianKC₊sigma_y)
+        Cgl = sol(t_mid, idxs = sys.GaussianKC₊C_gl)
+        m = sol(t_mid, idxs = sys.ElementalCarbon₊EC)
+
+        if sx <= 0 || sy <= 0 || Cgl < 0 || m <= 0
+            @warn "Negative values detected. Skipping puff contribution." time=t_mid sx=sx sy=sy Cgl=Cgl mass=m
+            continue
+        end
+
+        # Exposure
+        for (i, lon_rec) in enumerate(lon_range)
+            for (j, lat_rec) in enumerate(lat_range)
+                dx, dy = dxdy_m(lonp, latp, deg2rad(lon_rec), deg2rad(lat_rec))
+                kernel = exp(-0.5 * ((dx / sx)^2 + (dy / sy)^2))
+                
+                exposure_grid[i, j] += (m * Cgl * kernel) * dt_h # kg/m³ * h
+            end
+        end
+    end
+end
+
+exposure_grid .*= 1e9 # kg/m³·h to µg/m³·h
+
+
+EXPOSURE_THRESHOLD = 0.01
+
+exposure_grid[exposure_grid .< EXPOSURE_THRESHOLD] .= NaN
+
+p_exposure = heatmap(
+    lon_range, lat_range, exposure_grid',
+    xlabel = "Longitude (°)", 
+    ylabel = "Latitude (°)",
+    colorbar_title = "\nCumulative Exposure (µg/m³·h)",
+    right_margin = 10Plots.mm,
+    c = cgrad(:OrRd, rev=false),
+)
+
+p_exposure
+
+```
+
+
+
 
 
