@@ -68,7 +68,7 @@ end
 """
 Compute PBL mixing parameters based on domain levels.
 """
-function compute_imix_fpbl(pedge_domain::Vector{Float64}, pblh_m::Float64)
+function compute_imix_fpbl(pedge_domain, pblh_m)
     nz = length(pedge_domain) - 1
     p0 = pedge_domain[1]  # Top pressure of domain (hPa)
     bltop = p0 * exp(-pblh_m / SCALE_HEIGHT)  # PBL top pressure (hPa)
@@ -105,7 +105,7 @@ end
 """
 Compute air mass for each layer from pressure edges and grid area.
 """
-function air_mass_from_pressure(pedge::Vector{Float64}, area_m2::Float64)
+function air_mass_from_pressure(pedge, area_m2)
     nz = length(pedge) - 1
     ad = similar(pedge, nz)
     for l in 1:nz
@@ -118,14 +118,15 @@ end
 """
 Apply full PBL mixing to tracer concentrations (GEOS-Chem TURBDAY algorithm).
 """
-function pbl_full_mix!(tc::Array{Float64, 2}, ad::Vector{Float64}, imix::Int, fpbl::Float64)
+function pbl_full_mix!(tc::AbstractMatrix, ad::AbstractVector, imix::Int, fpbl)
+    T = promote_type(eltype(ad), eltype(tc), typeof(fpbl))
     nz, nspec = size(tc)
     if imix < 1 || imix > nz
         return
     end
 
     # Calculate total air mass in PBL
-    aa = 0.0
+    aa = zero(T)
     for l in 1:(imix - 1)
         aa += ad[l]
     end
@@ -138,7 +139,7 @@ function pbl_full_mix!(tc::Array{Float64, 2}, ad::Vector{Float64}, imix::Int, fp
     # Mix each species
     for n in 1:nspec
         # Calculate total mass of species in PBL
-        cc = 0.0
+        cc = zero(T)
         for l in 1:(imix - 1)
             cc += ad[l] * tc[l, n]
         end
