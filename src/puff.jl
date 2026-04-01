@@ -96,7 +96,7 @@ function Puff(di::DomainInfo; buffer_cells = 1, name = :Puff)
     lateral_boundary = [wb, eb, sb, nb] => (f = stop!,)
     return System(
         eqs, EarthSciMLBase.ivar(di); name = name,
-        metadata = Dict(CoupleType => PuffCoupler),
+        metadata = Dict(CoupleType => PuffCoupler, SysDomainInfo => di),
         continuous_events = [vertical_boundary, lateral_boundary]
     )
 end
