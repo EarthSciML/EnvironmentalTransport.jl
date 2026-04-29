@@ -32,7 +32,7 @@
         [Symbol("Puff₊lon(t)"), Symbol("Puff₊lat(t)"), Symbol("Puff₊lev(t)")],
         Symbol.(unknowns(sys))
     )
-    @test length(parameters(sys)) == 82
+    @test length(parameters(sys)) == 706
     @test length(observed(sys)) == 91
 
     tspan = EarthSciMLBase.get_tspan(di)

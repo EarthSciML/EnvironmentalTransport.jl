@@ -195,7 +195,7 @@ end
 
 function obs_function(mtk_sys, coord_args, v, T)
     obs_f = EarthSciMLBase.build_coord_observed_function(
-        mtk_sys, coord_args, v;
+        mtk_sys, coord_args, [v];
         eval_module = @__MODULE__
     )
     obscache = zeros(T, length(unknowns(mtk_sys))) # Not used for anything (hopefully).

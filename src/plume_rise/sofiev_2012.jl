@@ -52,18 +52,9 @@ end
 function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, puff::PuffCoupler)
     s12, puff = s12.sys, puff.sys
 
-    # Set a numeric guess for the puff level initial condition.
-    # The symbolic expression ParentScope(s12.lev_p) cannot be used here because
-    # it transitively depends on _itp callable interpolators whose Unknown(2) shape
-    # is incompatible with MTK v11's evaluate_varmap! during initial condition
-    # evaluation.  Instead, callers should pass initialization_eqs to ODEProblem
-    # to compute the actual initial level from s12.lev_p, e.g.:
-    #   ODEProblem(sys, [sys.Puff₊lev => missing], tspan;
-    #       initialization_eqs = [sys.Puff₊lev ~ sys.Sofiev2012PlumeRise₊lev_p],
-    #       guesses = [sys.Puff₊lev => 5.0])
     @unpack lev = puff
     dflt = initial_conditions(puff)
-    dflt[lev] = 5.0
+    dflt[lev] = ParentScope(s12.lev_p)
 
     return ConnectorSystem([], s12, puff)
 end

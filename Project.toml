@@ -1,7 +1,7 @@
 name = "EnvironmentalTransport"
 uuid = "9e73f4c4-d7e8-4c78-8a11-cd2430746631"
-authors = ["EarthSciML authors and contributors"]
 version = "0.7.0"
+authors = ["EarthSciML authors and contributors"]
 
 [deps]
 DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
@@ -28,8 +28,8 @@ Distributions = "0.25.113"
 DocStringExtensions = "0.9.3"
 DomainSets = "0.7.15"
 DynamicQuantities = "1"
-EarthSciData = "0.15"
-EarthSciMLBase = "0.25.3"
+EarthSciData = "0.16"
+EarthSciMLBase = "0.25.9"
 MethodOfLines = "0.11"
 ModelingToolkit = "11"
 NonlinearSolve = "4"
@@ -44,15 +44,11 @@ StochasticDiffEq = "6.74"
 TestItemRunner = "1.1.0"
 julia = "1.10"
 
-[sources]
-Catalyst = {url = "https://github.com/SciML/Catalyst.jl.git", rev = "master"}
-GasChem = {url = "https://github.com/EarthSciML/GasChem.jl.git", rev = "main"}
-
 [extras]
+Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 DomainSets = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
-Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
 EarthSciData = "a293c155-435f-439d-9c11-a083b6b47337"
 GasChem = "58070593-4751-4c87-a5d1-63807d11d76c"
 MethodOfLines = "94925ecb-adb7-4558-8ed8-f975c56a0bf4"

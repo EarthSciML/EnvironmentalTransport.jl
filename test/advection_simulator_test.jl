@@ -74,9 +74,15 @@
 
     csys = couple(csys, op)
 
+    # Build the advection-coupled prob outside the testset so we can reuse its
+    # populated parameter buffer below: in EarthSciData ≥ 0.16 the GEOSFP
+    # interpolator data lives in `DataBufferType` discretes that are zero
+    # until the data-load callback fires (which happens at solve start). Using
+    # `EarthSciMLBase.default_params(sys_coords)` for the v_fs/Δ_fs tests gives
+    # back the zero-initialized buffers and the wind/Δ accessors return 0.
+    prob = ODEProblem(csys, st)
+    sol = solve(prob, SSPRK22(), dt = dt)
     @testset "solve" begin
-        prob = ODEProblem(csys, st)
-        sol = solve(prob, SSPRK22(), dt = dt)
         # With advection, the norm should be lower because the pollution is more spread out.
         @test 310 < norm(sol.u[end]) < 350
     end
@@ -85,7 +91,7 @@
     sys_coords, coord_args = EarthSciMLBase._prepare_coord_sys(mtk_sys, domain)
     vars = EarthSciMLBase.get_needed_vars(op, csys, sys_coords, domain)
     @test length(vars) == 6
-    p = EarthSciMLBase.default_params(sys_coords)
+    p = prob.p  # populated by the solve above; not `default_params(sys_coords)`
 
     v_fs, Δ_fs = get_datafs(op, csys, sys_coords, coord_args, domain)
 
