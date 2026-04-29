@@ -1,6 +1,6 @@
 name = "EnvironmentalTransport"
 uuid = "9e73f4c4-d7e8-4c78-8a11-cd2430746631"
-version = "0.7.0"
+version = "0.7.1"
 authors = ["EarthSciML authors and contributors"]
 
 [deps]
