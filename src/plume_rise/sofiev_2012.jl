@@ -7,6 +7,39 @@ end
 """
 Wildfire plume rise model based on Sofiev et al. (2012) [1].
 
+When coupled with [`Puff`](@ref) and a meteorology source like
+`EarthSciData.GEOSFP`, this model sets `Puff.lev`'s initial condition to
+the symbolic expression `Sofiev2012PlumeRise.lev_p` (computed from
+interpolated meteorology and fire radiative power) so the puff is released
+at the plume-top level.
+
+`lev_p` cannot be evaluated until the EarthSciData data-load callback has
+populated the meteorology buffers (which happens at integrator init).
+Because the InitializationProblem is solved before callbacks fire, a
+freshly constructed `prob` cannot just be `solve`d — the symbolic IC
+evaluates against zero-filled buffers and produces NaN. The standard
+workaround is a two-step warmup:
+
+```julia
+# 1. Build a warmup prob with an explicit numeric `Puff.lev` so init can
+#    proceed; solve briefly (one saved sample) to populate buffers.
+warm_prob = ODEProblem(sys, [sys.Puff₊lev => 5.0], get_tspan(di))
+warm_sol = solve(warm_prob; save_everystep = false, save_start = true,
+                 save_end = false)
+
+# 2. Read the numerical `lev_p` from the warmup, build the real prob with
+#    that value, and solve.
+lev_p_value = first(getu(sys, sys.Sofiev2012PlumeRise₊lev_p)(warm_sol))
+prob = ODEProblem(sys, [sys.Puff₊lev => lev_p_value], get_tspan(di))
+sol = solve(prob)
+```
+
+For an `EnsembleProblem` whose `prob_func` varies the fire `lon`/`lat`/
+`P_fr` per trajectory, the warmup yields a representative `lev_p`; if
+per-trajectory plume heights are required, run a warmup per trajectory or
+have `prob_func` return a problem whose `Puff.lev` is computed from that
+trajectory's parameters.
+
 [1] Sofiev, M., Ermakova, T., and Vankevich, R.: Evaluation of the smoke-injection height
 from wild-land fires using remote-sensing data, Atmos. Chem. Phys., 12, 1995–2006,
 https://doi.org/10.5194/acp-12-1995-2012, 2012.
@@ -23,6 +56,7 @@ function Sofiev2012PlumeRise(; name = :Sofiev2012PlumeRise)
         Rd = 287.05, [unit = u"J/(kg*K)", description = "Dry-air gas constant"]
         g = 9.80665, [unit = u"m/s^2", description = "Gravitational acceleration"]
         Punit = 1.0, [unit = u"Pa", description = "Unit pressure"]
+        H_scale = 1.0, [description = "Scaling factor for plume height"]
     end
 
     params2 = @parameters begin
@@ -40,7 +74,7 @@ function Sofiev2012PlumeRise(; name = :Sofiev2012PlumeRise)
         N_ft(t), [unit = u"1/s", description = "Free troposphere Brunt-Vaisala frequency"]
     end
 
-    eqs = [H_p ~ α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * N_ft^2 / N_0^2)]
+    eqs = [H_p ~ α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * N_ft^2 / N_0^2) * H_scale]
 
     return System(
         eqs, t, [H_abl, H_p, lev_p, N_ft], [params1; params2];
@@ -51,10 +85,6 @@ end
 
 function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, puff::PuffCoupler)
     s12, puff = s12.sys, puff.sys
-
-    @unpack lev = puff
-    dflt = initial_conditions(puff)
-    dflt[lev] = ParentScope(s12.lev_p)
-
-    return ConnectorSystem([], s12, puff)
+    puff = EarthSciMLBase.strip_var_default(puff, :lev)
+    return ConnectorSystem([], s12, puff; initialization_equations = [puff.lev ~ s12.lev_p])
 end
