@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1777498009853,
+  "lastUpdate": 1778977362242,
   "repoUrl": "https://github.com/EarthSciML/EnvironmentalTransport.jl",
   "entries": {
     "Julia benchmark result": [
@@ -4462,6 +4462,54 @@ window.BENCHMARK_DATA = {
           {
             "name": "Advection Simulator/out-of-place/upwind1_stencil/0.625 x 0.5 (N=31719)",
             "value": 21185404,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=14464072\nallocs=444071\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "ctessum@gmail.com",
+            "name": "Christopher Tessum",
+            "username": "ctessum"
+          },
+          "committer": {
+            "email": "ctessum@gmail.com",
+            "name": "Christopher Tessum",
+            "username": "ctessum"
+          },
+          "distinct": true,
+          "id": "f77ed72a5e86f99e85c206958e5a381c950142c7",
+          "message": "Remove outdated comments and enhance description for H_scale parameter in Sofiev2012PlumeRise model",
+          "timestamp": "2026-05-17T09:02:48+09:00",
+          "tree_id": "0aa6ac4b291f91ddb359066dbcb734e49f34931f",
+          "url": "https://github.com/EarthSciML/EnvironmentalTransport.jl/commit/f77ed72a5e86f99e85c206958e5a381c950142c7"
+        },
+        "date": 1778977359490,
+        "tool": "julia",
+        "benches": [
+          {
+            "name": "Advection Simulator/in-place/upwind1_stencil/0.3125 x 0.25 (N=126222)",
+            "value": 64839337,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=57557480\nallocs=1767113\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Advection Simulator/in-place/upwind1_stencil/0.625 x 0.5 (N=31719)",
+            "value": 16188812,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=14464104\nallocs=444071\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Advection Simulator/out-of-place/upwind1_stencil/0.3125 x 0.25 (N=126222)",
+            "value": 64392390,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=57557448\nallocs=1767113\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Advection Simulator/out-of-place/upwind1_stencil/0.625 x 0.5 (N=31719)",
+            "value": 16102606,
             "unit": "ns",
             "extra": "gctime=0\nmemory=14464072\nallocs=444071\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
           }
