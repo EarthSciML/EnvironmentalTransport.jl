@@ -1,6 +1,6 @@
 name = "EnvironmentalTransport"
 uuid = "9e73f4c4-d7e8-4c78-8a11-cd2430746631"
-version = "0.7.1"
+version = "0.7.2"
 authors = ["EarthSciML authors and contributors"]
 
 [deps]
@@ -28,8 +28,8 @@ Distributions = "0.25.113"
 DocStringExtensions = "0.9.3"
 DomainSets = "0.7.15"
 DynamicQuantities = "1"
-EarthSciData = "0.16"
-EarthSciMLBase = "0.25.9"
+EarthSciData = "0.16.2"
+EarthSciMLBase = "0.25.12"
 MethodOfLines = "0.11"
 ModelingToolkit = "11"
 NonlinearSolve = "4"
