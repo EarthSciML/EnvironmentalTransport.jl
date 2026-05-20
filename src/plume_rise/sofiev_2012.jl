@@ -7,6 +7,16 @@ end
 """
 Wildfire plume rise model based on Sofiev et al. (2012) [1].
 
+Note: When this model component is coupled with the Puff model, you will need to run a warmup simulation to 
+initialize the data loaders before running the simulation for real, like this:
+
+```julia
+sol = solve(prob) # The first solve will give the wrong initial puff vertical level because the data loaders aren't initialized yet.
+@assert sol[sys.GEOSFP₊A1₊PBLH][1] > 0.0
+prob = remake(prob, p = sol.prob.p) # Update the problem with the initialized parameters.
+sol = solve(prob) # This should work correctly.
+```
+
 [1] Sofiev, M., Ermakova, T., and Vankevich, R.: Evaluation of the smoke-injection height
 from wild-land fires using remote-sensing data, Atmos. Chem. Phys., 12, 1995–2006,
 https://doi.org/10.5194/acp-12-1995-2012, 2012.
@@ -28,23 +38,19 @@ function Sofiev2012PlumeRise(; name = :Sofiev2012PlumeRise)
 
     params2 = @parameters begin
         P_fr = 5.0e6, [unit = u"W", description = "Fire radiative power"]
-
-        # Used to calculate the initial guess of the plume top level
-        h_to_lev = 100.0, [unit = u"m", description = "Height to level transform"]
     end
 
     # TODO(HE): Use as parameters?
     @variables begin
         H_abl(t), [unit = u"m", description = "Atmospheric boundary layer height"]
         H_p(t), [unit = u"m", description = "Plume top height"]
-        lev_p(t), [description = "Vertical level of the plume top height"]
         N_ft(t), [unit = u"1/s", description = "Free troposphere Brunt-Vaisala frequency"]
     end
 
     eqs = [H_p ~ α * H_abl + β * (P_fr / P_f0)^γ * exp(-δ * N_ft^2 / N_0^2) * H_scale]
 
     return System(
-        eqs, t, [H_abl, H_p, lev_p, N_ft], [params1; params2];
+        eqs, t, [H_abl, H_p, N_ft], [params1; params2];
         name = name,
         metadata = Dict(CoupleType => Sofiev2012PlumeRiseCoupler)
     )
@@ -52,6 +58,9 @@ end
 
 function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, puff::PuffCoupler)
     s12, puff = s12.sys, puff.sys
-    puff = EarthSciMLBase.strip_var_default(puff, :lev)
-    return ConnectorSystem([], s12, puff; initialization_equations = [puff.lev ~ s12.lev_p])
+    # Strip puff.lev's default so it is solved during initialization. Its value
+    # is pinned by the `s12.H_p ~ gfp.Z_agl` constraint in the Sofiev↔GEOSFP
+    # coupling, routed through `gfp.lev ~ clamp(puff.lev, ...)`.
+    puff = EarthSciMLBase.strip_var_default(puff, :lev; add_guess = true)
+    return ConnectorSystem([], s12, puff)
 end

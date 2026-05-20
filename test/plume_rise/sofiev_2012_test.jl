@@ -38,8 +38,8 @@
 
     prob = remake(prob, p = sol.prob.p)
     sol = solve(prob)
-    lev_0 = prob.u0[ModelingToolkit.variable_index(sys, sys.Puff₊lev)]
-    @test lev_0 ≈ 4.700049441016632
+    lev_0 = sol[sys.Puff₊lev][1]
+    @test lev_0 ≈ 4.521111658242667
 
     @test sol.retcode == SciMLBase.ReturnCode.Success
 end

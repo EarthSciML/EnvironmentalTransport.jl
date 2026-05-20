@@ -4,7 +4,7 @@ using DocStringExtensions
 import EarthSciMLBase
 using EarthSciMLBase: param_to_var, ConnectorSystem, CoupledSystem, get_coupletype,
     operator_compose
-using EarthSciData: GEOSFPCoupler, WRFCoupler, Ap, Bp
+using EarthSciData: GEOSFPCoupler, WRFCoupler, Ap, Bp, lev_from_pressure
 using EarthSciData: interp_callable
 using EnvironmentalTransport: PuffCoupler, GaussianPGBCoupler, GaussianKCCoupler,
     BoundaryLayerMixingKCCoupler, AdvectionOperator,
@@ -167,10 +167,8 @@ function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, gfp::GEOSFPCoup
     s12, gfp = s12.sys, gfp.sys
 
     κ = 287.05 / 1004.67                    # [-]    Poisson exponent Rd/cp (dry air)
-    Δℓ_newton = 0.5                             # [level] Newton step for H↔ℓ mapping (centered)
-    Δℓ_grad = 1.0                             # [level] offset for centered dθv/dz
 
-    LMIN, LMAX = 1.0 + Δℓ_newton, 72.0 - Δℓ_newton  # [-]
+    LMIN, LMAX = 1.0, 72.0                  # [-]    valid model-level range
 
     p0 = 1.0e5                             # [Pa]   reference sea-level pressure
 
@@ -211,37 +209,48 @@ function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, gfp::GEOSFPCoup
         (Rd * Tv̄ / g) * log(PS / Pmid)                                      # [m]  hypsometric height AGL
     end
 
-    # Local meters-per-level: dZ/dℓ with a centered difference
-    m_per_level_at = ℓ -> (Z_at(ℓ + Δℓ_newton) - Z_at(ℓ - Δℓ_newton)) / (2Δℓ_newton)  # [m level^-1]
-
-    # Map height H [m] → mid-level ℓ [-] with one Newton step
+    # Map height H [m] → model level ℓ [-] via the exact GEOS-FP grid
+    # inversion: height→pressure is analytic (hypsometric) and pressure→level
+    # is the exact piecewise-linear inverse `lev_from_pressure`.  The layer-mean
+    # virtual temperature Tv̄ depends weakly on ℓ, so a 2-pass fixed point is
+    # used, seeded from the 2-m virtual temperature.
     lev_from_height = H -> begin
-        ℓ0 = softclamp(H / s12.h_to_lev, LMIN, LMAX)     # initial guess from linear H→ℓ
-        Z0 = Z_at(ℓ0)
-        dZdℓ = m_per_level_at(ℓ0)
-        softclamp(ℓ0 + (H - Z0) / dZdℓ, LMIN, LMAX)
+        PS = PS_itp(τ + t, λ, φ)                                           # [Pa]
+        Tv2 = T2M_itp(τ + t, λ, φ) * (1 + 0.61 * QV2M_itp(τ + t, λ, φ))     # [K] 2-m virtual temp
+        # pass 1 — seed Tv̄ with the 2-m virtual temperature
+        ℓ1 = softclamp(
+            lev_from_pressure(PS * exp(-g * H / (Rd * Tv2)), PS) - 0.5, LMIN, LMAX)
+        # pass 2 — refine Tv̄ as the surface-to-ℓ mean virtual temperature
+        Tvℓ = T_itp(τ + t, λ, φ, ℓ1) * (1 + 0.61 * QV_itp(τ + t, λ, φ, ℓ1)) # [K]
+        Tv̄ = 0.5 * (Tvℓ + Tv2)                                             # [K]
+        softclamp(
+            lev_from_pressure(PS * exp(-g * H / (Rd * Tv̄)), PS) - 0.5, LMIN, LMAX)
     end
 
     return ConnectorSystem(
         [
             s12.H_abl ~ PBLH_itp(τ + t, λ, φ),  # [m] atmospheric boundary layer height
-            s12.lev_p ~ lev_from_height(s12.H_p),                   # [-]  plume-top level
 
-            # Free-troposphere buoyancy frequency N(t): probe near 2 × PBL height
+            # Free-troposphere buoyancy frequency N(t).  θv is probed on a
+            # stencil symmetric in *height* (z_ft ± Δz) rather than in level:
+            # a level-symmetric stencil is height-asymmetric over variable
+            # layer thicknesses, which biases dθv/dz away from z_ft.  Δz scales
+            # with the boundary-layer depth so both probes stay above ground.
             s12.N_ft ~ begin
-                lev_ft = lev_from_height(2 * s12.H_abl)             # [-] mid-level near FT
-                θp = θv_at(lev_ft + Δℓ_grad)                        # [K]
-                θm = θv_at(lev_ft - Δℓ_grad)                        # [K]
-                Zp = Z_at(lev_ft + Δℓ_grad)                         # [m]
-                Zm = Z_at(lev_ft - Δℓ_grad)                         # [m]
-                dθv_dz = (θp - θm) / (Zp - Zm)                      # [K m^-1]
-                θc = θv_at(lev_ft)                              # [K]
-                N2 = (g / θc) * dθv_dz                          # [s^-2]
+                z_ft = 2 * s12.H_abl                                # [m] probe height in FT
+                Δz = 0.5 * s12.H_abl                                # [m] half-stencil
+                ℓp = lev_from_height(z_ft + Δz)                     # [-] upper probe level
+                ℓm = lev_from_height(z_ft - Δz)                     # [-] lower probe level
+                ℓc = lev_from_height(z_ft)                          # [-] centre level
+                dθv_dz = (θv_at(ℓp) - θv_at(ℓm)) / (Z_at(ℓp) - Z_at(ℓm))  # [K m^-1]
+                θc = θv_at(ℓc)                                      # [K]
+                N2 = (g / θc) * dθv_dz                              # [s^-2]
                 sqrt(0.5 * (N2 + abs(N2)))                          # [s^-1] ensure N ≥ 0
             end,
         ],
         s12,
-        gfp
+        gfp;
+        initialization_equations = [s12.H_p ~ gfp.Z_agl],
     )
 end
 
