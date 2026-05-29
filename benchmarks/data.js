@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779281536308,
+  "lastUpdate": 1780038554236,
   "repoUrl": "https://github.com/EarthSciML/EnvironmentalTransport.jl",
   "entries": {
     "Julia benchmark result": [
@@ -4654,6 +4654,54 @@ window.BENCHMARK_DATA = {
           {
             "name": "Advection Simulator/out-of-place/upwind1_stencil/0.625 x 0.5 (N=31719)",
             "value": 14745398,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=14464072\nallocs=444071\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "ctessum@gmail.com",
+            "name": "Christopher Tessum",
+            "username": "ctessum"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bbd8ffb65d6c91d43be22af91ac050a7765b4675",
+          "message": "Merge pull request #121 from manozzing/patch-4\n\nPutting parentheses in plume rise equation",
+          "timestamp": "2026-05-29T14:50:47+08:00",
+          "tree_id": "673fc6a4511bcf1b48c20544b9be50d685759d82",
+          "url": "https://github.com/EarthSciML/EnvironmentalTransport.jl/commit/bbd8ffb65d6c91d43be22af91ac050a7765b4675"
+        },
+        "date": 1780038550981,
+        "tool": "julia",
+        "benches": [
+          {
+            "name": "Advection Simulator/in-place/upwind1_stencil/0.3125 x 0.25 (N=126222)",
+            "value": 60793637,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=57557480\nallocs=1767113\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Advection Simulator/in-place/upwind1_stencil/0.625 x 0.5 (N=31719)",
+            "value": 15284270.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=14464104\nallocs=444071\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Advection Simulator/out-of-place/upwind1_stencil/0.3125 x 0.25 (N=126222)",
+            "value": 60771972,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=57557448\nallocs=1767113\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Advection Simulator/out-of-place/upwind1_stencil/0.625 x 0.5 (N=31719)",
+            "value": 15195056.5,
             "unit": "ns",
             "extra": "gctime=0\nmemory=14464072\nallocs=444071\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
           }
