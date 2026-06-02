@@ -58,18 +58,22 @@ function EarthSciMLBase.couple2(blm::BoundaryLayerMixingKCCoupler, g::GEOSFPCoup
     # Surface virtual temperature from already-connected BLM parameters
     Tv_sfc = b.T2M * (1 + 0.61 * b.QV2M)
 
-    # Pressure at mid-level from Ap/Bp hybrid coefficients
-    Pmid = _Pu_blm * Ap(ℓ + 0.5) + Bp(ℓ + 0.5) * b.PS
+    # Pressure at edge `ℓ` from Ap/Bp hybrid coefficients.  Matches GEOSFP's
+    # edge convention: ℓ=1 is the surface (P=PS), so Z_agl_expr is anchored
+    # at zero on the ground.  Tv_sfc is used as the layer-mean stand-in to
+    # keep this SDE-safe (no interpolator sampling at integer levels); the
+    # approximation is most accurate near the boundary layer, which is what
+    # BoundaryLayerMixingKC consumes.
+    P_at_lev = _Pu_blm * Ap(ℓ) + Bp(ℓ) * b.PS
 
-    # Hypsometric height AGL (using surface Tv as approximation for mean Tv)
-    Z_agl_expr = (_Rd_blm * Tv_sfc / _g_blm) * log(b.PS / Pmid)
+    Z_agl_expr = (_Rd_blm * Tv_sfc / _g_blm) * log(b.PS / P_at_lev)
 
     # dZ/dlev via pressure derivative (centered difference on Ap/Bp)
     Δℓ = 0.5
-    P_plus = _Pu_blm * Ap(ℓ + 0.5 + Δℓ) + Bp(ℓ + 0.5 + Δℓ) * b.PS
-    P_minus = _Pu_blm * Ap(ℓ + 0.5 - Δℓ) + Bp(ℓ + 0.5 - Δℓ) * b.PS
+    P_plus = _Pu_blm * Ap(ℓ + Δℓ) + Bp(ℓ + Δℓ) * b.PS
+    P_minus = _Pu_blm * Ap(ℓ - Δℓ) + Bp(ℓ - Δℓ) * b.PS
     dPdlev = (P_plus - P_minus) / (2 * Δℓ)
-    dZdlev_expr = -(_Rd_blm * Tv_sfc / _g_blm) * dPdlev / Pmid
+    dZdlev_expr = -(_Rd_blm * Tv_sfc / _g_blm) * dPdlev / P_at_lev
 
     return ConnectorSystem(
         [
@@ -189,42 +193,50 @@ function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, gfp::GEOSFPCoup
 
     softclamp = (x, lo, hi) -> ifelse(x < lo, lo, ifelse(x > hi, hi, x))
 
-    # Virtual potential temperature θv(ℓ) at hybrid mid-level ℓ
+    # Virtual potential temperature θv(ℓ) evaluated at simulation level ℓ.
+    # ℓ is the edge coordinate of the Ap/Bp tables (ℓ=1 is the surface);
+    # T/QV are sampled at the same ℓ — for non-integer ℓ this is the linear
+    # interpolation across the netCDF layer-center grid.
     θv_at = ℓ -> begin
-        T = T_itp(τ + t, λ, φ, ℓ)                           # [K]     temperature at mid-level ℓ
+        T = T_itp(τ + t, λ, φ, ℓ)                           # [K]     temperature at level ℓ
         qv = QV_itp(τ + t, λ, φ, ℓ)                          # [kg/kg] water-vapor mixing ratio at ℓ
         PS = PS_itp(τ + t, λ, φ)                             # [Pa]    surface pressure
-        P = Punit * Ap(ℓ + 0.5) + Bp(ℓ + 0.5) * PS          # [Pa]    hybrid mid-level pressure
+        P = Punit * Ap(ℓ) + Bp(ℓ) * PS                       # [Pa]    pressure at edge ℓ
         Tv = T * (1 + 0.61 * qv)                               # [K]     virtual temperature
         Tv * ((p0 * Punit) / P)^κ                            # [K]     virtual potential temperature θv
     end
 
-    # Geopotential height above ground Z(ℓ) via hypsometric
+    # Geopotential height above ground Z(ℓ) via a one-layer hypsometric
+    # approximation: Tv̄ ≈ ½(Tv(ℓ) + Tv_sfc) and a single ln(PS/P(ℓ)).  This
+    # is the same approximation Sofiev probes use over the lower troposphere
+    # — accurate near the PBL, degrading aloft.  Anchored at Z(1)=0 by the
+    # edge convention (matches gfp.Z_agl).
     Z_at = ℓ -> begin
-        Tv = T_itp(τ + t, λ, φ, ℓ) * (1 + 0.61 * QV_itp(τ + t, λ, φ, ℓ))   # [K]  virtual temp at mid-level ℓ
+        Tv = T_itp(τ + t, λ, φ, ℓ) * (1 + 0.61 * QV_itp(τ + t, λ, φ, ℓ))   # [K]  virtual temp at level ℓ
         Tv2 = T2M_itp(τ + t, λ, φ) * (1 + 0.61 * QV2M_itp(τ + t, λ, φ))   # [K]  virtual temp at 2 m
-        Tv̄ = 0.5 * (Tv + Tv2)                                               # [K]  layer-mean virtual temperature
+        Tv̄ = 0.5 * (Tv + Tv2)                                               # [K]  surface-to-ℓ mean Tv
         PS = PS_itp(τ + t, λ, φ)                                          # [Pa] surface pressure
-        Pmid = Punit * Ap(ℓ + 0.5) + Bp(ℓ + 0.5) * PS                       # [Pa] hybrid mid-level pressure
-        (Rd * Tv̄ / g) * log(PS / Pmid)                                      # [m]  hypsometric height AGL
+        P = Punit * Ap(ℓ) + Bp(ℓ) * PS                                     # [Pa] pressure at edge ℓ
+        (Rd * Tv̄ / g) * log(PS / P)                                        # [m]  hypsometric height AGL
     end
 
     # Map height H [m] → model level ℓ [-] via the exact GEOS-FP grid
     # inversion: height→pressure is analytic (hypsometric) and pressure→level
     # is the exact piecewise-linear inverse `lev_from_pressure`.  The layer-mean
     # virtual temperature Tv̄ depends weakly on ℓ, so a 2-pass fixed point is
-    # used, seeded from the 2-m virtual temperature.
+    # used, seeded from the 2-m virtual temperature.  Edge convention: ℓ=1 is
+    # the surface, so no half-level shift is applied to the inverted level.
     lev_from_height = H -> begin
         PS = PS_itp(τ + t, λ, φ)                                           # [Pa]
         Tv2 = T2M_itp(τ + t, λ, φ) * (1 + 0.61 * QV2M_itp(τ + t, λ, φ))     # [K] 2-m virtual temp
         # pass 1 — seed Tv̄ with the 2-m virtual temperature
         ℓ1 = softclamp(
-            lev_from_pressure(PS * exp(-g * H / (Rd * Tv2)), PS) - 0.5, LMIN, LMAX)
+            lev_from_pressure(PS * exp(-g * H / (Rd * Tv2)), PS), LMIN, LMAX)
         # pass 2 — refine Tv̄ as the surface-to-ℓ mean virtual temperature
         Tvℓ = T_itp(τ + t, λ, φ, ℓ1) * (1 + 0.61 * QV_itp(τ + t, λ, φ, ℓ1)) # [K]
         Tv̄ = 0.5 * (Tvℓ + Tv2)                                             # [K]
         softclamp(
-            lev_from_pressure(PS * exp(-g * H / (Rd * Tv̄)), PS) - 0.5, LMIN, LMAX)
+            lev_from_pressure(PS * exp(-g * H / (Rd * Tv̄)), PS), LMIN, LMAX)
     end
 
     return ConnectorSystem(
@@ -279,8 +291,10 @@ function EarthSciMLBase.couple2(gd::GaussianPGBCoupler, g::GEOSFPCoupler)
     Tv2 = T2M_itp(τ + t, λ, φ) * (1 + 0.61 * QV2M_itp(τ + t, λ, φ))
     Tv̄ = 0.5 * (Tv + Tv2)
     PS_v = PS_itp(τ + t, λ, φ)
-    Pmid = _Pu_pgb * Ap(ℓ + 0.5) + Bp(ℓ + 0.5) * PS_v
-    Z_agl_expr = (_Rd_pgb * Tv̄ / _g_pgb) * log(PS_v / Pmid)
+    # Edge convention (matches gfp.Z_agl): pressure at edge ℓ, ℓ=1 is the
+    # surface so Z_agl(1)=0.  Tv̄ kept as the 2-point average.
+    P_at_lev = _Pu_pgb * Ap(ℓ) + Bp(ℓ) * PS_v
+    Z_agl_expr = (_Rd_pgb * Tv̄ / _g_pgb) * log(PS_v / P_at_lev)
 
     return ConnectorSystem(
         [

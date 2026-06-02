@@ -45,7 +45,10 @@
         sol = solve(prob, Tsit5())
 
         C_gl_val = sol[sys.GaussianPGB₊C_gl][end]
-        C_gl_want = 6.49e-11
+        # Edge-indexed Z_agl (EarthSciData PR #208): a puff at lev=1.4 now
+        # sits ~50 m AGL (40% into the first layer) instead of the previous
+        # ~125 m midpoint interpretation, so surface-level C_gl is higher.
+        C_gl_want = 8.209241335366349e-11
 
         @test isapprox(C_gl_val, C_gl_want; rtol = 0.02)
     end

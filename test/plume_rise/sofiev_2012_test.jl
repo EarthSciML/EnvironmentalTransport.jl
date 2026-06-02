@@ -39,7 +39,11 @@
     prob = remake(prob, p = sol.prob.p)
     sol = solve(prob)
     lev_0 = sol[sys.Puff₊lev][1]
-    @test lev_0 ≈ 4.521111658242667
+    # Edge-indexed lev convention (EarthSciData PR #208): ℓ=1 is the surface
+    # in both gfp.Z_agl and the local Z_at/lev_from_height helpers, so the
+    # plume-top lev sits ~0.5 higher than under the previous midpoint-
+    # indexed convention (was 4.521).
+    @test lev_0 ≈ 5.09721934285556
 
     @test sol.retcode == SciMLBase.ReturnCode.Success
 end

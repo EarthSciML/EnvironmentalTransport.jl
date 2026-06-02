@@ -32,8 +32,8 @@
         [Symbol("Puff₊lon(t)"), Symbol("Puff₊lat(t)"), Symbol("Puff₊lev(t)")],
         Symbol.(unknowns(sys))
     )
-    @test length(parameters(sys)) == 706
-    @test length(observed(sys)) == 91
+    @test length(parameters(sys)) == 707
+    @test length(observed(sys)) == 89
 
     tspan = EarthSciMLBase.get_tspan(di)
     prob = ODEProblem(sys, [], tspan)
