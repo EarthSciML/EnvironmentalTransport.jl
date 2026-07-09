@@ -39,7 +39,7 @@ function EarthSciMLBase.couple2(blm::BoundaryLayerMixingKCCoupler, g::GEOSFPCoup
     b, m = blm.sys, g.sys
     b = param_to_var(
         b, :PBLH, :USTAR, :HFLUX, :EFLUX, :PS, :T2M,
-        :QV2M, :z_agl, :z2lev, :x_trans, :y_trans
+        :QV2M, :z2lev, :x_trans, :y_trans
     )
 
     # Compute Z_agl and dZ/dlev via hypsometric equation using connected BLM
@@ -94,6 +94,40 @@ function EarthSciMLBase.couple2(blm::BoundaryLayerMixingKCCoupler, g::GEOSFPCoup
     )
 end
 
+function EarthSciMLBase.couple2(
+    blm::BoundaryLayerMixingKCCoupler,
+    w::WRFCoupler,
+)
+    b, m = blm.sys, w.sys
+    b = param_to_var(b, :PBLH, :USTAR, :HFLUX, :EFLUX, :PS, :T2M,
+    :QV2M, :z2lev, :x_trans, :y_trans)
+
+    # Convert WRF 2-m water-vapor mixing ratio to specific humidity.
+    QV2M_expr = m.Q2 / (1 + m.Q2)
+    
+    # WRF geometric height above ground and meters-per-level.
+    Z_agl_expr = m.z - m.HGT
+    dZdlev_expr = m.δzδlev
+
+    return ConnectorSystem(
+        [
+            b.PBLH ~ m.PBLH,
+            b.USTAR ~ m.UST,
+            b.HFLUX ~ m.HFX,
+            b.EFLUX ~ m.LH,
+            b.PS ~ m.PSFC,
+            b.T2M ~ m.T2,
+            b.QV2M ~ QV2M_expr,
+            b.x_trans ~ 1 / m.δxδlon,
+            b.y_trans ~ 1 / m.δyδlat,
+            b.z_agl ~ Z_agl_expr,
+            b.z2lev ~ 1 / dZdlev_expr,
+        ],
+        b,
+        m,
+    )
+end
+
 function EarthSciMLBase.couple2(p::PuffCoupler, b::BoundaryLayerMixingKCCoupler)
     sys_p = p.sys
     sys_b = b.sys
@@ -137,6 +171,9 @@ function EarthSciMLBase.get_needed_vars(
                 windvars, sys.A3dyn₊U, sys.A3dyn₊V, sys.A3dyn₊OMEGA,
                 sys.δxδlon, sys.δyδlat, sys.δPδlev
             )
+        elseif EarthSciMLBase.get_coupletype(sys) == WRFCoupler
+            found += 1
+            push!(windvars, sys.U, sys.V, sys.W, sys.δxδlon, sys.δyδlat, sys.δzδlev)
         end
     end
     if found == 0
@@ -155,15 +192,25 @@ function EarthSciMLBase.get_needed_vars(
     for sys in csys.systems
         if EarthSciMLBase.get_coupletype(sys) == GEOSFPCoupler
             found += 1
-            # need PBLH: PBL height (m) and area transform factors
             push!(pblvars, sys.A1₊PBLH, sys.δxδlon, sys.δyδlat)
+        elseif EarthSciMLBase.get_coupletype(sys) == WRFCoupler
+            found += 1
+            push!(pblvars, sys.PBLH, sys.δxδlon, sys.δyδlat)
         end
     end
+
     if found == 0
-        error("Could not find a source of PBL data in the coupled system. Valid sources are currently {EarthSciData.GEOSFP}.")
+        error(
+            "Could not find a source of PBL data in the coupled system. " *
+            "Valid sources are currently {EarthSciData.GEOSFP, EarthSciData.WRF}.",
+        )
     elseif found > 1
-        error("Found multiple sources of PBL data in the coupled system. Valid sources are currently {EarthSciData.GEOSFP}")
+        error(
+            "Found multiple sources of PBL data in the coupled system. " *
+            "Valid sources are currently {EarthSciData.GEOSFP, EarthSciData.WRF}.",
+        )
     end
+
     return vcat(pblvars)
 end
 

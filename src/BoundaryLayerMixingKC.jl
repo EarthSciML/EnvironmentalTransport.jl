@@ -65,7 +65,6 @@ function BoundaryLayerMixingKC(; name = :BoundaryLayerMixingKC)
     @parameters y_trans = 0.01 [
         unit = u"1/m", description = "lat radians per meter (1/δyδlat)",
     ]
-    @parameters z_agl = 50.0 [unit = u"m", description = "Height above ground level"]
     @parameters lev_gnd = 1.0 [unit = u"1", description = "Level index of the ground surface"]
     @parameters lev_top = 72.0 [unit = u"1", description = "Top level index of the domain"]
     @parameters w_damp = 1.0 [
@@ -114,6 +113,7 @@ function BoundaryLayerMixingKC(; name = :BoundaryLayerMixingKC)
     @variables lon(t) [unit = u"1", description = "Longitude coordinate"]
     @variables lat(t) [unit = u"1", description = "Latitude coordinate"]
     @variables lev(t) [unit = u"1", description = "Height (level) coordinate"]
+    @variables z_agl(t) [unit = u"m", description = "Height above ground level"]
 
     @brownians Bw #Bx By
 
@@ -244,11 +244,12 @@ function BoundaryLayerMixingKC(; name = :BoundaryLayerMixingKC)
         [
             zi, sigmaw, σu, σv, TL_v, wprime, uprime_x, uprime_y, Tv2m, rho,
             wth, wq, wthv, wthv_eff, Lmo, wstar, wprime_ref, lon, lat, lev,
+            z_agl,
         ],
         [
             κ, one, offset, m0, m1, ms0, kms0, kms1e_8, w_damp, S, PBLH, USTAR,
             HFLUX, EFLUX, PS, T2M, QV2M, z2lev, TL_h, TL_v_min, TL_v_max, Rd, cp,
-            Lv, g, R_inv, KMIX0, TKEMIN, x_trans, y_trans, z_agl, lev_gnd, lev_top,
+            Lv, g, R_inv, KMIX0, TKEMIN, x_trans, y_trans, lev_gnd, lev_top,
         ];
         name = name, metadata = Dict(CoupleType => BoundaryLayerMixingKCCoupler)
     )
