@@ -171,6 +171,11 @@ The output will be time derivative of the central index (i.e. index 2)
 of the ϕ vector (i.e. dϕ/dt).
 
 `Δt` and `p` are not used, but are function arguments for consistency with other operators.
+
+Stability: as an explicit scheme this stencil is monotone only for an inflow Courant
+number `|U|·Δt/Δz ≤ 1` (see `inflow_courant`). The stencil itself does not enforce
+this; `advection_op` keeps the vertical direction within that limit by sub-cycling
+the column wherever the vertical Courant number exceeds one.
 """
 function upwind1_stencil(ϕ, U, Δt, Δz; p = nothing)
     sz = sign(Δz) # Handle negative grid spacing
