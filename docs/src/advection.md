@@ -90,6 +90,11 @@ Next, we create an [`AdvectionOperator`](@ref) to perform advection.
 We need to specify a time step (300 s in this case), as stencil algorithm to do the advection (current options are [`upwind1_stencil`](@ref)).
 We also specify zero gradient boundary conditions.
 
+The time step must be the fixed step of the outer time integrator (`dt = 300` in the `solve` call below).
+The explicit upwind stencil is only monotone where the Courant number `|v|·Δt/Δx` is at most one; on a hybrid pressure grid the vertical Courant number can exceed one over steep terrain (thin layers, large `OMEGA`), and an explicit step there overshoots and, together with a positivity limiter, can create mass.
+The operator therefore checks the vertical Courant number of every column and, where it exceeds one, advances that column's vertical advection in `ceil(Courant)` sub-steps (up to `max_subcycles`, default 100) so that the update stays monotone; see [`EnvironmentalTransport.advection_op`](@ref) for the details.
+If the time step is not finite (e.g. `NaN`) this sub-cycling is disabled.
+
 Then, we couple the advection operator to the rest of the system.
 
 ```@example adv
