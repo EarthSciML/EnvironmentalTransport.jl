@@ -130,7 +130,10 @@ Examples:
   - `SpeciesConstantBC(Dict("O3" => 40.0, "NO2" => 10.0), 0.0)` sets multiple species
 
 Note: When using species names, they will be resolved to indices when the boundary
-condition is applied to a system with known species variables.
+condition is applied to a system with known species variables. A name matches a
+variable exactly, either by its bare species name with any namespace and `(t)`
+stripped (`"O3"` matches `GEOSChemGasPhase₊O3(t)` but not `BrNO3(t)`) or by its
+full string (`"SuperFast₊O3(t)"`).
 """
 struct SpeciesConstantBC
     values::Dict{Union{String, Int}, AbstractFloat}
@@ -159,6 +162,16 @@ end
 """
 $(SIGNATURES)
 
+Bare species name of a (possibly namespaced) unknown, e.g. `SuperFast₊O3(t)` -> "O3".
+"""
+function _bc_species_name(var)
+    s = String(last(split(string(var), "₊")))
+    return endswith(s, "(t)") ? String(chop(s; tail = 3)) : s
+end
+
+"""
+$(SIGNATURES)
+
 Helper function to resolve species names to indices and create a SpeciesConstantBCArray.
 This is used by AdvectionOperator when species information is available.
 """
@@ -170,8 +183,12 @@ function resolve_species_bc(bc::SpeciesConstantBC, x, species_vars)
             # Already an index
             resolved_values[key] = eltype(x)(value)
         elseif isa(key, String)
-            # Need to find the index for this species name
-            species_idx = findfirst(var -> contains(string(var), key), species_vars)
+            # Need to find the index for this species name: exact match on the
+            # bare species name (namespace and `(t)` stripped) or on the full
+            # variable string. A substring match would resolve "O3" to BrNO3.
+            species_idx = findfirst(
+                var -> _bc_species_name(var) == key || string(var) == key, species_vars
+            )
             if species_idx !== nothing
                 resolved_values[species_idx] = eltype(x)(value)
             else
