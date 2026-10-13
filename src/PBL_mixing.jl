@@ -164,14 +164,10 @@ end
     pbl_obs_function(mtk_sys, coord_args, v, T)
 
 Create an observed function for extracting data from the ModelingToolkit system.
+See [`obs_function`](@ref).
 """
 function pbl_obs_function(mtk_sys, coord_args, v, T)
-    obs_f = EarthSciMLBase.build_coord_observed_function(
-        mtk_sys, coord_args, [v];
-        eval_module = @__MODULE__
-    )
-    obscache = zeros(T, length(unknowns(mtk_sys)))
-    return (p, t, x1, x2, x3) -> only(obs_f(obscache, p, t, x1, x2, x3))
+    return obs_function(mtk_sys, coord_args, v, T)
 end
 
 """
