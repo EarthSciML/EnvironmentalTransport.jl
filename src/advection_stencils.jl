@@ -171,6 +171,21 @@ The output will be time derivative of the central index (i.e. index 2)
 of the ϕ vector (i.e. dϕ/dt).
 
 `Δt` and `p` are not used, but are function arguments for consistency with other operators.
+
+ADVECTIVE (non-conservative) form. Transported quantities here are MIXING RATIOS,
+and the face winds `U` are independently interpolated GEOS-FP fields that do NOT
+satisfy discrete continuity (∂u/∂x+∂v/∂y+∂ω/∂p ≠ 0), especially over terrain
+where the horizontal differences are taken along sloping hybrid-σ level surfaces.
+The pure conservative flux form `(F_L−F_R)/Δ` therefore produces a SPURIOUS source
+`dϕ/dt = −ϕ·div(u)` for a uniform field — a chronic, terrain-locked, surface-peaked
+error that (via the positivity limiter) rectifies into non-physical O₃ runaway
+(observed: ~951 ppb over the Sierra Nevada / Rockies, identical across chemistry
+mechanisms). We subtract the divergence term `+ϕ[2]·(U[2]−U[1])/Δz` to recover the
+advective form `−u·∂ϕ/∂x`, which leaves a uniform mixing ratio EXACTLY unchanged.
+⚠ This trades strict mass conservation for stability/correctness of the mixing-ratio
+field; the fully correct fix is mass-coupled flux form (advect ϕ·Δp/g with a vertical
+mass flux re-diagnosed from horizontal-flux continuity, as GEOS-Chem/TPCORE does).
+See maintain/PR_DRAFTS/EnvironmentalTransport-31-advection-mass-consistency.md.
 """
 function upwind1_stencil(ϕ, U, Δt, Δz; p = nothing)
     sz = sign(Δz) # Handle negative grid spacing
@@ -180,7 +195,8 @@ function upwind1_stencil(ϕ, U, Δt, Δz; p = nothing)
     ur₋ = sz * min(sz * U[2], zero(eltype(U)))
     flux₊ = (ϕ[1] * ul₊ - ϕ[2] * ur₊) / Δz
     flux₋ = (ϕ[2] * ul₋ - ϕ[3] * ur₋) / Δz
-    return flux₊ + flux₋
+    div_correction = ϕ[2] * (U[2] - U[1]) / Δz   # flux → advective: kill −ϕ·div(u)
+    return flux₊ + flux₋ + div_correction
 end
 
 """

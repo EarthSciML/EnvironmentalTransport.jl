@@ -113,7 +113,13 @@ function vf_z(args1, args2)
     data_f, grid1, grid2, grid3, Δ = args2
     x1 = grid1[i]
     x2 = grid2[j]
-    x3 = k > 1 ? grid3[min(k, length(grid3))] - Δ / 2 : grid3[k]
+    # Bottom face of cell k sits at lev = grid3[k] − Δ/2 for ALL k. The old
+    # `k > 1 ? … : grid3[k]` special-case sampled the cell CENTRE (grid3[1]=1.0)
+    # for the surface layer, i.e. OMEGA(lev 1.5)/2 ≠ 0 — a spurious mass flux
+    # THROUGH the ground. The regular formula gives lev 0.5, which is below the
+    # OMEGA source grid and is stored as exactly 0 by EarthSciData's
+    # `extrapolate_type = 0.0` guard: the intended no-flux-through-ground BC.
+    x3 = grid3[min(k, length(grid3))] - Δ / 2
     return data_f(p, t, x1, x2, x3) # Staggered grid
 end
 tuplefunc(vf) = (i, j, k, p, t) -> vf((i, j, k, p, t))
