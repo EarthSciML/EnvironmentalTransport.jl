@@ -172,10 +172,6 @@ of the ϕ vector (i.e. dϕ/dt).
 
 `Δt` and `p` are not used, but are function arguments for consistency with other operators.
 
-Stability: as an explicit scheme this stencil is monotone only for an inflow Courant
-number `|U|·Δt/Δz ≤ 1` (see `inflow_courant`). The stencil itself does not enforce
-this; `advection_op` keeps the vertical direction within that limit by sub-cycling
-the column wherever the vertical Courant number exceeds one.
 """
 function upwind1_stencil(ϕ, U, Δt, Δz; p = nothing)
     sz = sign(Δz) # Handle negative grid spacing
@@ -185,7 +181,8 @@ function upwind1_stencil(ϕ, U, Δt, Δz; p = nothing)
     ur₋ = sz * min(sz * U[2], zero(eltype(U)))
     flux₊ = (ϕ[1] * ul₊ - ϕ[2] * ur₊) / Δz
     flux₋ = (ϕ[2] * ul₋ - ϕ[3] * ur₋) / Δz
-    return flux₊ + flux₋
+    div_correction = ϕ[2] * (U[2] - U[1]) / Δz   # flux → advective: kill −ϕ·div(u)
+    return flux₊ + flux₋ + div_correction
 end
 
 """
