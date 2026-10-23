@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780406115626,
+  "lastUpdate": 1792761352424,
   "repoUrl": "https://github.com/EarthSciML/EnvironmentalTransport.jl",
   "entries": {
     "Julia benchmark result": [
@@ -4848,6 +4848,54 @@ window.BENCHMARK_DATA = {
             "value": 17541980,
             "unit": "ns",
             "extra": "gctime=0\nmemory=14464072\nallocs=444071\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "ctessum@gmail.com",
+            "name": "Christopher Tessum",
+            "username": "ctessum"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "dac527f2a60b73abe751f900609418b9261ab88d",
+          "message": "Merge pull request #130 from EarthSciML/fix/ci-failures\n\nFix CI: advective-form tests, Runic formatting, benchmark and docs",
+          "timestamp": "2026-10-23T07:54:15-05:00",
+          "tree_id": "1b2b00f50d4628e2f8f111b3765064d95649b369",
+          "url": "https://github.com/EarthSciML/EnvironmentalTransport.jl/commit/dac527f2a60b73abe751f900609418b9261ab88d"
+        },
+        "date": 1792761350458,
+        "tool": "julia",
+        "benches": [
+          {
+            "name": "Advection Simulator/in-place/upwind1_stencil/0.3125 x 0.25 (N=126222)",
+            "value": 60027452.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=68664976\nallocs=1851260\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Advection Simulator/in-place/upwind1_stencil/0.625 x 0.5 (N=31719)",
+            "value": 14944387,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=17255344\nallocs=465216\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Advection Simulator/out-of-place/upwind1_stencil/0.3125 x 0.25 (N=126222)",
+            "value": 61131983.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=74050592\nallocs=1935412\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Advection Simulator/out-of-place/upwind1_stencil/0.625 x 0.5 (N=31719)",
+            "value": 15202548,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=18608800\nallocs=486366\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
           }
         ]
       }
