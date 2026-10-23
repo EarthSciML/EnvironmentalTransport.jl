@@ -180,10 +180,10 @@ function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, gfp::GEOSFPCoup
     λ = ParentScope(gfp.lon)                  # [rad]  long
     φ = ParentScope(gfp.lat)                  # [rad]  lat
 
-    T_itp    = interp_callable(gfp, :I3₊T;    parent_scope = true)   # [K]
-    QV_itp   = interp_callable(gfp, :I3₊QV;   parent_scope = true)   # [kg/kg]
-    PS_itp   = interp_callable(gfp, :I3₊PS;   parent_scope = true)   # [Pa]
-    T2M_itp  = interp_callable(gfp, :A1₊T2M;  parent_scope = true)   # [K]
+    T_itp = interp_callable(gfp, :I3₊T; parent_scope = true)   # [K]
+    QV_itp = interp_callable(gfp, :I3₊QV; parent_scope = true)   # [kg/kg]
+    PS_itp = interp_callable(gfp, :I3₊PS; parent_scope = true)   # [Pa]
+    T2M_itp = interp_callable(gfp, :A1₊T2M; parent_scope = true)   # [K]
     QV2M_itp = interp_callable(gfp, :A1₊QV2M; parent_scope = true)   # [kg/kg]
     PBLH_itp = interp_callable(gfp, :A1₊PBLH; parent_scope = true)   # [m]
 
@@ -231,12 +231,14 @@ function EarthSciMLBase.couple2(s12::Sofiev2012PlumeRiseCoupler, gfp::GEOSFPCoup
         Tv2 = T2M_itp(τ + t, λ, φ) * (1 + 0.61 * QV2M_itp(τ + t, λ, φ))     # [K] 2-m virtual temp
         # pass 1 — seed Tv̄ with the 2-m virtual temperature
         ℓ1 = softclamp(
-            lev_from_pressure(PS * exp(-g * H / (Rd * Tv2)), PS), LMIN, LMAX)
+            lev_from_pressure(PS * exp(-g * H / (Rd * Tv2)), PS), LMIN, LMAX
+        )
         # pass 2 — refine Tv̄ as the surface-to-ℓ mean virtual temperature
         Tvℓ = T_itp(τ + t, λ, φ, ℓ1) * (1 + 0.61 * QV_itp(τ + t, λ, φ, ℓ1)) # [K]
         Tv̄ = 0.5 * (Tvℓ + Tv2)                                             # [K]
         softclamp(
-            lev_from_pressure(PS * exp(-g * H / (Rd * Tv̄)), PS), LMIN, LMAX)
+            lev_from_pressure(PS * exp(-g * H / (Rd * Tv̄)), PS), LMIN, LMAX
+        )
     end
 
     return ConnectorSystem(
@@ -282,10 +284,10 @@ function EarthSciMLBase.couple2(gd::GaussianPGBCoupler, g::GEOSFPCoupler)
     λ = ParentScope(m.lon)
     φ = ParentScope(m.lat)
     ℓ = ParentScope(m.lev)
-    T_itp    = interp_callable(m, :I3₊T;    parent_scope = true)
-    QV_itp   = interp_callable(m, :I3₊QV;   parent_scope = true)
-    PS_itp   = interp_callable(m, :I3₊PS;   parent_scope = true)
-    T2M_itp  = interp_callable(m, :A1₊T2M;  parent_scope = true)
+    T_itp = interp_callable(m, :I3₊T; parent_scope = true)
+    QV_itp = interp_callable(m, :I3₊QV; parent_scope = true)
+    PS_itp = interp_callable(m, :I3₊PS; parent_scope = true)
+    T2M_itp = interp_callable(m, :A1₊T2M; parent_scope = true)
     QV2M_itp = interp_callable(m, :A1₊QV2M; parent_scope = true)
     Tv = T_itp(τ + t, λ, φ, ℓ) * (1 + 0.61 * QV_itp(τ + t, λ, φ, ℓ))
     Tv2 = T2M_itp(τ + t, λ, φ) * (1 + 0.61 * QV2M_itp(τ + t, λ, φ))

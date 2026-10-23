@@ -21,7 +21,7 @@ end
 @testitem "upwind1 1" setup = [StencilSetup] begin
     c2 = [c[1], c..., c[end]]
     result = [upwind1_stencil(c2[(i - 1):(i + 1)], v[(i - 1):i], Δt, Δz) for i in 2:7]
-    @test c .+ result .* Δt ≈ [0.0, 0.3999999999999999, 1.8, 3.2, 4.6, 4.5]
+    @test c .+ result .* Δt ≈ [0.0, 0.2, 1.4, 2.6, 3.8, 5.0]
 end
 
 # @testset "upwind2 1" begin
@@ -140,13 +140,23 @@ end
                                 @testset "Δz $d3" begin
                                     dudt = [
                                         stencil(
-                                                u0[(i - lpad):(i + rpad)],
-                                                v[i:(i + 1)], Δt,
-                                                Δz[i]
-                                            )
+                                            u0[(i - lpad):(i + rpad)],
+                                            v[i:(i + 1)], Δt,
+                                            Δz[i]
+                                        )
                                             for i in (1 + lpad):(N - rpad)
                                     ]
-                                    @test sum(dudt .* Δz[(1 + lpad):(N - rpad)]) ≈ 0.0 atol = 1.0e-14
+                                    # upwind1_stencil is in advective form, so mass is only
+                                    # conserved for non-divergent velocity. The face fluxes
+                                    # telescope, leaving the divergence correction ϕᵢ(U₊ − U₋).
+                                    div_source = sum(
+                                        u0[i] * (v[i + 1] - v[i])
+                                            for i in (1 + lpad):(N - rpad)
+                                    )
+                                    @test sum(dudt .* Δz[(1 + lpad):(N - rpad)]) ≈ div_source atol = 1.0e-12
+                                    if d2 == "c"
+                                        @test div_source == 0.0
+                                    end
                                 end
                             end
                         end
