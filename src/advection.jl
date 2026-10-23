@@ -199,8 +199,10 @@ function advection_op(
         end
         return w
     end
-    @inline winds_at(w, k) = @inbounds (((w[1, k], w[2, k]), (w[3, k], w[4, k]), (w[5, k], w[6, k])),
-        (w[7, k], w[8, k], w[9, k]))
+    @inline winds_at(w, k) = @inbounds (
+        ((w[1, k], w[2, k]), (w[3, k], w[4, k]), (w[5, k], w[6, k])),
+        (w[7, k], w[8, k], w[9, k]),
+    )
 
     # Fill `dcol[s, k]` with the tendency of column (i, j) of the BC-wrapped array `u`.
     function column_tendency!(dcol, u, p, t, i, j)
@@ -209,14 +211,16 @@ function advection_op(
         if subcycle
             n = vertical_subcycles(
                 (inflow_courant((w[5, k], w[6, k]), w[9, k], Δt) for k in 1:nz),
-                max_subcycles)
+                max_subcycles
+            )
         end
         if n == 1
             @inbounds for k in 1:nz
                 vs, Δs = winds_at(w, k)
                 for s in 1:nspec
                     dcol[s, k] = advection_kernel_4d(
-                        u, stencil, vs, Δs, Δt, CartesianIndex(s, i, j, k), p)
+                        u, stencil, vs, Δs, Δt, CartesianIndex(s, i, j, k), p
+                    )
                 end
             end
         else
@@ -236,7 +240,8 @@ function advection_op(
                 for k in 1:nz
                     vs, Δs = winds_at(w, k)
                     colp[k + lpad] = u[s, i, j, k] + Δt * advection_kernel_4d_dirs(
-                        u, stencil, vs, Δs, Δt, CartesianIndex(s, i, j, k), (1, 2), p)
+                        u, stencil, vs, Δs, Δt, CartesianIndex(s, i, j, k), (1, 2), p
+                    )
                 end
                 subcycle_column!(colp, tmp, stencil, vzs, Δzs, Δt, n, nz, lpad, rpad, p)
                 for k in 1:nz
@@ -253,7 +258,7 @@ function advection_op(
             i, j = Tuple(IIs)
             dcol = Matrix{T}(undef, nspec, nz)
             column_tendency!(dcol, u, p, t, i, j)
-            dcol
+            return dcol
         end
         dcols = EarthSciMLBase.map_closure_to_range(kernelII, IIcol, alg)
         du = Array{T}(undef, sz...)
@@ -269,7 +274,7 @@ function advection_op(
         function kernelII(IIs)
             i, j = Tuple(IIs)
             column_tendency!(view(du, :, i, j, :), u, p, t, i, j)
-            nothing
+            return nothing
         end
         EarthSciMLBase.map_closure_to_range(kernelII, IIcol, alg)
         return nothing
@@ -452,12 +457,14 @@ function EarthSciMLBase.get_odefunction(
 
     if !isfinite(op.Δt)
         @warn "AdvectionOperator: Δt = $(op.Δt) is not finite, so vertical " *
-              "Courant-number sub-cycling is disabled; pass the outer integrator's " *
-              "fixed time step to keep the advection monotone where |OMEGA|·Δt exceeds " *
-              "the layer thickness." maxlog = 1
+            "Courant-number sub-cycling is disabled; pass the outer integrator's " *
+            "fixed time step to keep the advection monotone where |OMEGA|·Δt exceeds " *
+            "the layer thickness." maxlog = 1
     end
-    return advection_op(u0, op.stencil, v_fs, Δ_fs, op.Δt, bc_type, alg; p = p,
-        max_subcycles = op.max_subcycles)
+    return advection_op(
+        u0, op.stencil, v_fs, Δ_fs, op.Δt, bc_type, alg; p = p,
+        max_subcycles = op.max_subcycles
+    )
 end
 
 # Actual implementation is in EarthSciDataExt.jl.

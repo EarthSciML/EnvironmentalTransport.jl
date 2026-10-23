@@ -35,7 +35,7 @@ end
     @test vertical_subcycles([0.2, 1.0001, 0.5], 100) == 2
     @test vertical_subcycles([2.4], 100) == 3
     @test vertical_subcycles([250.0], 100) == 100
-    @test vertical_subcycles([1e300], 100) == 100
+    @test vertical_subcycles([1.0e300], 100) == 100
     @test vertical_subcycles([NaN, 3.0], 100) == 1
     @test vertical_subcycles(Float64[], 100) == 1
     @test vertical_subcycles((c for c in (0.5, 1.5)), 100) == 2
@@ -62,7 +62,7 @@ end
             for k in 1:nz
                 kk = k + lpad
                 new[kk] = r[kk] + Δt / n *
-                                  upwind1_stencil(r[(kk - lpad):(kk + rpad)], vzs[k], Δt / n, Δzs[k])
+                    upwind1_stencil(r[(kk - lpad):(kk + rpad)], vzs[k], Δt / n, Δzs[k])
             end
             r = new
         end
@@ -77,8 +77,8 @@ end
     @test n_u == 9
     colu = vcat(fill(ϕ0[1], lpad), copy(ϕ0), fill(ϕ0[end], rpad))
     subcycle_column!(colu, zeros(nz), upwind1_stencil, vzs_u, Δzs, Δt, n_u, nz, lpad, rpad, nothing)
-    @test minimum(colu) >= minimum(ϕ0) - 1e-12
-    @test maximum(colu) <= maximum(ϕ0) + 1e-12
+    @test minimum(colu) >= minimum(ϕ0) - 1.0e-12
+    @test maximum(colu) <= maximum(ϕ0) + 1.0e-12
 end
 
 @testitem "advection op: unchanged when the vertical Courant number is at most one" setup = [SubcycleSetup] begin
@@ -118,8 +118,8 @@ end
     @test minimum(plain) < lo || maximum(plain) > hi
     # … the sub-cycled tendency does not.
     sub = c[:] .+ Δt .* op_dt(c[:], NullParameters(), 0.0)
-    @test minimum(sub) >= lo - 1e-9
-    @test maximum(sub) <= hi + 1e-9
+    @test minimum(sub) >= lo - 1.0e-9
+    @test maximum(sub) <= hi + 1.0e-9
     @test !(sub ≈ c[:])                               # and it does advect
     # in-place agrees with out-of-place
     d = similar(sub)
@@ -129,8 +129,8 @@ end
     # A uniform field (equal to the boundary value) stays uniform to round-off,
     # sub-cycled or not.
     u = fill(50.0, size(c))
-    @test maximum(abs, op_dt(u[:], NullParameters(), 0.0)) < 1e-12
-    @test maximum(abs, op_nan(u[:], NullParameters(), 0.0)) < 1e-12
+    @test maximum(abs, op_dt(u[:], NullParameters(), 0.0)) < 1.0e-12
+    @test maximum(abs, op_nan(u[:], NullParameters(), 0.0)) < 1.0e-12
 
     # Time integration with SSPRK22 and a positivity limiter (the production
     # setup) while air with a different mixing ratio keeps subsiding in from the
@@ -138,13 +138,15 @@ end
     # sub-cycled one stays inside [lo, hi] and fills the column with the inflow value.
     limiter!(u, integrator, p, t) = (u .= max.(u, 0.0); nothing)
     tspan = (0.0, 48 * Δt)
-    run(op) = solve(ODEProblem(op, c[:], tspan), SSPRK22(limiter!, limiter!); dt = Δt,
-        save_everystep = false, adaptive = false)
+    run(op) = solve(
+        ODEProblem(op, c[:], tspan), SSPRK22(limiter!, limiter!); dt = Δt,
+        save_everystep = false, adaptive = false
+    )
     sol_plain = run(op_nan)
     sol_sub = run(op_dt)
     @test maximum(sol_plain.u[end]) > 10 * hi                  # the bug
-    @test maximum(sol_sub.u[end]) <= hi + 1e-9                 # the fix
-    @test minimum(sol_sub.u[end]) >= lo - 1e-9
+    @test maximum(sol_sub.u[end]) <= hi + 1.0e-9                 # the fix
+    @test minimum(sol_sub.u[end]) >= lo - 1.0e-9
     @test sol_sub.u[end][end] > 45                             # top of the column ≈ inflow value
 end
 
@@ -167,14 +169,16 @@ end
     for s in 1:nspec
         lo = min(minimum(c[s, :, :, :]), bcvals[s])
         hi = max(maximum(c[s, :, :, :]), bcvals[s])
-        @test minimum(unew[s, :, :, :]) >= lo - 1e-9
-        @test maximum(unew[s, :, :, :]) <= hi + 1e-9
+        @test minimum(unew[s, :, :, :]) >= lo - 1.0e-9
+        @test maximum(unew[s, :, :, :]) <= hi + 1.0e-9
     end
     # the plain tendency at this Courant number does NOT respect the bounds
     op_nan = advection_op(c, upwind1_stencil, v_fs, Δ_fs, NaN, bc, MapBroadcast())
     uplain = reshape(c[:] .+ Δt .* op_nan(c[:], NullParameters(), 0.0), size(c))
-    @test any(s -> minimum(uplain[s, :, :, :]) < min(minimum(c[s, :, :, :]), bcvals[s]) - 1e-9 ||
-                   maximum(uplain[s, :, :, :]) > max(maximum(c[s, :, :, :]), bcvals[s]) + 1e-9, 1:nspec)
+    @test any(
+        s -> minimum(uplain[s, :, :, :]) < min(minimum(c[s, :, :, :]), bcvals[s]) - 1.0e-9 ||
+            maximum(uplain[s, :, :, :]) > max(maximum(c[s, :, :, :]), bcvals[s]) + 1.0e-9, 1:nspec
+    )
     # in-place path gives the same answer
     d = zeros(length(c))
     op(d, c[:], NullParameters(), 0.0)
