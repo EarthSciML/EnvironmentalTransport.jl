@@ -172,6 +172,20 @@ of the ϕ vector (i.e. dϕ/dt).
 
 `Δt` and `p` are not used, but are function arguments for consistency with other operators.
 
+Stability: as an explicit scheme this stencil is monotone only for an inflow Courant
+number `|U|·Δt/Δz ≤ 1` (see `inflow_courant`). The stencil itself does not enforce
+this; `advection_op` keeps the vertical direction within that limit by sub-cycling
+the column wherever the vertical Courant number exceeds one.
+
+Advective (non-conservative) form: the transported quantities are mixing ratios, and
+the face winds `U` are independently interpolated GEOS-FP fields that do not satisfy
+discrete continuity (∂u/∂x + ∂v/∂y + ∂ω/∂p ≠ 0), especially over terrain, where the
+horizontal differences are taken along sloping hybrid-pressure level surfaces. The
+pure flux form `(F_L − F_R)/Δz` therefore produces a spurious tendency
+`dϕ/dt = −ϕ·div(u)` for a uniform field: a chronic, terrain-locked, surface-peaked
+error that a positivity limiter rectifies into non-physical growth. Adding
+`ϕ[2]·(U[2] − U[1])/Δz` cancels that term and recovers `−u·∂ϕ/∂x`, which leaves a
+uniform mixing ratio exactly unchanged, at the cost of strict mass conservation.
 """
 function upwind1_stencil(ϕ, U, Δt, Δz; p = nothing)
     sz = sign(Δz) # Handle negative grid spacing

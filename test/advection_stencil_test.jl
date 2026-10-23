@@ -21,6 +21,8 @@ end
 @testitem "upwind1 1" setup = [StencilSetup] begin
     c2 = [c[1], c..., c[end]]
     result = [upwind1_stencil(c2[(i - 1):(i + 1)], v[(i - 1):i], Δt, Δz) for i in 2:7]
+    # Advective form: dϕᵢ/dt = −U_left·(ϕᵢ − ϕᵢ₋₁)/Δz for these non-negative winds,
+    # e.g. cell 2: 1 − 0.05·8·(1 − 0)/0.5 = 0.2. (Flux form gave 0.4, 1.8, 3.2, 4.6, 4.5.)
     @test c .+ result .* Δt ≈ [0.0, 0.2, 1.4, 2.6, 3.8, 5.0]
 end
 
@@ -77,6 +79,23 @@ end
                         for i in (1 + lpad):(10 - rpad)
                 ]
                 @test dudt ≈ zeros(10 - lpad - rpad)
+            end
+        end
+    end
+
+    # The advective form must leave a uniform mixing ratio unchanged even when the
+    # face winds do not satisfy discrete continuity (U[2] ≠ U[1]); the flux form
+    # would give dϕ/dt = −ϕ·(U[2] − U[1])/Δz here.
+    @testset "Divergent wind" begin
+        vf = [3.0, -2.0, 5.0, 0.0, -4.0, 1.0, 2.0, -1.0, 6.0, 0.5, -3.0]
+        for stencil in [upwind1_stencil]
+            @testset "$(nameof(stencil)) Δz=$Δz" for Δz in (0.1, -0.1)
+                lpad, rpad = EnvironmentalTransport.stencil_size(stencil)
+                dudt = [
+                    stencil(u0[(i - lpad):(i + rpad)], vf[i:(i + 1)], Δt, Δz)
+                        for i in (1 + lpad):(10 - rpad)
+                ]
+                @test dudt ≈ zeros(10 - lpad - rpad) atol = 1.0e-12
             end
         end
     end
