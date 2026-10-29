@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792774518265,
+  "lastUpdate": 1793300009037,
   "repoUrl": "https://github.com/EarthSciML/EnvironmentalTransport.jl",
   "entries": {
     "Julia benchmark result": [
@@ -4942,6 +4942,54 @@ window.BENCHMARK_DATA = {
           {
             "name": "Advection Simulator/out-of-place/upwind1_stencil/0.625 x 0.5 (N=31719)",
             "value": 15220753.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=18608800\nallocs=486366\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "ctessum@gmail.com",
+            "name": "Christopher Tessum",
+            "username": "ctessum"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fadaa6a05996997e3cb74c12bd3cc4e8ff2214b3",
+          "message": "Merge pull request #131 from jialinl6/Oct_merge\n\nSpeciesConstantBC exact species-name matching, allocation-free observed-function reads, upwind1 docs and tests",
+          "timestamp": "2026-10-29T13:36:35-05:00",
+          "tree_id": "acac1f942a6d325ab33d58fd3cafbd69ea381690",
+          "url": "https://github.com/EarthSciML/EnvironmentalTransport.jl/commit/fadaa6a05996997e3cb74c12bd3cc4e8ff2214b3"
+        },
+        "date": 1793300006099,
+        "tool": "julia",
+        "benches": [
+          {
+            "name": "Advection Simulator/in-place/upwind1_stencil/0.3125 x 0.25 (N=126222)",
+            "value": 50534075.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=68664976\nallocs=1851260\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Advection Simulator/in-place/upwind1_stencil/0.625 x 0.5 (N=31719)",
+            "value": 12297784,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=17255344\nallocs=465216\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Advection Simulator/out-of-place/upwind1_stencil/0.3125 x 0.25 (N=126222)",
+            "value": 51797394.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=74050592\nallocs=1935412\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Advection Simulator/out-of-place/upwind1_stencil/0.625 x 0.5 (N=31719)",
+            "value": 12593021,
             "unit": "ns",
             "extra": "gctime=0\nmemory=18608800\nallocs=486366\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
           }
