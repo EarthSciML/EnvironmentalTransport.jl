@@ -1,9 +1,11 @@
 @testitem "advection simulator" begin
     using EnvironmentalTransport
     using EnvironmentalTransport: get_vf, get_Δ, get_datafs
+    using EnvironmentalTransport: vector_obs_function, pbl_obs_function, advection_op
 
     using Test
     using EarthSciMLBase, EarthSciData
+    using EarthSciMLBase: MapBroadcast
     using ModelingToolkit, OrdinaryDiffEqDefault
     using OrdinaryDiffEqTsit5: Tsit5
     using OrdinaryDiffEqSSPRK: SSPRK22
@@ -111,5 +113,37 @@
         @test only(Δ_fs[1](2, 3, 1, p, 0.0)) ≈ 424080.6852300487
         @test only(Δ_fs[2](3, 2, 1, p, 0.0)) ≈ 445280.0
         @test only(Δ_fs[3](3, 1, 2, p, 0.0)) ≈ -1511.6930930013798
+    end
+
+    # The data readers above use the scalar observed-function builder when
+    # EarthSciMLBase has one; they must match the vector builder bit for bit.
+    @testset "scalar observed functions match the vector builder" begin
+        bitwise_equal(a, b) = size(a) == size(b) && all(map(===, a, b))
+        T = eltype(domain)
+        grd = EarthSciMLBase.grid(domain)
+        tt = sol.t[end]
+        u = sol.u[end]
+
+        ref_fs = [vector_obs_function(sys_coords, coord_args, v, T) for v in vars]
+        pvarstrs = [String(Symbol(pv)) for pv in EarthSciMLBase.pvars(domain)]
+        v_ref = [get_vf(domain, pvarstrs[i], ref_fs[i]) for i in 1:3]
+        Δ_ref = [get_Δ(domain, ref_fs[3 + i], i) for i in 1:3]
+        u4 = reshape(u, :, length.(grd)...)
+        tendency(v_fs, Δ_fs) = advection_op(
+            u4, upwind1_stencil, v_fs, Δ_fs, op.Δt, ZeroGradBC(), MapBroadcast()
+        )(u, p, tt)
+        du = tendency(v_fs, Δ_fs)
+        @test any(!iszero, du)
+        @test bitwise_equal(du, tendency(v_ref, Δ_ref))
+
+        pbl_vars = EarthSciMLBase.get_needed_vars(
+            PBLMixingCallback(), csys, sys_coords, domain
+        )
+        pblh(f) = [f(p, tt, x1, x2, grd[3][1]) for x1 in grd[1], x2 in grd[2]]
+        pblh_new = pblh(pbl_obs_function(sys_coords, coord_args, pbl_vars[1], T))
+        @test all(>(0), pblh_new)
+        @test bitwise_equal(
+            pblh_new, pblh(vector_obs_function(sys_coords, coord_args, pbl_vars[1], T))
+        )
     end
 end

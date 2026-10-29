@@ -172,3 +172,46 @@ end
     # Other species get default
     @test x[2, -1, 1, 1] == 0.0
 end
+
+@testitem "SpeciesConstantBC exact species-name resolution" begin
+    using EnvironmentalTransport: SpeciesConstantBC, resolve_species_bc, _bc_species_name
+
+    @test _bc_species_name("GEOSChemGasPhase₊O3(t)") == "O3"
+    @test _bc_species_name("SuperFast₊NO2(t)") == "NO2"
+    @test _bc_species_name("O3(t)") == "O3"
+    @test _bc_species_name("O3") == "O3"
+
+    # Alphabetically sorted GEOS-Chem unknowns: a substring match would resolve
+    # "O3" to BrNO3 (index 1) and "CO" to BZCO3 (index 2).
+    species_vars = [
+        "GEOSChemGasPhase₊BrNO3(t)", "GEOSChemGasPhase₊BZCO3(t)",
+        "GEOSChemGasPhase₊NO3(t)", "GEOSChemGasPhase₊O3(t)", "GEOSChemGasPhase₊CO(t)",
+    ]
+    bc = SpeciesConstantBC(Dict("O3" => 40.0, "CO" => 100.0), 0.0)
+    arr = resolve_species_bc(bc, zeros(5, 3, 3, 2), species_vars)
+    @test arr.values == Dict(4 => 40.0, 5 => 100.0)
+    @test arr[4, 0, 1, 1] == 40.0
+    @test arr[5, 0, 1, 1] == 100.0
+    @test arr[1, 0, 1, 1] == 0.0
+    @test arr[2, 0, 1, 1] == 0.0
+    @test arr[3, 0, 1, 1] == 0.0
+
+    # Fully-qualified names still resolve, by exact match on the full string.
+    bc_full = SpeciesConstantBC(Dict("GEOSChemGasPhase₊O3(t)" => 40.0), 0.0)
+    arr_full = resolve_species_bc(bc_full, zeros(5, 3, 3, 2), species_vars)
+    @test arr_full.values == Dict(4 => 40.0)
+
+    # Un-namespaced variables.
+    bc_plain = SpeciesConstantBC(Dict("O3" => 40.0), 0.0)
+    arr_plain = resolve_species_bc(bc_plain, zeros(2, 3, 3, 2), ["HNO3(t)", "O3(t)"])
+    @test arr_plain.values == Dict(2 => 40.0)
+    @test arr_plain[2, 0, 1, 1] == 40.0
+    @test arr_plain[1, 0, 1, 1] == 0.0
+
+    # A name that is only a substring of a variable is not found.
+    bc_sub = SpeciesConstantBC(Dict("NO" => 1.0), 0.0)
+    arr_sub = @test_logs (:warn, r"Species 'NO' not found") resolve_species_bc(
+        bc_sub, zeros(5, 3, 3, 2), species_vars
+    )
+    @test isempty(arr_sub.values)
+end

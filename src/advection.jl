@@ -409,7 +409,38 @@ mutable struct AdvectionOperator <: EarthSciMLBase.Operator
     end
 end
 
+"""
+$(SIGNATURES)
+
+Return a function `(p, t, x1, x2, x3) -> value` that evaluates the observed variable
+`v` of `mtk_sys` at the given parameters, time and coordinates. It is used for the
+per-cell data reads (winds, grid spacings, PBL height), so it is evaluated once per
+grid cell per step.
+
+`v` must not depend on the unknowns of `mtk_sys`, because the state is not available
+here. If EarthSciMLBase provides `build_coord_observed_scalar_function`, the generated
+function returns the value directly without allocating; otherwise this falls back
+to [`vector_obs_function`](@ref).
+"""
 function obs_function(mtk_sys, coord_args, v, T)
+    if !isdefined(EarthSciMLBase, :build_coord_observed_scalar_function)
+        return vector_obs_function(mtk_sys, coord_args, v, T)
+    end
+    obs_f = EarthSciMLBase.build_coord_observed_scalar_function(
+        mtk_sys, coord_args, v;
+        eval_module = @__MODULE__
+    )
+    return (p, t, x1, x2, x3) -> obs_f(nothing, p, t, x1, x2, x3)
+end
+
+"""
+$(SIGNATURES)
+
+Like [`obs_function`](@ref), but built with the vector-valued
+`EarthSciMLBase.build_coord_observed_function`, which allocates a length-1 array on
+every evaluation. Used when the installed EarthSciMLBase has no scalar builder.
+"""
+function vector_obs_function(mtk_sys, coord_args, v, T)
     obs_f = EarthSciMLBase.build_coord_observed_function(
         mtk_sys, coord_args, [v];
         eval_module = @__MODULE__
